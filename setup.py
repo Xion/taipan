@@ -30,4 +30,6 @@ setup(
 
     platforms='any',
     packages=find_packages(exclude=['tests']),
+
+    tests_require=open('requirements-test.txt').readlines(),
 )

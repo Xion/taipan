@@ -11,8 +11,7 @@ except ImportError:
 
 
 import sys
-IS_PY3 = sys.version[0] == '3'
-IS_PY25 = sys.version[0] == '2' and int(sys.version[2]) <= 5
+IS_PY3 = sys.version_info[0] == 3
 
 
 if IS_PY3:
@@ -21,8 +20,3 @@ if IS_PY3:
     xrange = range
 else:
     from itertools import imap
-
-
-if IS_PY25:
-    import __builtin__
-    __builtin__.bytes = bytes = str

@@ -1,9 +1,9 @@
 """
 Tests for the .strings module.
 """
-from unittest import skipIf, skipUnless, TestCase  # TODO: shim skips for 2.6
-
 from taipan._compat import IS_PY3
+from taipan.testing import skipIf, skipUnless, TestCase
+
 import taipan.strings as __unit__
 
 

@@ -50,7 +50,9 @@ def join(delimiter, iterable):
     """"Returns a string which is a concatenation of strings in ``iterable``,
     separated by given ``delimiter``.
     """
+    # TODO(xion): add arg(s) that control handling Nones (skip/replace/error)
     ensure_string(delimiter)
+    ensure_iterable(iterable)
 
     string_class = delimiter.__class__
     return delimiter.join(imap(string_class, iterable))

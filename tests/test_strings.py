@@ -63,7 +63,39 @@ class EnsureString(TestCase):
 
 
 class Join(TestCase):
-    pass
+    ITERABLE = ['foo', 'bar', 'baz']
+    DELIMITER = 'X'
+    JOINED = 'fooXbarXbaz'
+
+    def test_delimiter__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(None, self.ITERABLE)
+
+    def test_delimiter__non_string(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(object(), self.ITERABLE)
+
+    def test_delimiter__empty(self):
+        expected = reduce(str.__add__, self.ITERABLE, '')
+        joined = __unit__.join('', self.ITERABLE)
+        self.assertEquals(expected, joined)
+
+    def test_iterable__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(self.DELIMITER, None)
+
+    def test_iterable__non_iterable(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(self.DELIMITER, object())
+
+    def test_iterable__empty(self):
+        expected = ""
+        joined = __unit__.join(self.DELIMITER, ())
+        self.assertEquals(expected, joined)
+
+    def test_normal(self):
+        joined = __unit__.join(self.DELIMITER, self.ITERABLE)
+        self.assertEquals(self.JOINED, joined)
 
 
 class CamelCase(TestCase):

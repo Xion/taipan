@@ -1,13 +1,51 @@
 """
 Dictionary-related functions and classes.
 """
+from taipan._compat import IS_PY3
 from taipan.collections import ensure_iterable, ensure_mapping
 
 
-__all__ = ['get', 'merge', 'select']
+__all__ = [
+    'filteritems', 'filterkeys', 'filtervalues',
+    'get',
+    'merge', 'select',
+]
 
 
-# TODO(xion): this probably needs a better name
+def filteritems(function, dict_):
+    """Return a new dictionary comprising of items
+    for which ``function`` returns True.
+
+    :param function: Function taking key and value, or None
+    """
+    ensure_mapping(dict_)
+    function = bool if function is None else function
+    return dict((k, v) for k, v in _items(dict_) if function(k, v))
+
+
+def filterkeys(function, dict_):
+    """Return a new dictionary comprising of keys
+    for which ``function`` returns True, and their corresponding values.
+
+    :param function: Function taking a dictionary key, or None
+    """
+    ensure_mapping(dict_)
+    function = bool if function is None else function
+    return dict((k, v) for k, v in _items(dict_) if function(k))
+
+
+def filtervalues(function, dict_):
+    """Returns a new dictionary comprising of values
+    for which ``function`` return True, and keys that corresponded to them.
+
+    :param function: Function taking a dictionary value, or None
+    """
+    ensure_mapping(dict_)
+    function = bool if function is None else function
+    return dict((k, v) for k, v in _items(dict_) if function(v))
+
+
+# TODO(xion): this may need a better name
 def get(dict_, keys=(), default=None):
     """Extensions of standard :meth:`dict.get`.
     Retrieves an item from given dictionary, trying given keys in order.
@@ -43,11 +81,29 @@ def merge(*dicts):
     return res
 
 
+def reverse(dict_):
+    """Return a reversed dictionary, where former values are keys
+    and former keys are values.
+
+    .. warning::
+
+        If more than one key maps to any given value in input dictionary,
+        it is undefined which one will be chosen for the result.
+
+    :param dict_: Dictionary to swap keys and values in
+    :return: Reversed dictionary
+    """
+    ensure_mapping(dict_)
+    return dict((v, k) for k, v in _items(dict_))
+
+
 def select(keys, from_, strict=False):
     """Selects a subset of given dictionary, including only the specified keys.
 
     :param keys: Iterable of keys to include
     :param strict: Whether ``keys`` are required to exist in the dictionary.
+
+    :return: Dictionary whose keys are a subset of given ``keys``
 
     :raises KeyError: If ``strict`` is True and one of ``keys`` is not found
                       in the dictionary.
@@ -59,3 +115,10 @@ def select(keys, from_, strict=False):
         return dict((k, from_[k]) for k in keys)
     else:
         return dict((k, from_[k]) for k in keys if k in from_)
+
+
+# Utility functions
+
+_items = dict.items if IS_PY3 else dict.iteritems
+_keys = dict.keys if IS_PY3 else dict.iterkeys
+_values = dict.values if IS_PY3 else dict.itervalues

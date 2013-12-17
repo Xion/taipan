@@ -99,7 +99,45 @@ class Join(TestCase):
 
 
 class CamelCase(TestCase):
-    pass
+    LOWERCASE = "alice has a cat"
+    CAPITALIZED = "Alice has a cat"
+    LOWERCASE_CC = "aliceHasACat"
+    CAPITALIZED_CC = "AliceHasACat"
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.camel_case(None)
+
+    def test_non_string(self):
+        with self.assertRaises(TypeError):
+            __unit__.camel_case(object())
+
+    def test_empty(self):
+        self.assertEquals('', __unit__.camel_case(''))
+
+    def test_capitalize__none(self):
+        self.assertEquals(
+            self.LOWERCASE_CC,
+            __unit__.camel_case(self.LOWERCASE, capitalize=None))
+        self.assertEquals(
+            self.CAPITALIZED_CC,
+            __unit__.camel_case(self.CAPITALIZED, capitalize=None))
+
+    def test_capitalize__true(self):
+        self.assertEquals(
+            self.CAPITALIZED_CC,
+            __unit__.camel_case(self.LOWERCASE, capitalize=True))
+        self.assertEquals(
+            self.CAPITALIZED_CC,
+            __unit__.camel_case(self.CAPITALIZED, capitalize=True))
+
+    def test_capitalize__false(self):
+        self.assertEquals(
+            self.LOWERCASE_CC,
+            __unit__.camel_case(self.LOWERCASE, capitalize=False))
+        self.assertEquals(
+            self.LOWERCASE_CC,
+            __unit__.camel_case(self.CAPITALIZED, capitalize=False))
 
 
 class Replace(TestCase):

@@ -69,9 +69,9 @@ def camel_case(arg, capitalize=None):
 
     :return: String turned into camel-case "equivalent"
     """
+    ensure_string(arg)
     if not arg:
         return arg
-    ensure_string(arg)
 
     words = arg.split()
     first_word = words[0] if len(words) > 0 else None
@@ -84,7 +84,7 @@ def camel_case(arg, capitalize=None):
             first_word = first_word[0].lower() + first_word[1:]
         words[0] = first_word
 
-    return join(arg, words)
+    return join(arg.__class__(), words)
 
 
 # String replacement

@@ -113,6 +113,11 @@ def replace(needle, with_=None):
                    or a mapping from needles to corresponding replacements
     :param with_: Replacement string, if ``needle`` was not a mapping
     """
+    if needle is None:
+        raise TypeError("replacement needle cannot be None")
+    if not needle:
+        raise ValueError("replacement needle cannot be empty")
+
     # TODO(xion): allow for regex needles
     if is_string(needle):
         replacer = Replacer((needle,))
@@ -121,7 +126,7 @@ def replace(needle, with_=None):
         if not is_mapping(needle):
             if all(imap(is_pair, needle)):
                 needle = dict(needle)
-            else:
+            elif not all(imap(is_string, needle)):
                 raise TypeError("invalid replacement needle")
         replacer = Replacer(needle)
 
@@ -133,7 +138,7 @@ def replace(needle, with_=None):
     return replacer
 
 
-class ReplacementError(Exception):
+class ReplacementError(ValueError):
     """Exception raised when string replacement error occurrs."""
 
 

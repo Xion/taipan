@@ -2,6 +2,7 @@
 Tests for the .strings module.
 """
 from taipan._compat import IS_PY3
+from taipan.collections import is_mapping
 from taipan.testing import skipIf, skipUnless, TestCase
 
 import taipan.strings as __unit__
@@ -141,4 +142,134 @@ class CamelCase(TestCase):
 
 
 class Replace(TestCase):
-    pass
+    HAYSTACK = "fooXbarXbazXbar"
+
+    SIMPLE_NEEDLE = "foo"
+    SIMPLE_REPLACEMENT = "blah"
+    SIMPLE_RESULT = "blahXbarXbazXbar"
+
+    LIST_NEEDLE = ("foo", "baz")
+    LIST_REPLACEMENT = "thud"
+    LIST_RESULT = "thudXbarXthudXbar"
+
+    MAP_REPLACEMENTS = {"foo": "blah", "baz": "thud"}
+    MAP_RESULT = "blahXbarXthudXbar"
+
+    def test_needle__none(self):
+        with self.assertRaises(TypeError) as r:
+            __unit__.replace(None)
+        self.assertIn("None", r.exception.message)
+
+    def test_needle__non_string(self):
+        with self.assertRaises(TypeError):
+            __unit__.replace(object())
+
+    def test_needle__empty_string(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.replace('')
+        self.assertIn("empty", r.exception.message)
+
+    def test_needle__empty_iterable(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.replace([])
+        self.assertIn("empty", r.exception.message)
+
+    def test_needle__some_string(self):
+        replacer = __unit__.replace(self.SIMPLE_NEEDLE)
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertIn(self.SIMPLE_NEEDLE, replacer._replacements)
+
+    def test_needle__list(self):
+        replacer = __unit__.replace(self.LIST_NEEDLE)
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertEquals(self.LIST_NEEDLE, replacer._replacements)
+
+    def test_needle__mapping(self):
+        replacer = __unit__.replace(self.MAP_REPLACEMENTS)
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertEquals(self.MAP_REPLACEMENTS, replacer._replacements)
+
+    def test_replacement__omitted(self):
+        replacer = __unit__.replace(self.SIMPLE_NEEDLE)
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertFalse(is_mapping(replacer._replacements))
+
+    def test_replacement__param__non_string(self):
+        with self.assertRaises(TypeError):
+            __unit__.replace(self.SIMPLE_NEEDLE, with_=object())
+
+    def test_replacement__param__empty_string(self):
+        replacer = __unit__.replace(self.SIMPLE_NEEDLE, with_="")
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertEquals({self.SIMPLE_NEEDLE: ""}, replacer._replacements)
+
+    def test_replacement__param__some_string(self):
+        replacer = __unit__.replace(
+            self.SIMPLE_NEEDLE, with_=self.SIMPLE_REPLACEMENT)
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertEquals({self.SIMPLE_NEEDLE: self.SIMPLE_REPLACEMENT},
+                          replacer._replacements)
+
+    def test_replacement__fluent__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.replace(self.SIMPLE_NEEDLE).with_(None)
+
+    def test_replacement__fluent__non_string(self):
+        with self.assertRaises(TypeError):
+            __unit__.replace(self.SIMPLE_NEEDLE).with_(object())
+
+    def test_replacement__fluent__empty_string(self):
+        replacer = __unit__.replace(self.SIMPLE_NEEDLE).with_("")
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertEquals({self.SIMPLE_NEEDLE: ""}, replacer._replacements)
+
+    def test_replacement__fluent__some_string(self):
+        replacer = __unit__.replace(
+            self.SIMPLE_NEEDLE).with_(self.SIMPLE_REPLACEMENT)
+        self.assertIsInstance(replacer, __unit__.Replacer)
+        self.assertEquals({self.SIMPLE_NEEDLE: self.SIMPLE_REPLACEMENT},
+                          replacer._replacements)
+
+    def test_replacement__duplicate__param_and_fluent(self):
+        replacer = __unit__.replace(
+            self.SIMPLE_NEEDLE, with_=self.SIMPLE_REPLACEMENT)
+        with self.assertRaises(__unit__.ReplacementError):
+            replacer.with_(self.SIMPLE_REPLACEMENT)
+
+    def test_replacement__duplicate__double_fluent(self):
+        replacer = __unit__.replace(
+            self.SIMPLE_NEEDLE).with_(self.SIMPLE_REPLACEMENT)
+        with self.assertRaises(__unit__.ReplacementError):
+            replacer.with_(self.SIMPLE_REPLACEMENT)
+
+    def test_haystack__none(self):
+        with self.assertRaises(TypeError) as r:
+            __unit__.replace(
+                self.SIMPLE_NEEDLE, with_=self.SIMPLE_REPLACEMENT).in_(None)
+        self.assertIn("None", r.exception.message)
+
+    def test_haystack__non_string(self):
+        with self.assertRaises(TypeError):
+            __unit__.replace(self.SIMPLE_NEEDLE,
+                             with_=self.SIMPLE_REPLACEMENT).in_(object())
+
+    def test_haystack__empty_string(self):
+        result = __unit__.replace(
+            self.SIMPLE_NEEDLE, with_=self.SIMPLE_REPLACEMENT).in_("")
+        self.assertEquals("", result)
+
+    def test_replace__simple(self):
+        result = __unit__.replace(
+            self.SIMPLE_NEEDLE).with_(
+            self.SIMPLE_REPLACEMENT).in_(self.HAYSTACK)
+        self.assertEquals(self.SIMPLE_RESULT, result)
+
+    def test_replace__list(self):
+        result = __unit__.replace(
+            self.LIST_NEEDLE).with_(
+            self.LIST_REPLACEMENT).in_(self.HAYSTACK)
+        self.assertEquals(self.LIST_RESULT, result)
+
+    def test_replace__mapping(self):
+        result = __unit__.replace(self.MAP_REPLACEMENTS).in_(self.HAYSTACK)
+        self.assertEquals(self.MAP_RESULT, result)

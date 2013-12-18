@@ -3,6 +3,7 @@ Dictionary-related functions and classes.
 """
 from taipan._compat import IS_PY3
 from taipan.collections import ensure_iterable, ensure_mapping
+from taipan.functional import ensure_callable
 
 
 __all__ = [
@@ -19,7 +20,12 @@ def filteritems(function, dict_):
     :param function: Function taking key and value, or None
     """
     ensure_mapping(dict_)
-    function = bool if function is None else function
+
+    if function is None:
+        function = lambda k, v: all((k, v))
+    else:
+        ensure_callable(function)
+
     return dict((k, v) for k, v in _items(dict_) if function(k, v))
 
 
@@ -29,8 +35,8 @@ def filterkeys(function, dict_):
 
     :param function: Function taking a dictionary key, or None
     """
+    function = bool if function is None else ensure_callable(function)
     ensure_mapping(dict_)
-    function = bool if function is None else function
     return dict((k, v) for k, v in _items(dict_) if function(k))
 
 
@@ -40,8 +46,8 @@ def filtervalues(function, dict_):
 
     :param function: Function taking a dictionary value, or None
     """
+    function = bool if function is None else ensure_callable(function)
     ensure_mapping(dict_)
-    function = bool if function is None else function
     return dict((k, v) for k, v in _items(dict_) if function(v))
 
 

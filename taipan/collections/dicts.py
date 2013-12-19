@@ -66,6 +66,9 @@ def get(dict_, keys=(), default=None):
     ensure_iterable(keys)
 
     keys = list(keys)
+    if not keys:
+        return default
+
     for key in keys[:-1]:
         if key in dict_:
             return dict_[key]

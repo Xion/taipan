@@ -127,7 +127,51 @@ class FilterValues(_Filter):
 
 
 class Get(TestCase):
-    pass
+    DICT = dict(zip(map(chr, range(ord('a'), ord('z') + 1)),  # a..z
+                    range(1, 26 + 1)))
+
+    ABSENT_KEYS = ('not_present', 'also_absent')
+    PRESENT_KEYS = tuple('hax')
+    KEYS = ABSENT_KEYS + PRESENT_KEYS  # assumed typical situation
+
+    DEFAULT = 0
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(None, self.KEYS, self.DEFAULT)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(object(), self.KEYS, self.DEFAULT)
+
+    def test_dict__empty(self):
+        self.assertEquals(self.DEFAULT,
+                          __unit__.get({}, self.KEYS, self.DEFAULT))
+
+    def test_keys__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(self.DICT, None, self.DEFAULT)
+
+    def test_keys__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(self.DICT, object(), self.DEFAULT)
+
+    def test_keys__empty(self):
+        self.assertEquals(self.DEFAULT,
+                          __unit__.get(self.DICT, (), self.DEFAULT))
+
+    def test_keys__typical(self):
+        self.assertEquals(
+            self.DICT[self.PRESENT_KEYS[0]],
+            __unit__.get(self.DICT, self.KEYS, self.DEFAULT))
+
+    def test_default__omitted(self):
+        self.assertIsNone(__unit__.get(self.DICT, self.ABSENT_KEYS))
+
+    def test_default__provided(self):
+        self.assertEquals(
+            self.DEFAULT,
+            __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
 
 
 class Merge(TestCase):

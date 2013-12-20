@@ -6,6 +6,10 @@ from taipan.testing import TestCase
 import taipan.collections.dicts as __unit__
 
 
+ALPHABET = map(chr, range(ord('a'), ord('z') + 1))
+ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
+
+
 class _Filter(TestCase):
     TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
     FALSY_DICT = {'foo': 0, '': 1, False: 2, 'bar': 3, (): 4, 'baz': ()}
@@ -127,8 +131,7 @@ class FilterValues(_Filter):
 
 
 class Get(TestCase):
-    DICT = dict(zip(map(chr, range(ord('a'), ord('z') + 1)),  # a..z
-                    range(1, 26 + 1)))
+    DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
 
     ABSENT_KEYS = ('not_present', 'also_absent')
     PRESENT_KEYS = tuple('hax')
@@ -179,7 +182,33 @@ class Merge(TestCase):
 
 
 class Reverse(TestCase):
-    pass
+    REVERSIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
+    IRREVERSIBLE_DICT = dict(zip(range(1, 2 * len(ALPHABET) + 1),
+                                 ALPHABET * 2))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.reverse(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.reverse(object())
+
+    def test_empty(self):
+        self.assertEquals({}, __unit__.reverse({}))
+
+    def test_reversible(self):
+        reversed_dict = __unit__.reverse(self.REVERSIBLE_DICT)
+        self.assertEquals(
+            set(self.REVERSIBLE_DICT.values()), set(reversed_dict.keys()))
+        self.assertEquals(
+            set(self.REVERSIBLE_DICT.keys()), set(reversed_dict.values()))
+
+    def test_irreversible(self):
+        # a bit of misnomer, but it means dictionary has duplicate values
+        reversed_dict = __unit__.reverse(self.IRREVERSIBLE_DICT)
+        self.assertGreater(
+            set(self.IRREVERSIBLE_DICT.keys()), set(reversed_dict.values()))
 
 
 class Select(TestCase):

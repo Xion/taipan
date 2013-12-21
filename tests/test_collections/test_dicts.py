@@ -177,7 +177,37 @@ class Get(TestCase):
 
 
 class Merge(TestCase):
-    pass
+    KEYS = ('foo', 'bar', 'baz', 'qux', 'thud')
+
+    DICT = dict(zip(KEYS[:3], range(3)))
+    OTHER_DICT = dict(zip(KEYS[3:], range(3, len(KEYS))))
+    MANY_DICTS = [{k: v} for k, v in zip(KEYS, range(len(KEYS)))]
+
+    MERGED = dict(zip(KEYS, range(5)))
+
+    def test_no_args(self):
+        self.assertEquals({}, __unit__.merge())
+
+    def test_single_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(None)
+
+    def test_single_arg__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(object())
+
+    def test_single_arg__dict(self):
+        result =  __unit__.merge(self.DICT)
+        self.assertEquals(self.DICT, result)
+        self.assertIsNot(self.DICT, result)
+
+    def test_two_args(self):
+        self.assertEquals(
+            self.MERGED, __unit__.merge(self.DICT, self.OTHER_DICT))
+
+    def test_many_args(self):
+        self.assertEquals(
+            self.MERGED, __unit__.merge(*self.MANY_DICTS))
 
 
 class Reverse(TestCase):

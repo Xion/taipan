@@ -62,7 +62,7 @@ class EnsureString(TestCase):
     @skipUnless(IS_PY3, "requires Python 3.x")
     def test_bytestring__py3(self):
         with self.assertRaises(TypeError):
-            __unit__.ensure_string(self.DEFAULT_STRING)
+            __unit__.ensure_string(self.BYTE_STRING)
 
 
 class Join(TestCase):

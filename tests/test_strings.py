@@ -1,6 +1,8 @@
 """
 Tests for the .strings module.
 """
+from functools import reduce
+
 from taipan._compat import IS_PY3
 from taipan.collections import is_mapping
 from taipan.testing import skipIf, skipUnless, TestCase
@@ -158,7 +160,7 @@ class Replace(TestCase):
     def test_needle__none(self):
         with self.assertRaises(TypeError) as r:
             __unit__.replace(None)
-        self.assertIn("None", r.exception.message)
+        self.assertIn("None", str(r.exception))
 
     def test_needle__non_string(self):
         with self.assertRaises(TypeError):
@@ -167,12 +169,12 @@ class Replace(TestCase):
     def test_needle__empty_string(self):
         with self.assertRaises(ValueError) as r:
             __unit__.replace('')
-        self.assertIn("empty", r.exception.message)
+        self.assertIn("empty", str(r.exception))
 
     def test_needle__empty_iterable(self):
         with self.assertRaises(ValueError) as r:
             __unit__.replace([])
-        self.assertIn("empty", r.exception.message)
+        self.assertIn("empty", str(r.exception))
 
     def test_needle__some_string(self):
         replacer = __unit__.replace(self.SIMPLE_NEEDLE)
@@ -246,7 +248,7 @@ class Replace(TestCase):
         with self.assertRaises(TypeError) as r:
             __unit__.replace(
                 self.SIMPLE_NEEDLE, with_=self.SIMPLE_REPLACEMENT).in_(None)
-        self.assertIn("None", r.exception.message)
+        self.assertIn("None", str(r.exception))
 
     def test_haystack__non_string(self):
         with self.assertRaises(TypeError):

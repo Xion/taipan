@@ -282,7 +282,7 @@ class Select(TestCase):
 
         with self.assertRaises(KeyError) as r:
             __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=True)
-        self.assertEquals(self.EXTRANEOUS_KEY, r.exception.message)
+        self.assertIn(repr(self.EXTRANEOUS_KEY), str(r.exception))
 
     def test_strict__false(self):
         self.assertEquals(

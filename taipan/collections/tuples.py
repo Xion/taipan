@@ -1,6 +1,8 @@
 """
 Tuple-related functions and classes.
 """
+from taipan._compat import Numeric
+
 
 __all__ = [
     'is_tuple',
@@ -25,7 +27,7 @@ def is_tuple(obj, len_=None):
 
     if len_ is None:
         return True
-    if not isinstance(len_, (int, long)):
+    if not isinstance(len_, Numeric):
         raise TypeError(
             "length must be a number (got %s instead)" % type(len_).__name__)
     if len_ < 0:

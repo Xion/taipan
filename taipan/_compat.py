@@ -14,6 +14,8 @@ import sys
 IS_PY3 = sys.version_info[0] == 3
 
 
+Numeric = (int,) if IS_PY3 else (int, long)
+
 if IS_PY3:
     imap = map
     unichr = chr

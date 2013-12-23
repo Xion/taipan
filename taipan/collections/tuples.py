@@ -22,8 +22,15 @@ def is_tuple(obj, len_=None):
     """
     if not isinstance(obj, tuple):
         return False
+
     if len_ is None:
         return True
+    if not isinstance(len_, (int, long)):
+        raise TypeError(
+            "length must be a number (got %s instead)" % type(len_).__name__)
+    if len_ < 0:
+        raise ValueError("length must be positive (got %s instead)" % len_)
+
     return len(obj) == len_
 
 

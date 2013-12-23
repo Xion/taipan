@@ -228,10 +228,10 @@ class Reverse(TestCase):
 
     def test_reversible(self):
         reversed_dict = __unit__.reverse(self.REVERSIBLE_DICT)
-        self.assertEquals(
-            set(self.REVERSIBLE_DICT.values()), set(reversed_dict.keys()))
-        self.assertEquals(
-            set(self.REVERSIBLE_DICT.keys()), set(reversed_dict.values()))
+        self.assertItemsEqual(
+            self.REVERSIBLE_DICT.values(), reversed_dict.keys())
+        self.assertItemsEqual(
+            self.REVERSIBLE_DICT.keys(), reversed_dict.values())
 
     def test_irreversible(self):
         # a bit of misnomer, but it means dictionary has duplicate values

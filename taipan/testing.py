@@ -11,6 +11,7 @@ try:
 except ImportError:
     from unittest import *
 
+from taipan._compat import IS_PY3
 from taipan.functional import identity
 from taipan.strings import BaseString
 
@@ -26,6 +27,13 @@ class TestCase(_BaseTestCase):
     Includes few additional, convenience assertion methods.
     """
     __missing = object()
+
+    # Python 3 changes name of the following assert function,
+    # so we provide backward and forward synonyms for compatibility
+    if IS_PY3:
+        assertItemsEqual = _BaseTestCase.assertCountEqual
+    else:
+        assertCountEqual = _BaseTestCase.assertItemsEqual
 
     def assertStartsWith(self, prefix, string, msg=None):
         """Assert that ``string`` starts with given ``prefix``."""

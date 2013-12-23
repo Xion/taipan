@@ -1,6 +1,7 @@
 """
 Functional utilities.
 """
+from taipan._compat import imap
 from taipan.collections import ensure_iterable
 
 
@@ -131,7 +132,7 @@ def and_(*fs):
              on results of ``fs`` applied to its argument
     """
     ensure_argcount(fs, min_=1)
-    fs = list(map(ensure_callable, fs))
+    fs = list(imap(ensure_callable, fs))
 
     if len(fs) == 1:
         return fs[0]
@@ -157,7 +158,7 @@ def or_(*fs):
              on results of ``fs`` applied to its argument
     """
     ensure_argcount(fs, min_=1)
-    fs = list(map(ensure_callable, fs))
+    fs = list(imap(ensure_callable, fs))
 
     if len(fs) == 1:
         return fs[0]

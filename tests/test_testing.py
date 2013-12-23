@@ -89,3 +89,37 @@ class AssertEndsWith(_Assertion):
 
     def test_success(self):
         self._TESTCASE.assertEndsWith(self.SUFFIX, self.STRING)
+
+
+class AssertThat(_Assertion):
+    IDENTITY = staticmethod(lambda x: x)
+    NOT = staticmethod(lambda x: not x)
+
+    def test_predicate__none(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertThat(None)
+
+    def test_predicate__non_callable(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertThat(object())
+
+    def test_predicate__truth(self):
+        self._TESTCASE.assertThat(lambda: True)
+
+    def test_predicate__falsity(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertThat(lambda: False)
+
+    def test_predicate__expected_argument(self):
+        with self.assertRaises(TypeError):
+            self._TESTCASE.assertThat(self.IDENTITY)
+
+    def test_argument__none(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertThat(AssertThat.IDENTITY, None)
+        self._TESTCASE.assertThat(AssertThat.NOT, None)
+
+    def test_argument__some_object(self):
+        self._TESTCASE.assertThat(AssertThat.IDENTITY, object())
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertThat(AssertThat.NOT, object())

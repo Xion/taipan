@@ -59,11 +59,15 @@ class TestCase(_BaseTestCase):
         if not callable(predicate):
             self.fail("%s is not a callable predicate" % predicate)
 
-        satisfied = (
-            predicate() if argument is self.__missing else predicate(argument))
+        satisfied = (predicate()
+                     if argument is self.__missing
+                     else predicate(argument))
+
         if not satisfied:
-            self.__fail(
-                msg, "predicate %s not satisfied for %s" % (predicate, string))
+            argument_part = ("" if argument is self.__missing
+                             else " for %s" % argument)
+            self.__fail(msg, "predicate %s not satisfied%s" % (
+                predicate, argument_part))
 
     # Utility functions
 

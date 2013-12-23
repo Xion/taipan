@@ -85,6 +85,8 @@ def empty():
 
 # General combinators
 
+# TODO(xion): implement currying and uncurrying
+
 def compose(*fs):
     """Creates composition of the functions passed in.
 

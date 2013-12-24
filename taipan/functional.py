@@ -96,7 +96,7 @@ def compose(*fs):
              applied consecutively to its argument in reverse order
     """
     ensure_argcount(fs, min_=1)
-    fs = list(map(ensure_callable, fs))
+    fs = list(imap(ensure_callable, fs))
 
     if len(fs) == 1:
         return fs[0]

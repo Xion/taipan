@@ -57,17 +57,36 @@ class TestCase(_BaseTestCase):
             self.assertThat(is_pair, some_tuple)
         """
         if not callable(predicate):
-            self.fail("%s is not a callable predicate" % predicate)
+            self.fail("%r is not a callable predicate" % predicate)
 
         satisfied = (predicate()
                      if argument is self.__missing
                      else predicate(argument))
 
         if not satisfied:
+            predicate_part = (getattr(predicate, '__doc__', None)
+                              or repr(predicate))
             argument_part = ("" if argument is self.__missing
                              else " for %s" % argument)
             self.__fail(msg, "predicate %s not satisfied%s" % (
-                predicate, argument_part))
+                predicate_part, argument_part))
+
+    def assertNoop(self, function, argument, msg=None):
+        """Assert that ``function`` returns given ``argument`` verbatim
+        when applied to it.
+
+        Example::
+
+            self.assertNoop(str.upper, "WAT")
+        """
+        if not callable(function):
+            self.fail("%r is not a callable function" % function)
+
+        result = function(argument)
+        if result != argument:
+            self.__fail(
+                msg, "result %r of function %r differs from argument %r" % (
+                    result, function, argument))
 
     # Utility functions
 

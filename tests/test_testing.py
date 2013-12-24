@@ -123,3 +123,25 @@ class AssertThat(_Assertion):
         self._TESTCASE.assertThat(AssertThat.IDENTITY, object())
         with self.assertRaises(self._FAILURE):
             self._TESTCASE.assertThat(AssertThat.NOT, object())
+
+
+class AssertNoop(_Assertion):
+    NOOP = staticmethod(lambda x: x)
+    EFFECTIVE = staticmethod(lambda x: not x)
+
+    ARGUMENT = 42
+
+    def test_function__none(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertNoop(None, self.ARGUMENT)
+
+    def test_function__non_callable(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertNoop(object(), self.ARGUMENT)
+
+    def test_function__noop(self):
+        self._TESTCASE.assertNoop(self.NOOP, self.ARGUMENT)
+
+    def test__function__effective(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertNoop(self.EFFECTIVE, self.ARGUMENT)

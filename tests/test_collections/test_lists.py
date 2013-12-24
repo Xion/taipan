@@ -159,3 +159,35 @@ class Intercalate(TestCase):
     def test_list__normal(self):
         self.assertEquals(
             self.INTERCALATED, __unit__.intercalate(self.ELEMENTS, self.LIST))
+
+
+class Concat(TestCase):
+    INVALID_WITH_NUMBER = [range(3), 1]
+    INVALID_WITH_STRING = [range(3), "baz"]
+
+    LISTS = [[1, 2.0, "three"], ["foo", "bar"]]
+    CONCATENATED = [1, 2.0, "three", "foo", "bar"]
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.concat(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.concat(object())
+
+    def test_empty(self):
+        self.assertNoop(__unit__.concat, [])
+
+    def test_invalid__with_number(self):
+        with self.assertRaises(TypeError):
+            __unit__.concat(self.INVALID_WITH_NUMBER)
+
+    def test_invalid__with_string(self):
+        # string is theoretially also a sequence, but making it suddenly
+        # behave like a list here would be prone to produce nasty bugs
+        with self.assertRaises(TypeError):
+            __unit__.concat(self.INVALID_WITH_STRING)
+
+    def test_correct(self):
+        self.assertEquals(self.CONCATENATED, __unit__.concat(self.LISTS))

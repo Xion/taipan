@@ -15,6 +15,10 @@ class Head(TestCase):
         with self.assertRaises(TypeError):
             __unit__.head(None)
 
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.head(object())
+
     def test_empty(self):
         with self.assertRaises(IndexError):
             __unit__.head([])
@@ -35,6 +39,10 @@ class Last(TestCase):
         with self.assertRaises(TypeError):
             __unit__.last(None)
 
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.last(object())
+
     def test_empty(self):
         with self.assertRaises(IndexError):
             __unit__.last([])
@@ -54,6 +62,10 @@ class Tail(TestCase):
         with self.assertRaises(TypeError):
             __unit__.tail(None)
 
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.tail(object())
+
     def test_empty(self):
         with self.assertRaises(ValueError):
             __unit__.tail([])
@@ -70,9 +82,80 @@ class Init(TestCase):
         with self.assertRaises(TypeError):
             __unit__.init(None)
 
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.init(object())
+
     def test_empty(self):
         with self.assertRaises(ValueError):
             __unit__.init([])
 
     def test_normal(self):
         self.assertEquals(self.INIT, __unit__.init(self.LIST))
+
+
+class Intersperse(TestCase):
+    ELEMENT = 0
+
+    SINGLETON_LIST = [42]
+    LIST = [1, 2.0, "three"]
+    INTERSPERSED = [1, 0, 2.0, 0, "three"]
+
+    def test_list__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.intersperse(self.ELEMENT, None)
+
+    def test_list__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.intersperse(self.ELEMENT, object())
+
+    def test_list__empty(self):
+        self.assertEquals([], __unit__.intersperse(self.ELEMENT, []))
+
+    def test_list__singleton(self):
+        self.assertEquals(
+            self.SINGLETON_LIST,
+            __unit__.intersperse(self.ELEMENT, self.SINGLETON_LIST))
+
+    def test_list__normal(self):
+        self.assertEquals(
+            self.INTERSPERSED, __unit__.intersperse(self.ELEMENT, self.LIST))
+
+
+class Intercalate(TestCase):
+    ELEMENTS = [-1, -2]
+
+    SINGLETON_LIST = [42]
+    LIST = [1, 2.0, "three"]
+    INTERCALATED = [1, -1, -2, 2.0, -1, -2, "three"]
+
+    def test_elems__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.intercalate(None, self.LIST)
+
+    def test_elems__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.intercalate(object(), self.LIST)
+
+    def test_elems__empty(self):
+        self.assertEquals(self.LIST, __unit__.intercalate([], self.LIST))
+
+    def test_list__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.intercalate(self.ELEMENTS, None)
+
+    def test_list__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.intercalate(self.ELEMENTS, object())
+
+    def test_list__empty(self):
+        self.assertEquals([], __unit__.intercalate(self.ELEMENTS, []))
+
+    def test__list__singleton(self):
+        self.assertEquals(
+            self.SINGLETON_LIST,
+            __unit__.intercalate(self.ELEMENTS, self.SINGLETON_LIST))
+
+    def test_list__normal(self):
+        self.assertEquals(
+            self.INTERCALATED, __unit__.intercalate(self.ELEMENTS, self.LIST))

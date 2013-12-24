@@ -68,7 +68,7 @@ def intercalate(elems, list_):
         return list_
 
     return sum(
-        (elems + list_[i:i+1] for i in xrange(len(list_))),
+        (elems + list_[i:i+1] for i in xrange(1, len(list_))),
         list_[:1])
 
 

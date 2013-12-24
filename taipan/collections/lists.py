@@ -1,7 +1,7 @@
 """
 List-related functions and classes.
 """
-from taipan._compat import imap
+from taipan._compat import imap, xrange
 from taipan.collections import ensure_sequence
 
 
@@ -28,29 +28,52 @@ def last(list_):
 def tail(list_):
     """Returns tail of a list (all elements without the first one)."""
     ensure_sequence(list_)
+    if not list_:
+        raise ValueError("can't tail an empty list")
     return list(list_[1:])
 
 
 def init(list_):
     """Returns all the elements of a list except the last one."""
     ensure_sequence(list_)
+    if not list_:
+        raise ValueError("can't extract initial part of an emty list")
     return list(list_[:-1])
 
 
 # List manipulation
 
-# TODO(xion): implement intersperse() (insert single element between existing)
-def intersperse(list_, elem):
-    raise NotImplementedError()
+def intersperse(elem, list_):
+    """"Intersperse an ``elem``\ ent between the elements of the ``list_``.
+
+    :return: A new list where ``elem`` is inserted between
+             every two elements of ``list_``
+    """
+    return intercalate([elem], list_)
 
 
-# TODO(xion): implement intercalate() (insert sublist between existing items)
-def intercalate(list_, elems):
-    raise NotImplementedError()
+def intercalate(elems, list_):
+    """"Insert a given elements between existing elements of a list.
+
+    :param elems: List of elements to insert between elements of ``list_`
+    :param list_: List to insert the elements to
+
+    :return: A new list where items from ``elems`` are inserted
+             between every two elements of ``list_``
+    """
+    ensure_sequence(elems)
+    ensure_sequence(list_)
+
+    if len(list_) <= 1:
+        return list_
+
+    return sum(
+        (elems + list_[i:i+1] for i in xrange(len(list_))),
+        list_[:1])
 
 
 def concat(list_):
-    """Concatenates a list of lists into a single reslting list."""
+    """Concatenates a list of lists into a single resulting list."""
     ensure_sequence(list_)
     return sum(imap(ensure_sequence, list_), [])
 

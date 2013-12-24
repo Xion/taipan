@@ -14,11 +14,13 @@ import sys
 IS_PY3 = sys.version_info[0] == 3
 
 
-Numeric = (int,) if IS_PY3 else (int, long)
+unichr = chr if IS_PY3 else unichr
+xrange = range if IS_PY3 else xrange
 
 if IS_PY3:
     imap = map
-    unichr = chr
-    xrange = range
 else:
     from itertools import imap
+
+
+Numeric = (int,) if IS_PY3 else (int, long)

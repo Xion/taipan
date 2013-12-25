@@ -25,12 +25,21 @@ def ensure_argcount(args, min_=None, max_=None):
     :return: ``args`` if the conditions are met
     :raise TypeError: When conditions are not met
     """
-    ensure_iterable(arg)
+    ensure_iterable(args)
 
-    if min_ is not None and not (len(args) >= min_):
+    has_min = min_ is not None
+    has_max = max_ is not None
+    if not (has_min or has_max):
+        raise ValueError(
+            "minimum and/or maximum number of arguments must be provided")
+    if has_min and has_max and min_ > max_:
+        raise ValueError(
+            "maximum number of arguments must be greater or equal to minimum")
+
+    if has_min and len(args) < min_:
         raise TypeError(
             "expected at least %s arguments, got %s" % (min_, len(args)))
-    if max_ is not None and not (len(args) <= max_):
+    if has_max and len(args) > max_:
         raise TypeError(
             "expected at most %s arguments, got %s" % (max_, len(args)))
 

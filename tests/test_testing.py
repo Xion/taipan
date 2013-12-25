@@ -80,7 +80,7 @@ class AssertZero(_Assertion):
 
     @skipIf(IS_PY3, "requires Python 2.x")
     def test_long_zero(self):
-        self._TESTCASE.assertZero(0L)
+        self._TESTCASE.assertZero(eval('0L'))
 
     def test_float_zero(self):
         self._TESTCASE.assertZero(0.0)
@@ -105,7 +105,7 @@ class AssertEmpty(_Assertion):
     @skipIf(IS_PY3, "requires Python 2.x")
     def test_zero__py2(self):
         with self._assertFailure():
-            self._TESTCASE.assertEmpty(0L)
+            self._TESTCASE.assertEmpty(eval('0L'))
 
     def test_empty_string(self):
         self._TESTCASE.assertEmpty("")

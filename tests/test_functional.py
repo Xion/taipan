@@ -193,6 +193,45 @@ class Const(_ConstantFunction):
         self.assertIsNot(self.DIFFERENT_OBJECT, object_())
 
 
+class PredefinedConstantFunctions(_ConstantFunction):
+
+    def test_true(self):
+        true = __unit__.true()
+        self.assertTrue(true())
+        with self.assertRaises(TypeError):
+            true("extraneous argument")
+
+    def test_false(self):
+        false = __unit__.false()
+        self.assertFalse(false())
+        with self.assertRaises(TypeError):
+            false("extraneous argument")
+
+    def test_none(self):
+        none = __unit__.none()
+        self.assertIsNone(none())
+        with self.assertRaises(TypeError):
+            none("extraneous argument")
+
+    def test_zero(self):
+        zero = __unit__.zero()
+        self.assertZero(zero())
+        with self.assertRaises(TypeError):
+            zero("extraneous argument")
+
+    def test_one(self):
+        one = __unit__.one()
+        self.assertEquals(1, one())
+        with self.assertRaises(TypeError):
+            one("extraneous argument")
+
+    def test_empty(self):
+        empty = __unit__.empty()
+        self.assertEmpty(empty())
+        with self.assertRaises(TypeError):
+            empty("extraneous argument")
+
+
 class Compose(TestCase):
     pass
 

@@ -29,6 +29,55 @@ class _Assertion(TestCase):
     _FAILURE = _TESTCASE.failureException
 
 
+class AssertZero(_Assertion):
+
+    def test_none(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero(None)
+
+    def test_empty_string(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero("")
+
+    def test_empty_list(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero([])
+
+    def test_empty_tuple(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero(())
+
+    def test_empty_dict(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero({})
+
+    def test_some_object(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero(object())
+
+    def test_positive_integer(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero(42)
+
+    def test_negative_integer(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero(-69)
+
+    def test_positive_float(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero(3.14)
+
+    def test_negative_float(self):
+        with self.assertRaises(self._FAILURE):
+            self._TESTCASE.assertZero(-2.73)
+
+    def test_integer_zero(self):
+        self._TESTCASE.assertZero(0)
+
+    def test_float_zero(self):
+        self._TESTCASE.assertZero(0.0)
+
+
 class AssertStartsWith(_Assertion):
     PREFIX = "foo"
     STRING = "foobar"

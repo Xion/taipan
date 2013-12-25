@@ -28,6 +28,12 @@ class TestCase(_BaseTestCase):
     """
     __missing = object()
 
+    def assertZero(self, argument, msg=None):
+        """Assert that ``argument`` is equal to zero."""
+        if msg is None:
+            msg = "%r is not equal to zero" % (argument,)
+        self.assertEqual(0, argument, msg=msg)
+
     # Python 3 changes name of the following assert function,
     # so we provide backward and forward synonyms for compatibility
     if IS_PY3:

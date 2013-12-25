@@ -109,7 +109,7 @@ class EnsureArgcount(TestCase):
 
 # Constant functions
 
-class Identity(TestCase):
+class _ConstantFunction(TestCase):
     EMPTY_TUPLE = ()
 
     EMPTY_LIST = []
@@ -124,6 +124,9 @@ class Identity(TestCase):
 
     OBJECT = object()
     DIFFERENT_OBJECT = object()
+
+
+class Identity(_ConstantFunction):
 
     def test_values(self):
         identity = __unit__.identity()
@@ -157,8 +160,37 @@ class Identity(TestCase):
         self.assertIsNot(self.DIFFERENT_OBJECT, identity(self.OBJECT))
 
 
-class Const(TestCase):
-    pass
+class Const(_ConstantFunction):
+
+    def test_values(self):
+        self.assertIsNone(__unit__.const(None)())
+        self.assertIs(0, __unit__.const(0)())
+        self.assertIs(self.EMPTY_TUPLE, __unit__.const(self.EMPTY_TUPLE)())
+
+    def test_empty_lists(self):
+        empty_list = __unit__.const(self.EMPTY_LIST)
+        self.assertIs(self.EMPTY_LIST, empty_list())
+        self.assertIsNot(self.DIFFERENT_EMPTY_LIST, empty_list())
+
+    def test_lists(self):
+        list_ = __unit__.const(self.LIST)
+        self.assertIs(self.LIST, list_())
+        self.assertIsNot(self.DIFFERENT_EMPTY_LIST, list_())
+
+    def test_empty_dicts(self):
+        empty_dict = __unit__.const(self.EMPTY_DICT)
+        self.assertIs(self.EMPTY_DICT, empty_dict())
+        self.assertIsNot(self.DIFFERENT_EMPTY_DICT, empty_dict())
+
+    def test_dicts(self):
+        dict_ = __unit__.const(self.DICT)
+        self.assertIs(self.DICT, dict_())
+        self.assertIsNot(self.DICT_COPY, dict_())
+
+    def test_object(self):
+        object_ = __unit__.const(self.OBJECT)
+        self.assertIs(self.OBJECT, object_())
+        self.assertIsNot(self.DIFFERENT_OBJECT, object_())
 
 
 class Compose(TestCase):

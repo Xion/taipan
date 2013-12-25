@@ -107,7 +107,57 @@ class EnsureArgcount(TestCase):
         __unit__.ensure_argcount(self.MANY_ARGS, min_=self.MANY, max_=self.MANY)
 
 
-class ConstantFunctions(TestCase):
+# Constant functions
+
+class Identity(TestCase):
+    EMPTY_TUPLE = ()
+
+    EMPTY_LIST = []
+    DIFFERENT_EMPTY_LIST = []
+    LIST = list(range(5))
+    LIST_COPY = list(LIST)
+
+    EMPTY_DICT = {}
+    DIFFERENT_EMPTY_DICT = {}
+    DICT = dict(zip('abcde', range(5)))
+    DICT_COPY = dict(DICT)
+
+    OBJECT = object()
+    DIFFERENT_OBJECT = object()
+
+    def test_values(self):
+        identity = __unit__.identity()
+        self.assertIsNone(identity(None))
+        self.assertIs(0, identity(0))
+        self.assertIs(self.EMPTY_TUPLE, identity(self.EMPTY_TUPLE))
+
+    def test_empty_lists(self):
+        identity = __unit__.identity()
+        self.assertIs(self.EMPTY_LIST, identity(self.EMPTY_LIST))
+        self.assertIsNot(self.DIFFERENT_EMPTY_LIST, identity(self.EMPTY_LIST))
+
+    def test_lists(self):
+        identity = __unit__.identity()
+        self.assertIs(self.LIST, identity(self.LIST))
+        self.assertIsNot(self.LIST_COPY, identity(self.LIST))
+
+    def test_empty_dicts(self):
+        identity = __unit__.identity()
+        self.assertIs(self.EMPTY_DICT, identity(self.EMPTY_DICT))
+        self.assertIsNot(self.DIFFERENT_EMPTY_DICT, identity(self.EMPTY_DICT))
+
+    def test_dicts(self):
+        identity = __unit__.identity()
+        self.assertIs(self.DICT, identity(self.DICT))
+        self.assertIsNot(self.DICT_COPY, identity(self.DICT))
+
+    def test_object(self):
+        identity = __unit__.identity()
+        self.assertIs(self.OBJECT, identity(self.OBJECT))
+        self.assertIsNot(self.DIFFERENT_OBJECT, identity(self.OBJECT))
+
+
+class Const(TestCase):
     pass
 
 

@@ -12,6 +12,7 @@ except ImportError:
     from unittest import *
 
 from taipan._compat import IS_PY3
+from taipan.collections import is_iterable
 from taipan.functional import identity
 from taipan.strings import BaseString
 
@@ -34,6 +35,13 @@ class TestCase(_BaseTestCase):
             msg = "%r is not equal to zero" % (argument,)
         self.assertEqual(0, argument, msg=msg)
 
+    def assertEmpty(self, argument, msg=None):
+        """Assert that ``argument`` is an empty iterable."""
+        if not is_iterable(argument):
+            self.__fail(msg, "%r is not an iterable" % argument)
+        if argument:
+            self.__fail(msg, "%r is not empty" % argument)
+
     # Python 3 changes name of the following assert function,
     # so we provide backward and forward synonyms for compatibility
     if IS_PY3:
@@ -46,14 +54,14 @@ class TestCase(_BaseTestCase):
         self.assertIsInstance(prefix, BaseString)
         self.assertIsInstance(string, BaseString)
         if not string.startswith(prefix):
-            self.__fail(msg, "%s does not start with %s" % (string, prefix))
+            self.__fail(msg, "%r does not start with %r" % (string, prefix))
 
     def assertEndsWith(self, suffix, string, msg=None):
         """Assert that ``string`` ends with given ``suffix``."""
         self.assertIsInstance(suffix, BaseString)
         self.assertIsInstance(string, BaseString)
         if not string.endswith(suffix):
-            self.__fail(msg, "%s does not end with %s" % (string, suffix))
+            self.__fail(msg, "%r does not end with %r" % (string, suffix))
 
     def assertThat(self, predicate, argument=__missing, msg=None):
         """Assert that a ``predicate`` applies to given ``argument``.
@@ -73,8 +81,8 @@ class TestCase(_BaseTestCase):
             predicate_part = (getattr(predicate, '__doc__', None)
                               or repr(predicate))
             argument_part = ("" if argument is self.__missing
-                             else " for %s" % argument)
-            self.__fail(msg, "predicate %s not satisfied%s" % (
+                             else " for %r" % argument)
+            self.__fail(msg, "predicate %r not satisfied%s" % (
                 predicate_part, argument_part))
 
     def assertNoop(self, function, argument, msg=None):

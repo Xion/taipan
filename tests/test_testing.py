@@ -8,9 +8,11 @@ Tests for the .testing module (yep).
     that we're trying to test here!
 """
 try:
-    from unittest2 import TestCase
+    from unittest2 import TestCase, skipIf
 except ImportError:
-    from unittest import TestCase
+    from unittest import TestCase, skipIf
+
+from taipan._compat import IS_PY3
 
 import taipan.testing as __unit__
 
@@ -76,8 +78,50 @@ class AssertZero(_Assertion):
     def test_integer_zero(self):
         self._TESTCASE.assertZero(0)
 
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_long_zero(self):
+        self._TESTCASE.assertZero(0L)
+
     def test_float_zero(self):
         self._TESTCASE.assertZero(0.0)
+
+
+class AssertEmpty(_Assertion):
+
+    def test_none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertEmpty(None)
+
+    def test_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertEmpty(False)
+
+    def test_zero(self):
+        with self._assertFailure():
+            self._TESTCASE.assertEmpty(0)
+        with self._assertFailure():
+            self._TESTCASE.assertEmpty(0.0)
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_zero__py2(self):
+        with self._assertFailure():
+            self._TESTCASE.assertEmpty(0L)
+
+    def test_empty_string(self):
+        self._TESTCASE.assertEmpty("")
+
+    def test_empty_tuple(self):
+        self._TESTCASE.assertEmpty(())
+
+    def test_empty_list(self):
+        self._TESTCASE.assertEmpty([])
+
+    def test_empty_dict(self):
+        self._TESTCASE.assertEmpty({})
+
+    def test_empty_set(self):
+        self._TESTCASE.assertEmpty(set())
+        self._TESTCASE.assertEmpty(frozenset())
 
 
 class AssertStartsWith(_Assertion):

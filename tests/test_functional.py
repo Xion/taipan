@@ -3,6 +3,7 @@ Tests for the .functional module.
 """
 from taipan.testing import TestCase
 
+from taipan._compat import xrange
 import taipan.functional as __unit__
 
 
@@ -233,7 +234,69 @@ class PredefinedConstantFunctions(_ConstantFunction):
 
 
 class Compose(TestCase):
-    pass
+    F = staticmethod(lambda x: x + 1)
+    G = staticmethod(lambda x: 3*x)
+    H = staticmethod(lambda x: x*x)
+
+    FG = staticmethod(lambda x: 3*x + 1)  # f(g(x))
+    GF = staticmethod(lambda x: 3*(x + 1))  # g(f(x))
+    FH = staticmethod(lambda x: x*x + 1)  # f(h(x))
+    HF = staticmethod(lambda x: (x + 1)**2)  # h(f(x))
+    GH = staticmethod(lambda x: 3*(x*x))  # g(h(x))
+    HG = staticmethod(lambda x: (3*x)**2)  # h(g(x))
+
+    FGH = staticmethod(lambda x: 3*(x*x) + 1)  # f(g(h(x)))
+    HGF = staticmethod(lambda x: (3*(x + 1))**2)  # h(g(f(x)))
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.compose()
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.compose(None)
+
+    def test_single_arg(self):
+        self._assertFunctionsEqual(Compose.F, __unit__.compose(Compose.F))
+        self._assertFunctionsEqual(Compose.G, __unit__.compose(Compose.G))
+        self._assertFunctionsEqual(Compose.H, __unit__.compose(Compose.H))
+
+    def test_two_functions(self):
+        self._assertFunctionsEqual(
+            Compose.FG, __unit__.compose(Compose.F, Compose.G))
+        self._assertFunctionsEqual(
+            Compose.GF, __unit__.compose(Compose.G, Compose.F))
+        self._assertFunctionsEqual(
+            Compose.FH, __unit__.compose(Compose.F, Compose.H))
+        self._assertFunctionsEqual(
+            Compose.HF, __unit__.compose(Compose.H, Compose.F))
+        self._assertFunctionsEqual(
+            Compose.GH, __unit__.compose(Compose.G, Compose.H))
+        self._assertFunctionsEqual(
+            Compose.HG, __unit__.compose(Compose.H, Compose.G))
+
+    def test_associativity(self):
+        self._assertFunctionsEqual(
+            Compose.FGH, __unit__.compose(Compose.F, Compose.GH))
+        self._assertFunctionsEqual(
+            Compose.FGH, __unit__.compose(Compose.FG, Compose.H))
+
+        self._assertFunctionsEqual(
+            Compose.HGF, __unit__.compose(Compose.H, Compose.GF))
+        self._assertFunctionsEqual(
+            Compose.HGF, __unit__.compose(Compose.HG, Compose.F))
+
+    def test_three_functions(self):
+        self._assertFunctionsEqual(
+            Compose.FGH, __unit__.compose(Compose.F, Compose.G, Compose.H))
+        self._assertFunctionsEqual(
+            Compose.HGF, __unit__.compose(Compose.H, Compose.G, Compose.F))
+
+    def _assertFunctionsEqual(self, f, g, domain=None):
+        if domain is None:
+            domain = xrange(-512, 512 + 1)
+        for x in domain:
+            self.assertEquals(f(x), g(x))
 
 
 class LogicalCombinators(TestCase):

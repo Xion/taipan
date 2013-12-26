@@ -233,6 +233,8 @@ class PredefinedConstantFunctions(_ConstantFunction):
             empty("extraneous argument")
 
 
+# General combinators
+
 class Compose(TestCase):
     F = staticmethod(lambda x: x + 1)
     G = staticmethod(lambda x: 3*x)
@@ -257,47 +259,89 @@ class Compose(TestCase):
             __unit__.compose(None)
 
     def test_single_arg(self):
-        self._assertFunctionsEqual(Compose.F, __unit__.compose(Compose.F))
-        self._assertFunctionsEqual(Compose.G, __unit__.compose(Compose.G))
-        self._assertFunctionsEqual(Compose.H, __unit__.compose(Compose.H))
+        self._assertIntegerFunctionsEqual(
+            Compose.F, __unit__.compose(Compose.F))
+        self._assertIntegerFunctionsEqual(
+            Compose.G, __unit__.compose(Compose.G))
+        self._assertIntegerFunctionsEqual(
+            Compose.H, __unit__.compose(Compose.H))
 
     def test_two_functions(self):
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.FG, __unit__.compose(Compose.F, Compose.G))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.GF, __unit__.compose(Compose.G, Compose.F))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.FH, __unit__.compose(Compose.F, Compose.H))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.HF, __unit__.compose(Compose.H, Compose.F))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.GH, __unit__.compose(Compose.G, Compose.H))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.HG, __unit__.compose(Compose.H, Compose.G))
 
     def test_associativity(self):
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.FGH, __unit__.compose(Compose.F, Compose.GH))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.FGH, __unit__.compose(Compose.FG, Compose.H))
 
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.HGF, __unit__.compose(Compose.H, Compose.GF))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.HGF, __unit__.compose(Compose.HG, Compose.F))
 
     def test_three_functions(self):
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.FGH, __unit__.compose(Compose.F, Compose.G, Compose.H))
-        self._assertFunctionsEqual(
+        self._assertIntegerFunctionsEqual(
             Compose.HGF, __unit__.compose(Compose.H, Compose.G, Compose.F))
 
-    def _assertFunctionsEqual(self, f, g, domain=None):
+    def _assertIntegerFunctionsEqual(self, f, g, domain=None):
         if domain is None:
             domain = xrange(-512, 512 + 1)
         for x in domain:
             self.assertEquals(f(x), g(x))
 
 
-class LogicalCombinators(TestCase):
-    pass
+# Logical combinators
+
+class Not_(TestCase):
+    TRUE = staticmethod(lambda _: True)
+    FALSE = staticmethod(lambda _: False)
+    NONE = staticmethod(lambda _: None)
+
+    IDENTITY = staticmethod(lambda x: x)
+    NOT = staticmethod(lambda x: not x)
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.not_(None)
+
+    def test_true(self):
+        self._assertBooleanFunctionsEqual(Not_.FALSE, __unit__.not_(Not_.TRUE))
+
+    def test_false(self):
+        self._assertBooleanFunctionsEqual(Not_.TRUE, __unit__.not_(Not_.FALSE))
+
+    def test_none(self):
+        self._assertBooleanFunctionsEqual(Not_.TRUE, __unit__.not_(Not_.NONE))
+
+    def test_identity(self):
+        self._assertBooleanFunctionsEqual(
+            Not_.NOT, __unit__.not_(Not_.IDENTITY))
+
+    def test_not(self):
+        self._assertBooleanFunctionsEqual(
+            Not_.IDENTITY, __unit__.not_(Not_.NOT))
+
+    def test_double_not(self):
+        not_ = __unit__.not_(Not_.IDENTITY)
+        identity = __unit__.not_(Not_.NOT)
+        self._assertBooleanFunctionsEqual(Not_.IDENTITY, __unit__.not_(not_))
+        self._assertBooleanFunctionsEqual(Not_.NOT, __unit__.not_(identity))
+
+    def _assertBooleanFunctionsEqual(self, f, g):
+        for val in (True, False):
+            self.assertEquals(f(val), g(val))
+        self.assertEquals(bool(f(None)), bool(g(None)))

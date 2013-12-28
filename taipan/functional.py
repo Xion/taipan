@@ -104,6 +104,8 @@ def compose(*fs):
     :return: Function returning a result of functions from ``fs``
              applied consecutively to its argument in reverse order
     """
+    # TODO(xion): allow for the last function to take arbitrary number of args
+
     ensure_argcount(fs, min_=1)
     fs = list(imap(ensure_callable, fs))
 
@@ -133,8 +135,8 @@ def not_(f):
 
 
 def and_(*fs):
-    """Creates a function that returns true
-    if each argument evaluates to true.
+    """Creates a function that returns true for an argument
+    if every given function evalutes to true for that argument.
 
     :param fs: One-argument functions
     :return: Short-circuiting function performing logical conjunction
@@ -159,8 +161,8 @@ def and_(*fs):
 
 
 def or_(*fs):
-    """Creates a function that returns false
-    if each argument evaluates to false.
+    """Creates a function that returns false for an argument
+    if every given function evaluates to false for that argument.
 
     :param fs: One-argument functions
     :return: Short-circuiting function performing logical alternative

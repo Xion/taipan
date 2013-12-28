@@ -235,7 +235,16 @@ class PredefinedConstantFunctions(_ConstantFunction):
 
 # General combinators
 
-class Compose(TestCase):
+class _Combinator(TestCase):
+
+    def _assertIntegerFunctionsEqual(self, f, g, domain=None):
+        if domain is None:
+            domain = xrange(-512, 512 + 1)
+        for x in domain:
+            self.assertEquals(f(x), g(x))
+
+
+class Compose(_Combinator):
     F = staticmethod(lambda x: x + 1)
     G = staticmethod(lambda x: 3*x)
     H = staticmethod(lambda x: x*x)
@@ -297,22 +306,24 @@ class Compose(TestCase):
         self._assertIntegerFunctionsEqual(
             Compose.HGF, __unit__.compose(Compose.H, Compose.G, Compose.F))
 
-    def _assertIntegerFunctionsEqual(self, f, g, domain=None):
-        if domain is None:
-            domain = xrange(-512, 512 + 1)
-        for x in domain:
-            self.assertEquals(f(x), g(x))
-
 
 # Logical combinators
 
-class Not_(TestCase):
+class _LogicalCombinator(_Combinator):
     TRUE = staticmethod(lambda _: True)
     FALSE = staticmethod(lambda _: False)
     NONE = staticmethod(lambda _: None)
 
     IDENTITY = staticmethod(lambda x: x)
     NOT = staticmethod(lambda x: not x)
+
+    def _assertBooleanFunctionsEqual(self, f, g):
+        for val in (True, False):
+            self.assertEquals(f(val), g(val))
+        self.assertEquals(bool(f(None)), bool(g(None)))
+
+
+class Not_(_LogicalCombinator):
 
     def test_none(self):
         with self.assertRaises(TypeError):
@@ -341,7 +352,90 @@ class Not_(TestCase):
         self._assertBooleanFunctionsEqual(Not_.IDENTITY, __unit__.not_(not_))
         self._assertBooleanFunctionsEqual(Not_.NOT, __unit__.not_(identity))
 
-    def _assertBooleanFunctionsEqual(self, f, g):
-        for val in (True, False):
-            self.assertEquals(f(val), g(val))
-        self.assertEquals(bool(f(None)), bool(g(None)))
+
+class _BinaryLogicalCombinator(_LogicalCombinator):
+    IS_AT_LEAST = staticmethod(lambda min_: lambda x: x >= min_)
+    IS_AT_MOST = staticmethod(lambda max_: lambda x: x <= max_)
+    IS_DIVISIBLE_BY = staticmethod(lambda d: lambda x: x % d == 0)
+
+
+class And_(_BinaryLogicalCombinator):
+    IS_BETWEEN = staticmethod(lambda min_, max_: lambda x: min_ <= x <= max_)
+    IS_EVEN_BETWEEN = staticmethod(
+        lambda min_, max_: lambda x: min_ <= x <= max_ and x % 2 == 0)
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.and_()
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.and_(None)
+
+    def test_one_arg__true(self):
+        self._assertBooleanFunctionsEqual(And_.TRUE, __unit__.and_(And_.TRUE))
+
+    def test_one_arg__false(self):
+        self._assertBooleanFunctionsEqual(And_.FALSE, __unit__.and_(And_.FALSE))
+
+    def test_two_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            And_.TRUE, __unit__.and_(And_.TRUE, And_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.TRUE, And_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.FALSE, And_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.FALSE, And_.FALSE))
+
+    def test_two_args__integer_ranges__open(self):
+        self._assertIntegerFunctionsEqual(
+            And_.IS_AT_LEAST(10),  # higher minimum "wins"
+            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_LEAST(10)))
+        self._assertIntegerFunctionsEqual(
+            And_.IS_AT_MOST(5),  # lower maximum "wins"
+            __unit__.and_(And_.IS_AT_MOST(5), And_.IS_AT_MOST(10)))
+
+    def test_two_args__integer_ranges__closed(self):
+        self._assertIntegerFunctionsEqual(
+            And_.IS_BETWEEN(5, 10),
+            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_MOST(10)))
+        self._assertIntegerFunctionsEqual(
+            And_.FALSE,
+            __unit__.and_(And_.IS_AT_LEAST(10), And_.IS_AT_MOST(5)))
+
+    def test_three_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            And_.TRUE, __unit__.and_(And_.TRUE, And_.TRUE, And_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.TRUE, And_.TRUE, And_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.TRUE, And_.FALSE, And_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.TRUE, And_.FALSE, And_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.FALSE, And_.TRUE, And_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.FALSE, And_.TRUE, And_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.FALSE, And_.FALSE, And_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            And_.FALSE, __unit__.and_(And_.FALSE, And_.FALSE, And_.FALSE))
+
+    def test_three_args__even_integer_intervals(self):
+        self._assertIntegerFunctionsEqual(
+            And_.IS_EVEN_BETWEEN(5, 10),
+            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_MOST(10),
+                          And_.IS_DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            And_.FALSE,  # because there are no even numbers in range
+            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_MOST(5),
+                          And_.IS_DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            And_.FALSE,  # because there are no numbers in range
+            __unit__.and_(And_.IS_AT_LEAST(10), And_.IS_AT_MOST(5),
+                          And_.IS_DIVISIBLE_BY(2)))
+
+
+class Or_(_BinaryLogicalCombinator):
+    IS_OUTSIDE = staticmethod(lambda min_, max_: lambda x: x < min_ or x > max_)

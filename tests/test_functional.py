@@ -354,21 +354,21 @@ class Not_(_LogicalCombinator):
 
 
 class _BinaryLogicalCombinator(_LogicalCombinator):
-    IS_AT_LEAST = staticmethod(lambda min_: lambda x: x >= min_)
-    IS_AT_MOST = staticmethod(lambda max_: lambda x: x <= max_)
-    IS_DIVISIBLE_BY = staticmethod(lambda d: lambda x: x % d == 0)
+    GREATER_THAN = staticmethod(lambda min_: lambda x: x > min_)
+    LESS_THAN = staticmethod(lambda max_: lambda x: x < max_)
+    DIVISIBLE_BY = staticmethod(lambda d: lambda x: x % d == 0)
 
 
 class And_(_BinaryLogicalCombinator):
-    IS_BETWEEN = staticmethod(lambda min_, max_: lambda x: min_ <= x <= max_)
-    IS_EVEN_BETWEEN = staticmethod(
-        lambda min_, max_: lambda x: min_ <= x <= max_ and x % 2 == 0)
+    BETWEEN = staticmethod(lambda min_, max_: lambda x: min_ < x < max_)
+    EVEN_BETWEEN = staticmethod(
+        lambda min_, max_: lambda x: min_ < x < max_ and x % 2 == 0)
 
     def test_no_args(self):
         with self.assertRaises(TypeError):
             __unit__.and_()
 
-    def test_none(self):
+    def test_one_arg__none(self):
         with self.assertRaises(TypeError):
             __unit__.and_(None)
 
@@ -388,21 +388,21 @@ class And_(_BinaryLogicalCombinator):
         self._assertBooleanFunctionsEqual(
             And_.FALSE, __unit__.and_(And_.FALSE, And_.FALSE))
 
-    def test_two_args__integer_ranges__open(self):
+    def test_two_args__integer_ranges__half_open(self):
         self._assertIntegerFunctionsEqual(
-            And_.IS_AT_LEAST(10),  # higher minimum "wins"
-            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_LEAST(10)))
+            And_.GREATER_THAN(10),  # higher minimum "wins"
+            __unit__.and_(And_.GREATER_THAN(5), And_.GREATER_THAN(10)))
         self._assertIntegerFunctionsEqual(
-            And_.IS_AT_MOST(5),  # lower maximum "wins"
-            __unit__.and_(And_.IS_AT_MOST(5), And_.IS_AT_MOST(10)))
+            And_.LESS_THAN(5),  # lower maximum "wins"
+            __unit__.and_(And_.LESS_THAN(5), And_.LESS_THAN(10)))
 
     def test_two_args__integer_ranges__closed(self):
         self._assertIntegerFunctionsEqual(
-            And_.IS_BETWEEN(5, 10),
-            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_MOST(10)))
+            And_.BETWEEN(5, 10),
+            __unit__.and_(And_.GREATER_THAN(5), And_.LESS_THAN(10)))
         self._assertIntegerFunctionsEqual(
             And_.FALSE,
-            __unit__.and_(And_.IS_AT_LEAST(10), And_.IS_AT_MOST(5)))
+            __unit__.and_(And_.GREATER_THAN(10), And_.LESS_THAN(5)))
 
     def test_three_args__boolean_functions(self):
         self._assertBooleanFunctionsEqual(
@@ -424,18 +424,92 @@ class And_(_BinaryLogicalCombinator):
 
     def test_three_args__even_integer_intervals(self):
         self._assertIntegerFunctionsEqual(
-            And_.IS_EVEN_BETWEEN(5, 10),
-            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_MOST(10),
-                          And_.IS_DIVISIBLE_BY(2)))
+            And_.EVEN_BETWEEN(5, 10),
+            __unit__.and_(And_.GREATER_THAN(5), And_.LESS_THAN(10),
+                          And_.DIVISIBLE_BY(2)))
         self._assertIntegerFunctionsEqual(
             And_.FALSE,  # because there are no even numbers in range
-            __unit__.and_(And_.IS_AT_LEAST(5), And_.IS_AT_MOST(5),
-                          And_.IS_DIVISIBLE_BY(2)))
+            __unit__.and_(And_.GREATER_THAN(6), And_.LESS_THAN(7),
+                          And_.DIVISIBLE_BY(2)))
         self._assertIntegerFunctionsEqual(
             And_.FALSE,  # because there are no numbers in range
-            __unit__.and_(And_.IS_AT_LEAST(10), And_.IS_AT_MOST(5),
-                          And_.IS_DIVISIBLE_BY(2)))
+            __unit__.and_(And_.GREATER_THAN(10), And_.LESS_THAN(5),
+                          And_.DIVISIBLE_BY(2)))
 
 
 class Or_(_BinaryLogicalCombinator):
-    IS_OUTSIDE = staticmethod(lambda min_, max_: lambda x: x < min_ or x > max_)
+    OUTSIDE = staticmethod(lambda min_, max_: lambda x: x < min_ or x > max_)
+    EVEN_OR_OUTSIDE = staticmethod(
+        lambda min_, max_: lambda x: x % 2 == 0 or x < min_ or x > max_)
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.or_()
+
+    def test_one_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.or_(None)
+
+    def test_one_arg__true(self):
+        self._assertBooleanFunctionsEqual(Or_.TRUE, __unit__.or_(Or_.TRUE))
+
+    def test_one_arg__false(self):
+        self._assertBooleanFunctionsEqual(Or_.FALSE, __unit__.or_(Or_.FALSE))
+
+    def test_two_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.TRUE, Or_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.TRUE, Or_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.FALSE, Or_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Or_.FALSE, __unit__.or_(Or_.FALSE, Or_.FALSE))
+
+    def test_two_args__integer_ranges__half_open(self):
+        self._assertIntegerFunctionsEqual(
+            Or_.GREATER_THAN(5),  # lower minimum "wins"
+            __unit__.or_(Or_.GREATER_THAN(5), Or_.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Or_.LESS_THAN(10),  # higher maximum "wins"
+            __unit__.or_(Or_.LESS_THAN(5), Or_.LESS_THAN(10)))
+
+    def test_two_args__integer_ranges__open(self):
+        self._assertIntegerFunctionsEqual(
+            Or_.OUTSIDE(5, 10),
+            __unit__.or_(Or_.LESS_THAN(5), Or_.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Or_.TRUE,
+            __unit__.or_(Or_.GREATER_THAN(5), Or_.LESS_THAN(10)))
+
+    def test_three_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.TRUE, Or_.TRUE, Or_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.TRUE, Or_.TRUE, Or_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.TRUE, Or_.FALSE, Or_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.TRUE, Or_.FALSE, Or_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.FALSE, Or_.TRUE, Or_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.FALSE, Or_.TRUE, Or_.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Or_.TRUE, __unit__.or_(Or_.FALSE, Or_.FALSE, Or_.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Or_.FALSE, __unit__.or_(Or_.FALSE, Or_.FALSE, Or_.FALSE))
+
+    def test_three_args__even_integer_intervals(self):
+        self._assertIntegerFunctionsEqual(
+            Or_.EVEN_OR_OUTSIDE(5, 10),
+            __unit__.or_(Or_.LESS_THAN(5), Or_.GREATER_THAN(10),
+                          Or_.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Or_.TRUE,  # because the ranges overlap
+            __unit__.or_(Or_.GREATER_THAN(6), Or_.LESS_THAN(7),
+                          Or_.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Or_.TRUE,  # because an even number closes the gap between ranges
+            __unit__.or_(Or_.GREATER_THAN(10), Or_.LESS_THAN(10),
+                          Or_.DIVISIBLE_BY(2)))

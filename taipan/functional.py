@@ -97,7 +97,7 @@ def empty():
 
 # General combinators
 
-# TODO(xion): implement currying
+curry = functools.partial
 
 
 def uncurry(f):

@@ -2,6 +2,7 @@
 Tests for the .strings module.
 """
 from functools import reduce
+import re
 
 from taipan._compat import IS_PY3
 from taipan.collections import is_mapping
@@ -36,6 +37,27 @@ class IsString(TestCase):
         self.assertFalse(__unit__.is_string(self.BYTE_STRING))
 
 
+class IsRegex(TestCase):
+    DEFAULT_STRING_RE = re.compile('foo')
+    UNICODE_STRING_RE = re.compile(u'foo')
+    BYTE_STRING_RE = re.compile(b'foo')
+
+    def test_none(self):
+        self.assertFalse(__unit__.is_regex(None))
+
+    def test_some_object(self):
+        self.assertFalse(__unit__.is_regex(object()))
+
+    def test_default_string_re(self):
+        self.assertTrue(__unit__.is_regex(self.DEFAULT_STRING_RE))
+
+    def test_unicode_string_re(self):
+        self.assertTrue(__unit__.is_regex(self.UNICODE_STRING_RE))
+
+    def test_bytestirng_re(self):
+        self.assertTrue(__unit__.is_regex(self.BYTE_STRING_RE))
+
+
 class EnsureString(TestCase):
     DEFAULT_STRING = 'foo'
     UNICODE_STRING = u'foo'
@@ -63,6 +85,29 @@ class EnsureString(TestCase):
     def test_bytestring__py3(self):
         with self.assertRaises(TypeError):
             __unit__.ensure_string(self.BYTE_STRING)
+
+
+class EnsureRegex(TestCase):
+    DEFAULT_STRING_RE = re.compile('foo')
+    UNICODE_STRING_RE = re.compile(u'foo')
+    BYTE_STRING_RE = re.compile(b'foo')
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_regex(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_regex(object())
+
+    def test_default_string_re(self):
+        __unit__.ensure_regex(self.DEFAULT_STRING_RE)
+
+    def test_unicode_string_re(self):
+        __unit__.ensure_regex(self.UNICODE_STRING_RE)
+
+    def test_bytestirng_re(self):
+        __unit__.ensure_regex(self.BYTE_STRING_RE)
 
 
 class Join(TestCase):

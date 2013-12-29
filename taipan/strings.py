@@ -11,6 +11,7 @@ from taipan.collections.tuples import is_pair
 
 __all__ = [
     'BaseString', 'UnicodeString', 'is_string', 'ensure_string',
+    'Regex', 'is_regex', 'ensure_regex',
     'join',
     'camel_case',
     'replace', 'ReplacementError',
@@ -26,6 +27,11 @@ BaseString = str if IS_PY3 else basestring
 #: Unicode string class used by this Python interpreter.
 UnicodeString = str if IS_PY3 else unicode
 
+#: Regular expression class.
+Regex = type(re.compile(''))
+
+
+# Kind checks
 
 def is_string(s):
     """Checks whether given object ``s`` is a string of characters.
@@ -34,20 +40,41 @@ def is_string(s):
     return isinstance(s, BaseString)
 
 
+def is_regex(r):
+    """Checks whether given object ``r`` is a compiled regular expression.
+    :return: ``True`` is ``r`` is a regular expression object,
+             ``False`` otherwise
+    """
+    return isinstance(r, Regex)
+
+
+# Assertions
+
 def ensure_string(s):
     """Checks whether ``s`` is a string of characters.
     :return: ``s`` if it is a string of characters
-    :raises TypeError: When ``s` is not a string of characters
+    :raise TypeError: When ``s` is not a string of characters
     """
     if not is_string(s):
         raise TypeError("expected a string, got %s" % type(s).__name__)
     return s
 
 
+def ensure_regex(r):
+    """Checks whether ``r`` is a compiled regular expression.
+    :return: ``r`` if it is a regular expression object
+    :raise TypeError: When ``s`` is not a regular expression object
+    """
+    if not is_regex(r):
+        raise TypeError(
+            "expected a regular expression, got %s" % type(r).__name__)
+    return r
+
+
 # Splitting and joining
 
 def join(delimiter, iterable):
-    """"Returns a string which is a concatenation of strings in ``iterable``,
+    """Returns a string which is a concatenation of strings in ``iterable``,
     separated by given ``delimiter``.
     """
     # TODO(xion): add arg(s) that control handling Nones (skip/replace/error)

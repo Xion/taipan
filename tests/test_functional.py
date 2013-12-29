@@ -1,6 +1,8 @@
 """
 Tests for the .functional module.
 """
+from itertools import product
+
 from taipan.testing import TestCase
 
 from taipan._compat import xrange
@@ -237,11 +239,16 @@ class PredefinedConstantFunctions(_ConstantFunction):
 
 class _Combinator(TestCase):
 
-    def _assertIntegerFunctionsEqual(self, f, g, domain=None):
+    def _assertIntegerFunctionsEqual(self, f, g, argcount=1, domain=None):
         if domain is None:
-            domain = xrange(-512, 512 + 1)
-        for x in domain:
-            self.assertEquals(f(x), g(x))
+            # use roughly the same amount time regardless of function's arity
+            limit = int(pow(512, 1.0 / argcount))
+            self.assertGreater(
+                limit, 0, msg="Too many arguments for integer functions")
+            domain = xrange(-limit, limit + 1)
+
+        for args in product(domain, repeat=argcount):
+            self.assertEquals(f(*args), g(*args))
 
 
 class Compose(_Combinator):
@@ -305,6 +312,17 @@ class Compose(_Combinator):
             Compose.FGH, __unit__.compose(Compose.F, Compose.G, Compose.H))
         self._assertIntegerFunctionsEqual(
             Compose.HGF, __unit__.compose(Compose.H, Compose.G, Compose.F))
+
+    def test_last_function_with_multiple_args(self):
+        self._assertIntegerFunctionsEqual(
+            lambda a, b: Compose.F(a * b),
+            __unit__.compose(Compose.F, int.__mul__),
+            argcount=2)
+        self._assertIntegerFunctionsEqual(
+            lambda a, b: Compose.G(a + b),
+            __unit__.compose(Compose.G, int.__add__),
+            argcount=2)
+
 
 
 # Logical combinators

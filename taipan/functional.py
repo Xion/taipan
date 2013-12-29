@@ -104,8 +104,6 @@ def compose(*fs):
     :return: Function returning a result of functions from ``fs``
              applied consecutively to its argument in reverse order
     """
-    # TODO(xion): allow for the last function to take arbitrary number of args
-
     ensure_argcount(fs, min_=1)
     fs = list(imap(ensure_callable, fs))
 
@@ -113,10 +111,13 @@ def compose(*fs):
         return fs[0]
     if len(fs) == 2:
         f1, f2 = fs
-        return lambda x: f1(f2(x))
+        return lambda *args, **kwargs: f1(f2(*args, **kwargs))
 
-    def g(x):
-        for f in reversed(fs):
+    fs.reverse()
+
+    def g(*args, **kwargs):
+        x = fs[0](*args, **kwargs)
+        for f in fs[1:]:
             x = f(x)
         return x
 

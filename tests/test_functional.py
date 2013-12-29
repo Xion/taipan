@@ -251,6 +251,43 @@ class _Combinator(TestCase):
             self.assertEquals(f(*args), g(*args))
 
 
+class Uncurry(_Combinator):
+    VERBATIM = staticmethod(lambda *args, **kwargs: (args, kwargs))
+
+    SINGLE_VARARG = ((42,), {})
+    TWO_VARARGS = (('foo', 'bar'), {})
+
+    SINGLE_KWARG = ((), {'foo': 1})
+    TWO_KWARGS = ((), {'foo': 1, 'bar': 2})
+
+    ARG_AND_KWARG = ((42,), {'foo': 1})
+    ARGS_AND_KWARGS = ((13, 42), {'foo': 1, 'bar': 2})
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.uncurry(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.uncurry(object())
+
+    def test_callable__positional_args(self):
+        uncurried = __unit__.uncurry(Uncurry.VERBATIM)
+        self.assertEquals(self.SINGLE_VARARG, uncurried(*self.SINGLE_VARARG))
+        self.assertEquals(self.TWO_VARARGS, uncurried(*self.TWO_VARARGS))
+
+    def test_callable__keyword_args(self):
+        uncurried = __unit__.uncurry(Uncurry.VERBATIM)
+        self.assertEquals(self.SINGLE_KWARG, uncurried(*self.SINGLE_KWARG))
+        self.assertEquals(self.TWO_KWARGS, uncurried(*self.TWO_KWARGS))
+
+    def test_callable__both(self):
+        uncurried = __unit__.uncurry(Uncurry.VERBATIM)
+        self.assertEquals(self.ARG_AND_KWARG, uncurried(*self.ARG_AND_KWARG))
+        self.assertEquals(
+            self.ARGS_AND_KWARGS, uncurried(*self.ARGS_AND_KWARGS))
+
+
 class Compose(_Combinator):
     F = staticmethod(lambda x: x + 1)
     G = staticmethod(lambda x: 3*x)

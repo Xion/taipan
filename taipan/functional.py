@@ -1,6 +1,8 @@
 """
 Functional utilities.
 """
+import functools
+
 from taipan._compat import imap
 from taipan.collections import ensure_iterable
 
@@ -95,7 +97,19 @@ def empty():
 
 # General combinators
 
-# TODO(xion): implement currying and uncurrying
+# TODO(xion): implement currying
+
+
+def uncurry(f):
+    """Convert a curried function into a function on tuples
+    (of positional arguments) and dictionaries (of keyword arguments).
+    """
+    ensure_callable(f)
+
+    result = lambda args=(), kwargs=None: f(*args, **(kwargs or {}))
+    functools.update_wrapper(result, f, ('__name__', '__module__'))
+    return result
+
 
 def compose(*fs):
     """Creates composition of the functions passed in.

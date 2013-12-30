@@ -110,14 +110,14 @@ def split(s, by=None, maxsplit=None):
     # that matches them all
     if is_iterable(by):
         if not by:
-            raise ValueError("empty separator")
+            raise ValueError("empty separator list")
         if not s:
             return ['']  # quickly eliminate trivial case
         or_ = s.__class__('|')
         regex = join(or_, imap(re.escape, by))
-        return re.split(regex, s, maxsplit=maxsplit or 0)
+        return split(s, by=re.compile(regex), maxsplit=maxsplit)
 
-    raise TypeError("invalid delimiter")
+    raise TypeError("invalid separator")
 
 
 def join(delimiter, iterable):

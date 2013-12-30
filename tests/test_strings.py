@@ -178,6 +178,9 @@ class Split(TestCase):
             [self.STRING], __unit__.split(self.STRING, by='X', maxsplit=0))
         self.assertEquals(
             [self.STRING],
+            __unit__.split(self.STRING, by=('a', 'X'), maxsplit=0))
+        self.assertEquals(
+            [self.STRING],
             __unit__.split(self.STRING, by=re.compile(self.REGEX), maxsplit=0))
 
     def test_maxsplit__non_integer(self):

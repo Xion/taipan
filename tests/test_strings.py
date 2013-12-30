@@ -110,6 +110,111 @@ class EnsureRegex(TestCase):
         __unit__.ensure_regex(self.BYTE_STRING_RE)
 
 
+class Split(TestCase):
+    TEXT = 'Alice has a cat'
+    WORDS = ['Alice', 'has', 'a', 'cat']
+
+    STRING = 'fooXbarXbaz'
+    REGEX = 'ba.'
+    SPLIT_BY_X = ['foo', 'bar', 'baz']
+    SPLIT_BY_A_OR_X = ['foo', 'b', 'r', 'b', 'z']
+    SPLIT_BY_REGEX = ['fooX', 'X', '']
+
+    MAXSPLIT = 1
+
+    def test_string__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.split(None)
+
+    def test_string__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.split(object())
+
+    def test_string__empty__no_separator(self):
+        # result contingent on TODO inside the ``split`` function
+        self.assertEquals([], __unit__.split(''))
+
+    def test_string__some_string__no_separator(self):
+        self.assertEquals([self.STRING], __unit__.split(self.STRING))
+
+    def test_by__none__words(self):
+        self.assertEquals(self.WORDS, __unit__.split(self.TEXT, by=None))
+
+    def test_by__none__one_word(self):
+        self.assertEquals([self.STRING], __unit__.split(self.STRING, by=None))
+
+    def test_by__single_string(self):
+        self.assertEquals(self.SPLIT_BY_X, __unit__.split(self.STRING, by='X'))
+
+    def test_by__multiple_strings(self):
+        self.assertEquals(
+            self.SPLIT_BY_A_OR_X, __unit__.split(self.STRING, by=('a', 'X')))
+
+    def test_by__regex_object(self):
+        self.assertEquals(
+            self.SPLIT_BY_REGEX,
+            __unit__.split(self.STRING, by=re.compile(self.REGEX)))
+
+    def test_by__allegedly_regex_string(self):
+        # regex supplied as string should be treated as string,
+        # (in this case, it results in no splits whatsoever)
+        self.assertEquals(
+            [self.STRING], __unit__.split(self.STRING, by=self.REGEX))
+
+    def test_maxsplit__none(self):
+        self.assertEquals(self.WORDS, __unit__.split(self.TEXT, maxsplit=None))
+        self.assertEquals(
+            self.SPLIT_BY_A_OR_X,
+            __unit__.split(self.STRING, by=('a', 'X'), maxsplit=None))
+        self.assertEquals(
+            self.SPLIT_BY_REGEX,
+            __unit__.split(self.STRING,
+                           by=re.compile(self.REGEX), maxsplit=None))
+
+    def test_maxsplit__zero(self):
+        self.assertEquals(
+            [self.TEXT], __unit__.split(self.TEXT, by=None, maxsplit=0))
+        self.assertEquals(
+            [self.STRING], __unit__.split(self.STRING, by='X', maxsplit=0))
+        self.assertEquals(
+            [self.STRING],
+            __unit__.split(self.STRING, by=re.compile(self.REGEX), maxsplit=0))
+
+    def test_maxsplit__non_integer(self):
+        with self.assertRaises(TypeError):
+            __unit__.split(self.TEXT, maxsplit=object())
+        with self.assertRaises(TypeError):
+            __unit__.split(self.STRING, by='X', maxsplit=object())
+        with self.assertRaises(TypeError):
+            __unit__.split(self.STRING, by=('a', 'X'), maxsplit=object())
+        with self.assertRaises(TypeError):
+            __unit__.split(
+                self.STRING, by=re.compile(self.REGEX), maxsplit=object())
+
+    def test_maxsplit__positive(self):
+        maxsplit = self.MAXSPLIT  # just to make expressions fit
+
+        self.assertEquals(
+            self.WORDS[:maxsplit] + [' '.join(self.WORDS[maxsplit:])],
+            __unit__.split(self.TEXT, maxsplit=maxsplit))
+        self.assertEquals(
+            self.SPLIT_BY_X[:maxsplit] + ['X'.join(self.SPLIT_BY_X[maxsplit:])],
+            __unit__.split(self.STRING, by='X', maxsplit=maxsplit))
+
+        # this works because the first split to perform at 'X' rather than 'a'
+        self.assertEquals(
+            self.SPLIT_BY_X[:maxsplit] + ['X'.join(self.SPLIT_BY_X[maxsplit:])],
+            __unit__.split(self.STRING, by=('a', 'X'), maxsplit=maxsplit))
+
+        # here, first split is at 'bar'
+        sep_index = self.STRING.find('bar')
+        string_sans_sep = self.STRING.replace('bar', '')
+        self.assertEquals(
+            [self.STRING[:sep_index], string_sans_sep[sep_index:]],
+            __unit__.split(
+                self.STRING, by=re.compile(self.REGEX), maxsplit=maxsplit))
+
+
 class Join(TestCase):
     ITERABLE = ['foo', 'bar', 'baz']
     DELIMITER = 'X'

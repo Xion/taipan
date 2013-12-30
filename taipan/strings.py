@@ -5,7 +5,7 @@ String-related functions and classes.
 import re
 
 from taipan._compat import IS_PY3, imap
-from taipan.collections import ensure_iterable, is_mapping
+from taipan.collections import ensure_iterable, is_iterable, is_mapping
 from taipan.collections.tuples import is_pair
 
 
@@ -72,6 +72,53 @@ def ensure_regex(r):
 
 
 # Splitting and joining
+
+def split(s, by=None, maxsplit=None):
+    """Split a string based on given delimiter(s).
+    Delimiters can be either strings or compiled regular expression objects.
+
+    :param s: String to split
+    :param by: A delimiter, or iterable thereof.
+    :param maxsplit: Maximum number of splits to perform.
+                     ``None`` means no limit,
+                     while 0 does not perform a split at all.
+
+    :return: List of words in the string ``s``
+             that were separated by delimiter(s)
+    """
+    ensure_string(s)
+
+    # TODO(xion): Consider introducing a case for ``split('')``
+    # to make it return ``['']`` rather than default ``[]`` thru ``str.split``.
+    # It's the so-called "whitespace split" that normally eliminates
+    # empty strings from result. However, ``split(s)`` for any other ``s``
+    # always returns ``[s]`` so these two approaches are at odds here.
+    # (Possibly refer to split functions in other languages for comparison).
+
+    # singular delimiters are handled by appropriate standard functions
+    if by is None or is_string(by):
+        return s.split(by) if maxsplit is None else s.split(by, maxsplit)
+    if is_regex(by):
+        # by the quirk of API, ``maxsplit=0`` means "no limit" in ``re.split``,
+        # but in``str.split`` it means "don't split at all"; we reconcile this
+        # by making ``str.split`` convention apply to regex-based splitting too
+        if maxsplit == 0:
+            return [s]
+        return by.split(s, maxsplit=maxsplit or 0)
+
+    # multiple delimiters require preparing a regular expression
+    # that matches them all
+    if is_iterable(by):
+        if not by:
+            raise ValueError("empty separator")
+        if not s:
+            return ['']  # quickly eliminate trivial case
+        or_ = s.__class__('|')
+        regex = join(or_, imap(re.escape, by))
+        return re.split(regex, s, maxsplit=maxsplit or 0)
+
+    raise TypeError("invalid delimiter")
+
 
 def join(delimiter, iterable):
     """Returns a string which is a concatenation of strings in ``iterable``,

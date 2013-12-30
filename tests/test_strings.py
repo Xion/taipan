@@ -143,8 +143,18 @@ class Split(TestCase):
     def test_by__none__one_word(self):
         self.assertEquals([self.STRING], __unit__.split(self.STRING, by=None))
 
+    def test_by__empty_string(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.split(self.STRING, by='')
+        self.assertIn("empty", str(r.exception))
+
     def test_by__single_string(self):
         self.assertEquals(self.SPLIT_BY_X, __unit__.split(self.STRING, by='X'))
+
+    def test_by__empty_tuple(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.split(self.STRING, by=())
+        self.assertIn("empty", str(r.exception))
 
     def test_by__multiple_strings(self):
         self.assertEquals(
@@ -154,6 +164,11 @@ class Split(TestCase):
         self.assertEquals(
             self.SPLIT_BY_REGEX,
             __unit__.split(self.STRING, by=re.compile(self.REGEX)))
+
+    def test_by__empty_regex(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.split(self.STRING, by=re.compile(''))
+        self.assertIn("empty", str(r.exception))
 
     def test_by__allegedly_regex_string(self):
         # regex supplied as string should be treated as string,

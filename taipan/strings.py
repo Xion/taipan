@@ -85,6 +85,8 @@ def split(s, by=None, maxsplit=None):
 
     :return: List of words in the string ``s``
              that were separated by delimiter(s)
+
+    :raise ValueError: If the separator is an empty string or regex
     """
     ensure_string(s)
 
@@ -95,19 +97,20 @@ def split(s, by=None, maxsplit=None):
     # always returns ``[s]`` so these two approaches are at odds here.
     # (Possibly refer to split functions in other languages for comparison).
 
-    # singular delimiters are handled by appropriate standard functions
+    # string delimiter are handled by appropriate standard function
     if by is None or is_string(by):
         return s.split(by) if maxsplit is None else s.split(by, maxsplit)
+
+    # regex delimiters have certain special cases handled explicitly below,
+    # so that we do the same things that ``str.split`` does
     if is_regex(by):
-        # by the quirk of API, ``maxsplit=0`` means "no limit" in ``re.split``,
-        # but in``str.split`` it means "don't split at all"; we reconcile this
-        # by making ``str.split`` convention apply to regex-based splitting too
+        if not by.pattern:
+            return s.split('')  # will fail with proper exception & message
         if maxsplit == 0:
             return [s]
         return by.split(s, maxsplit=maxsplit or 0)
 
-    # multiple delimiters require preparing a regular expression
-    # that matches them all
+    # multiple delimiters are handled by regex that matches them all
     if is_iterable(by):
         if not by:
             raise ValueError("empty separator list")

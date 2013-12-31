@@ -130,21 +130,23 @@ def _wrap_decorator(decorator, targets, is_valid_target):
         # (without any parameters and parentheses)
         one_arg = len(args) == 1 and not kwargs
         if one_arg and is_valid_target(args[0]):
-            actual_decorator = decor()
+            actual_decorator = decorator()
             return actual_decorator(args[0])
 
         # pass the parameters to decorator callable
         # to get the actual decorator that can be applied to targets
         actual_decorator = decorator(*args, **kwargs)
+        # TODO(xion): The above raises TypeError with confusing message
+        # ("<class>.__new__() takes no parameters") when @function_decorator
+        # is applied to a class. See if we can detect that and do better.
 
         # wrap it inside a function that verifies
         # whether the target that user has given is valid for this decorator
-        @functools.wraps(actual_decorator)
         def decorator_wrapper(target):
             if not is_valid_target(target):
                 raise TypeError(
                     "@%s can only be applied to %s: got %r instead" % (
-                        actual_decorator.__name__, targets, type(target)))
+                        decorator.__name__, targets, type(target)))
             return actual_decorator(target)
 
         return decorator_wrapper

@@ -7,7 +7,7 @@ from taipan.collections import ensure_sequence
 
 __all__ = [
     'head', 'last', 'tail', 'init',
-    'intersperse', 'intercalate', 'concat',
+    'intersperse', 'intercalate', 'concat', 'join',
 ]
 
 

@@ -12,7 +12,7 @@ from taipan.collections.tuples import is_pair
 __all__ = [
     'BaseString', 'UnicodeString', 'is_string', 'ensure_string',
     'Regex', 'is_regex', 'ensure_regex',
-    'join',
+    'split', 'join',
     'camel_case',
     'replace', 'ReplacementError',
 ]
@@ -150,7 +150,7 @@ def camel_case(arg, capitalize=None):
     if not arg:
         return arg
 
-    words = arg.split()
+    words = split(arg)
     first_word = words[0] if len(words) > 0 else None
 
     words = [word.capitalize() for word in words]

@@ -63,6 +63,15 @@ class TestCase(_BaseTestCase):
         if not string.endswith(suffix):
             self.__fail(msg, "%r does not end with %r" % (string, suffix))
 
+    def assertHasAttr(self, attr, obj, msg=None):
+        """Assert that ``obj``\ ect has given ``attr``\ ibute."""
+        self.assertIsInstance(attr, BaseString)
+        if not attr:
+            self.fail("attribute name is empty")
+
+        if not hasattr(obj, attr):
+            self.__fail(msg, "%r does not have attribute %r" % (obj, attr))
+
     def assertThat(self, predicate, argument=__missing, msg=None):
         """Assert that a ``predicate`` applies to given ``argument``.
 

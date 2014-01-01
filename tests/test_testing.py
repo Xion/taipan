@@ -186,6 +186,44 @@ class AssertEndsWith(_Assertion):
         self._TESTCASE.assertEndsWith(self.SUFFIX, self.STRING)
 
 
+class AssertHasAttr(_Assertion):
+
+    class Object(object):
+        """Helper class of objects that can have attributes set easily."""
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+    NO_ATTRS = Object()
+
+    ATTR = 'foo'
+    OBJECT_WITH_THE_ATTR = Object(**{ATTR: 42})
+    OBJECT_SANS_THE_ATTR = Object(bar=1)
+
+    def test_attr__none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertHasAttr(None, self.NO_ATTRS)
+
+    def test_attr__some_object(self):
+        with self._assertFailure():
+            self._TESTCASE.assertHasAttr(object(), self.NO_ATTRS)
+
+    def test_attr__empty_string(self):
+        with self._assertFailure():
+            self._TESTCASE.assertHasAttr('', self.NO_ATTRS)
+
+    def test_obj__none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertHasAttr(self.ATTR, None)
+
+    def test_obj__has_the_attr(self):
+        self._TESTCASE.assertHasAttr(self.ATTR, self.OBJECT_WITH_THE_ATTR)
+
+    def test_obj__does_not_have_the_attr(self):
+        with self._assertFailure():
+            self._TESTCASE.assertHasAttr(self.ATTR, self.OBJECT_SANS_THE_ATTR)
+
+
 class AssertThat(_Assertion):
     IDENTITY = staticmethod(lambda x: x)
     NOT = staticmethod(lambda x: not x)

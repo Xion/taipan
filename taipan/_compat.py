@@ -18,9 +18,10 @@ unichr = chr if IS_PY3 else unichr
 xrange = range if IS_PY3 else xrange
 
 if IS_PY3:
+    ifilter = filter
     imap = map
 else:
-    from itertools import imap
+    from itertools import ifilter, imap
 
 
 Numeric = (int,) if IS_PY3 else (int, long)

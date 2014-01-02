@@ -88,6 +88,9 @@ class fluent(object):
         for name, method in methods:
             if self._is_private_method(name):
                 continue
+
+            # TODO(xion): warn about terminator method names
+            # that haven't been encountered in the decorated ``class_``
             if not self._is_terminator(name, method):
                 fluent_method = self._make_fluent(method)
                 setattr(class_, name, fluent_method)
@@ -140,6 +143,9 @@ def terminator(method):
     ensure_callable(method)
     method.__fluent_terminator = True
     return method
+
+#: Alias for @\ :func:`terminator`.
+fluent.terminator = staticmethod(terminator)
 
 
 class FluentError(ValueError):

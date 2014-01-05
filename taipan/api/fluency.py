@@ -19,7 +19,7 @@ as simple as adding a @\ :class:`fluent` decorator to the class.
 import functools
 import inspect
 
-from taipan._compat import imap
+from taipan._compat import imap, IS_PY3
 from taipan.api.decorators import class_decorator
 from taipan.collections import is_iterable
 from taipan.functional import ensure_callable
@@ -83,9 +83,7 @@ class fluent(object):
         self._terminators = self._get_terminators(kwargs)
 
     def __call__(self, class_):
-        methods = inspect.getmembers(class_, predicate=inspect.ismethod)
-
-        for name, method in methods:
+        for name, method in self._get_methods(class_):
             if self._is_private_method(name):
                 continue
 
@@ -96,6 +94,13 @@ class fluent(object):
                 setattr(class_, name, fluent_method)
 
         return class_
+
+    def _get_methods(self, class_):
+        """Retrieve all methods of a class."""
+        # in Python 3, methods in class are ordinary functions,
+        # but in Python 2 they are special "bound method" objects
+        predicate = inspect.isfunction if IS_PY3 else inspect.ismethod
+        return inspect.getmembers(class_, predicate)
 
     def _get_terminators(self, ctor_kwargs):
         """Retrieve fluent terminators from decorator's arguments."""

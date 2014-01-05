@@ -75,9 +75,9 @@ class fluent(object):
 
     .. warning::
 
-        This class is just an example and contains multiple fatal flaws,
-        including the ripeness for SQL injection attacks. **Never** use
-        something like this in actual code!
+        The ``Query`` class is just an example and contains many fatal flaws,
+        including the ripeness for SQL injection attacks.
+        **Never** use something like this in your production code!
     """
     def __init__(self, **kwargs):
         self._terminators = self._get_terminators(kwargs)
@@ -145,7 +145,7 @@ def terminator(method):
     return method
 
 #: Alias for @\ :func:`terminator`.
-fluent.terminator = staticmethod(terminator)
+fluent.terminator = terminator
 
 
 class FluentError(ValueError):

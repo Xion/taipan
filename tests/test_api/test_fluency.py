@@ -143,7 +143,7 @@ class Terminator(TestCase):
         foo = Foo()
         self.assertEquals(Fluent.SIMPLE_RESULT, foo.blurbicate())
 
-    def test_class__one_fluent_and_terminator(self):
+    def test_fluent__one_fluent_and_terminator(self):
         @__unit__.fluent
         class Sum(object):
             def __init__(self):
@@ -158,7 +158,7 @@ class Terminator(TestCase):
             .add(1).add(2).add(3).add(4).add(5).add(6)
             .compute())
 
-    def test_class__multiple_terminators(self):
+    def test_fluent__multiple_terminators(self):
         @__unit__.fluent
         class Accumulator(object):
             def __init__(self):
@@ -177,3 +177,13 @@ class Terminator(TestCase):
         accum = Accumulator().put(1).put(2).put(3).put(4).put(5).put(6)
         self.assertEquals(21, accum.sum())
         self.assertEquals(720, accum.product())
+
+    def test_alias(self):
+        @__unit__.fluent
+        class Foo(object):
+            @__unit__.fluent.terminator
+            def blurbicate(self):
+                return Fluent.SIMPLE_RESULT
+
+        foo = Foo()
+        self.assertEquals(Fluent.SIMPLE_RESULT, foo.blurbicate())

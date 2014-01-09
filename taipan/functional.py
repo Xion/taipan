@@ -127,6 +127,34 @@ def attr_func(*attrs):
     return getattrs
 
 
+def key_func(*keys):
+    """Creates a "key function" based on given keys.
+
+    Resulting function will perform lookup using specified keys, in order,
+    on the object passed to it as an argument.
+    For example, ``key_func('a', 'b')(foo)`` is equivalent to ``foo['a']['b']``.
+
+    :param keys: Lookup keys
+    :return: Unary key function
+    """
+    ensure_argcount(keys, min_=1)
+    keys = list(map(ensure_string, keys))
+
+    if len(keys) == 1:
+        return operator.itemgetter(keys[0])
+
+    def getitems(obj):
+        for item in keys:
+            obj = obj[item]
+        return obj
+
+    return getitems
+
+
+#: Alias for :func:`key_func`.
+item_func = key_func
+
+
 # General combinators
 
 curry = functools.partial

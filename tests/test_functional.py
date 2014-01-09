@@ -270,15 +270,57 @@ class AttrFunc(TestCase):
         with self.assertRaises(AttributeError):
             func(self.DOUBLY_NESTED_OBJECT)
 
-    def test_two_attr__good(self):
+    def test_two_attrs__good(self):
         func = __unit__.attr_func('foo', 'bar')
         self.assertEquals(
             self.DOUBLY_NESTED_OBJECT.foo.bar, func(self.DOUBLY_NESTED_OBJECT))
 
-    def test_two_attr__bad(self):
+    def test_two_attrs__bad(self):
         func = __unit__.attr_func('doesnt_exist', 'foo')
         with self.assertRaises(AttributeError):
             func(self.DOUBLY_NESTED_OBJECT)
+
+
+class KeyFunc(TestCase):
+    SINGLY_NESTED_DICT = dict(foo=1, bar='baz')
+    DOUBLY_NESTED_DICT = dict(foo=dict(foo=1, bar=2), bar='a')
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.key_func()
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.key_func(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.key_func(object())
+
+    def test_single_key__good(self):
+        func = __unit__.key_func('foo')
+        self.assertEquals(
+            self.SINGLY_NESTED_DICT['foo'], func(self.SINGLY_NESTED_DICT))
+        self.assertEquals(
+            self.DOUBLY_NESTED_DICT['foo'], func(self.DOUBLY_NESTED_DICT))
+
+    def test_single_key__bad(self):
+        func = __unit__.key_func('doesnt_exist')
+        with self.assertRaises(LookupError):
+            func(self.SINGLY_NESTED_DICT)
+        with self.assertRaises(LookupError):
+            func(self.DOUBLY_NESTED_DICT)
+
+    def test_two_keys__good(self):
+        func = __unit__.key_func('foo', 'bar')
+        self.assertEquals(
+            self.DOUBLY_NESTED_DICT['foo']['bar'],
+            func(self.DOUBLY_NESTED_DICT))
+
+    def test_two_keys__bad(self):
+        func = __unit__.key_func('doesnt_exist', 'foo')
+        with self.assertRaises(LookupError):
+            func(self.DOUBLY_NESTED_DICT)
 
 
 # General combinators

@@ -1,6 +1,7 @@
 """
 Tests for the .functional module.
 """
+from collections import namedtuple
 from itertools import product
 
 from taipan.testing import TestCase
@@ -235,6 +236,51 @@ class PredefinedConstantFunctions(_ConstantFunction):
             empty("extraneous argument")
 
 
+# Unary functions
+
+class AttrFunc(TestCase):
+    CLASS = namedtuple('Foo', ['foo', 'bar'])
+
+    SINGLE_NESTED_OBJECT = CLASS(foo=1, bar='baz')
+    DOUBLY_NESTED_OBJECT = CLASS(foo=CLASS(foo=1, bar=2), bar='a')
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.attr_func()
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.attr_func(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.attr_func(object())
+
+    def test_single_attr__good(self):
+        func = __unit__.attr_func('foo')
+        self.assertEquals(
+            self.SINGLE_NESTED_OBJECT.foo, func(self.SINGLE_NESTED_OBJECT))
+        self.assertEquals(
+            self.DOUBLY_NESTED_OBJECT.foo, func(self.DOUBLY_NESTED_OBJECT))
+
+    def test_single_attr__bad(self):
+        func = __unit__.attr_func('doesnt_exist')
+        with self.assertRaises(AttributeError):
+            func(self.SINGLE_NESTED_OBJECT)
+        with self.assertRaises(AttributeError):
+            func(self.DOUBLY_NESTED_OBJECT)
+
+    def test_two_attr__good(self):
+        func = __unit__.attr_func('foo', 'bar')
+        self.assertEquals(
+            self.DOUBLY_NESTED_OBJECT.foo.bar, func(self.DOUBLY_NESTED_OBJECT))
+
+    def test_two_attr__bad(self):
+        func = __unit__.attr_func('doesnt_exist', 'foo')
+        with self.assertRaises(AttributeError):
+            func(self.DOUBLY_NESTED_OBJECT)
+
+
 # General combinators
 
 class _Combinator(TestCase):
@@ -361,7 +407,6 @@ class Compose(_Combinator):
             argcount=2)
 
 
-
 # Logical combinators
 
 class _LogicalCombinator(_Combinator):
@@ -384,20 +429,20 @@ class Not_(_LogicalCombinator):
         with self.assertRaises(TypeError):
             __unit__.not_(None)
 
-    def test_true(self):
+    def test_true_func(self):
         self._assertBooleanFunctionsEqual(Not_.FALSE, __unit__.not_(Not_.TRUE))
 
-    def test_false(self):
+    def test_false_func(self):
         self._assertBooleanFunctionsEqual(Not_.TRUE, __unit__.not_(Not_.FALSE))
 
-    def test_none(self):
+    def test_none_func(self):
         self._assertBooleanFunctionsEqual(Not_.TRUE, __unit__.not_(Not_.NONE))
 
-    def test_identity(self):
+    def test_identity_func(self):
         self._assertBooleanFunctionsEqual(
             Not_.NOT, __unit__.not_(Not_.IDENTITY))
 
-    def test_not(self):
+    def test_not_func(self):
         self._assertBooleanFunctionsEqual(
             Not_.IDENTITY, __unit__.not_(Not_.NOT))
 

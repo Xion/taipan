@@ -2,9 +2,11 @@
 Functional utilities.
 """
 import functools
+import operator
 
 from taipan._compat import imap
-from taipan.collections import ensure_iterable
+from taipan.collections import ensure_sequence
+from taipan.strings import ensure_string
 
 
 def ensure_callable(arg):
@@ -27,7 +29,7 @@ def ensure_argcount(args, min_=None, max_=None):
     :return: ``args`` if the conditions are met
     :raise TypeError: When conditions are not met
     """
-    ensure_iterable(args)
+    ensure_sequence(args)
 
     has_min = min_ is not None
     has_max = max_ is not None
@@ -48,7 +50,7 @@ def ensure_argcount(args, min_=None, max_=None):
     return args
 
 
-# Comstant functions
+# Constant functions
 
 def identity():
     """Returns an identity function.
@@ -93,6 +95,36 @@ def one():
 def empty():
     """Creates a function that always returns an empty iterable."""
     return const(())
+
+
+# Unary functions
+
+def attr_func(*attrs):
+    """Creates an "attribute function" for given attribute name(s).
+
+    Resulting function will retrieve attributes with given names, in order,
+    from the object that has been passed to it.
+    For example, ``attr_func('a', 'b')(foo)`` yields the same as ``foo.a.b``
+
+    :param attrs: Attribute names
+    :return: Unary attribute function
+    """
+    ensure_argcount(attrs, min_=1)
+    attrs = list(map(ensure_string, attrs))
+    # TODO(xion): verify attribute names correctness
+
+    # TODO(xion): support arguments containing dots, e.g.
+    # attr_func('a.b') instead of attr_func('a', 'b')
+
+    if len(attrs) == 1:
+        return operator.attrgetter(attrs[0])
+
+    def getattrs(obj):
+        for attr in attrs:
+            obj = getattr(obj, attr)
+        return obj
+
+    return getattrs
 
 
 # General combinators

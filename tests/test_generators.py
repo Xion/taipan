@@ -1,6 +1,7 @@
 """
 Tests for .generators module.
 """
+from taipan._compat import izip, xrange
 from taipan.collections import is_iterable, is_sequence
 from taipan.collections.tuples import is_tuple
 from taipan.testing import TestCase
@@ -103,3 +104,54 @@ class Batch(_GeneratorsTestCase):
 
     def _assertTuple(self, obj):
         self.assertTrue(is_tuple(obj), msg="%r is not a tuple" % (obj,))
+
+
+class Iterate(_GeneratorsTestCase):
+    pass
+
+
+class Pad(_GeneratorsTestCase):
+    LENGTH = 10
+    ITERABLE = list(xrange(LENGTH))
+
+    MUCH_MORE_THAN_LENGTH = 100 * LENGTH
+    PADDING = object()
+
+    def test_iterable__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.pad(None)
+
+    def test_iterable__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.pad(object())
+
+    def test_iterable__empty(self):
+        padded = __unit__.pad([])
+
+        self._assertGenerator(padded)
+        for _, elem in izip(xrange(self.MUCH_MORE_THAN_LENGTH), padded):
+            self.assertIsNone(elem)
+
+    def test_pad__default(self):
+        padded = __unit__.pad(self.ITERABLE)
+
+        self._assertGenerator(padded)
+        for i, elem in izip(xrange(self.MUCH_MORE_THAN_LENGTH), padded):
+            if i < self.LENGTH:
+                self.assertIs(self.ITERABLE[i], elem)
+            else:
+                self.assertIsNone(elem)
+
+    def test_pad__custom(self):
+        padded = __unit__.pad(self.ITERABLE, with_=self.PADDING)
+
+        self._assertGenerator(padded)
+        for i, elem in izip(xrange(self.MUCH_MORE_THAN_LENGTH), padded):
+            if i < self.LENGTH:
+                self.assertIs(self.ITERABLE[i], elem)
+            else:
+                self.assertIs(self.PADDING, elem)
+
+
+class Unique(_GeneratorsTestCase):
+    pass

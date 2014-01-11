@@ -20,8 +20,9 @@ xrange = range if IS_PY3 else xrange
 if IS_PY3:
     ifilter = filter
     imap = map
+    izip = zip
 else:
-    from itertools import ifilter, imap
+    from itertools import ifilter, imap, izip
 
 
 Numeric = (int,) if IS_PY3 else (int, long)

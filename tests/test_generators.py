@@ -41,7 +41,8 @@ class Batch(_GeneratorsTestCase):
         self._assertGenerator(batched)
         batched = list(batched)
 
-        self.assertEquals(len(self.WITHOUT_LEFTOVERS) / self.N, len(batched))
+        self.assertEquals(
+            int(len(self.WITHOUT_LEFTOVERS) / self.N), len(batched))
         for i, batch in enumerate(batched):
             self._assertTuple(batch)
             self.assertEquals(self.N, len(batch))
@@ -54,7 +55,8 @@ class Batch(_GeneratorsTestCase):
         self._assertGenerator(batched)
         batched = list(batched)
 
-        self.assertEquals(len(self.WITH_LEFTOVERS) / self.N + 1, len(batched))
+        self.assertEquals(
+            int(len(self.WITH_LEFTOVERS) / self.N) + 1, len(batched))
         for i, batch in enumerate(batched):
             self._assertTuple(batch)
             self.assertGreaterEqual(self.N, len(batch))
@@ -67,7 +69,8 @@ class Batch(_GeneratorsTestCase):
         self._assertGenerator(batched)
         batched = list(batched)
 
-        self.assertEquals(len(self.WITH_LEFTOVERS) / self.N + 1, len(batched))
+        self.assertEquals(
+            int(len(self.WITH_LEFTOVERS) / self.N) + 1, len(batched))
         for i, batch in enumerate(batched):
             self._assertTuple(batch)
             self.assertEquals(self.N, len(batch))

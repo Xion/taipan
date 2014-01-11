@@ -4,9 +4,9 @@ Generator-related functions and classes.
 from __future__ import absolute_import
 
 from collections import deque
-from itertools import chain, islice, izip_longest, repeat
+from itertools import chain, islice, repeat
 
-from taipan._compat import imap, Numeric
+from taipan._compat import imap, izip_longest, Numeric
 from taipan.collections import ensure_iterable
 
 
@@ -89,9 +89,12 @@ def unique(iterable, key=None):
     if key is None:
         key = hash
 
-    seen = set()
-    for elem in iterable:
-        k = key(elem)
-        if k not in seen:
-            seen.add(k)
-            yield elem
+    def generator():
+        seen = set()
+        for elem in iterable:
+            k = key(elem)
+            if k not in seen:
+                seen.add(k)
+                yield elem
+
+    return generator()

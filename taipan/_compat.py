@@ -21,8 +21,9 @@ if IS_PY3:
     ifilter = filter
     imap = map
     izip = zip
+    from itertools import zip_longest as izip_longest
 else:
-    from itertools import ifilter, imap, izip
+    from itertools import ifilter, imap, izip, izip_longest
 
 
 Numeric = (int,) if IS_PY3 else (int, long)

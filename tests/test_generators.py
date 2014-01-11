@@ -110,7 +110,65 @@ class Batch(_GeneratorsTestCase):
 
 
 class Iterate(_GeneratorsTestCase):
-    pass
+    MAX = 10
+    FEW = MAX / 2
+
+    class Counter(object):
+        """Simplest iterable that can tell how much it's been iterated over."""
+        def __init__(self, max_count=None):
+            self.max_count = max_count
+            self.current_count = 0
+
+        def __iter__(self):
+            return self
+
+        def next(self):
+            if self.max_count is not None:
+                if self.current_count >= self.max_count:
+                    raise StopIteration()
+            self.current_count += 1
+            return self.current_count
+
+    def test_iterable__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.iterate(None)
+
+    def test_iterable__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.iterate(object())
+
+    def test_iterable__finite__few_iterations(self):
+        counter = self.Counter(self.MAX)
+        __unit__.iterate(counter, self.FEW)
+        self.assertEquals(self.FEW, counter.current_count)
+
+    def test_iterable__finite__to_the_end(self):
+        counter = self.Counter(self.MAX)
+        __unit__.iterate(counter)
+        self.assertEquals(self.MAX, counter.current_count)
+
+    def test_iterable__finite__past_the_end(self):
+        counter = self.Counter(self.MAX)
+        __unit__.iterate(counter, self.MAX * 2)
+        self.assertEquals(self.MAX, counter.current_count)
+
+    def test_iterable__finite__multiple_calls(self):
+        counter = self.Counter(self.MAX)
+        for i in xrange(1, self.FEW):
+            __unit__.iterate(counter, self.FEW)
+            self.assertEquals(
+                min(self.MAX, i * self.FEW), counter.current_count)
+
+    def test_iterable__infinite__few_iterations(self):
+        counter = self.Counter()
+        __unit__.iterate(counter, self.FEW)
+        self.assertEquals(self.FEW, counter.current_count)
+
+    def test_iterable__infinite__multiple_calls(self):
+        counter = self.Counter()
+        for i in xrange(1, self.FEW):
+            __unit__.iterate(counter, self.FEW)
+            self.assertEquals(i * self.FEW, counter.current_count)
 
 
 class Pad(_GeneratorsTestCase):

@@ -157,4 +157,60 @@ class Pad(_GeneratorsTestCase):
 
 
 class Unique(_GeneratorsTestCase):
-    pass
+    NORMAL_WITHOUT_DUPLICATES = [1, 2, 3, 4, 5]
+    NORMAL_WITH_DUPLICATES = [1, 2, 2, 3, 4, 5, 1]
+
+    STRLEN_WITHOUT_DUPLICATES = "Alice has a parrot".split()
+    STRLEN_WITH_DUPLICATES = "Alice has a cat and a dog and a parrot".split()
+
+    def test_iterable__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.unique(None)
+
+    def test_iterable__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.unique(object())
+
+    def test_iterable__empty(self):
+        uniqued = __unit__.unique([])
+
+        self._assertGenerator(uniqued)
+        uniqued = list(uniqued)
+
+        self.assertZero(len(uniqued))
+
+    def test_iterable__without_duplicates(self):
+        uniqued = __unit__.unique(self.NORMAL_WITHOUT_DUPLICATES)
+
+        self._assertGenerator(uniqued)
+        uniqued = list(uniqued)
+
+        self.assertItemsEqual(self.NORMAL_WITHOUT_DUPLICATES, uniqued)
+
+    def test_iterable__with_duplicates(self):
+        uniqued = __unit__.unique(self.NORMAL_WITH_DUPLICATES)
+
+        self._assertGenerator(uniqued)
+        uniqued = list(uniqued)
+
+        self.assertItemsEqual(self.NORMAL_WITHOUT_DUPLICATES, uniqued)
+
+    def test_key__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.unique((), object())
+
+    def test_key__strlen__without_duplicates(self):
+        uniqued = __unit__.unique(self.STRLEN_WITHOUT_DUPLICATES, key=len)
+
+        self._assertGenerator(uniqued)
+        uniqued = list(uniqued)
+
+        self.assertItemsEqual(self.STRLEN_WITHOUT_DUPLICATES, uniqued)
+
+    def test_key__strlen__with_duplicates(self):
+        uniqued = __unit__.unique(self.STRLEN_WITH_DUPLICATES, key=len)
+
+        self._assertGenerator(uniqued)
+        uniqued = list(uniqued)
+
+        self.assertItemsEqual(self.STRLEN_WITHOUT_DUPLICATES, uniqued)

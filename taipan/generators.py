@@ -8,6 +8,7 @@ from itertools import chain, islice, repeat
 
 from taipan._compat import imap, izip_longest, Numeric
 from taipan.collections import ensure_iterable
+from taipan.functional import ensure_callable
 
 
 # Itertools recipes
@@ -85,9 +86,7 @@ def unique(iterable, key=None):
     :return: Iterable with duplicates removed
     """
     ensure_iterable(iterable)
-
-    if key is None:
-        key = hash
+    key = hash if key is None else ensure_callable(key)
 
     def generator():
         seen = set()

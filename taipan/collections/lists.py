@@ -53,7 +53,7 @@ def intersperse(elem, list_):
 
 
 def intercalate(elems, list_):
-    """"Insert a given elements between existing elements of a list.
+    """Insert given elements between existing elements of a list.
 
     :param elems: List of elements to insert between elements of ``list_`
     :param list_: List to insert the elements to
@@ -75,7 +75,14 @@ def intercalate(elems, list_):
 def concat(list_):
     """Concatenates a list of lists into a single resulting list."""
     ensure_sequence(list_)
+
+    # we don't use ``itertools.chain.from_iterable``, because that would
+    # inadvertenly allow strings, treating them as lists of characters
+    # and potentially producing very difficult bugs
     return sum(imap(ensure_sequence, list_), [])
 
 #: Alias for the :func:`concat` function.
 join = concat
+
+#: Alias for the :func:`concat` function.
+flatten = concat

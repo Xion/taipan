@@ -19,6 +19,11 @@ class _GeneratorsTestCase(TestCase):
         self.assertTrue(is_iterable(obj) and not is_sequence(obj),
                         msg="%r is not a generator" % (obj,))
 
+    def _assertEmptyIterable(self, obj, msg=None):
+        self.assertTrue(is_iterable(obj), msg="%r is not an iterable" % (obj,))
+        for _ in obj:
+            self.fail(msg or "expected empty iterable was found not to be so")
+
 
 class Batch(_GeneratorsTestCase):
     N = 3
@@ -124,8 +129,8 @@ class Cycle(_GeneratorsTestCase):
 
     def test_iterable__empty(self):
         cycled = __unit__.cycle(())
-        for _ in cycled:
-            self.fail("cycled empty iterable expected to be also empty")
+        self._assertEmptyIterable(
+            cycled, msg="cycled empty iterable expected to be also empty")
 
     def test_n__none(self):
         cycled = __unit__.cycle(self.ITERABLE)
@@ -140,8 +145,8 @@ class Cycle(_GeneratorsTestCase):
 
     def test_n__zero(self):
         cycled = __unit__.cycle(self.ITERABLE, 0)
-        for _ in cycled:
-            self.fail("iterable cycled 0 times expected to be empty")
+        self._assertEmptyIterable(
+            cycled, msg="iterable cycled 0 times expected to be empty")
 
     def test_n__negative(self):
         with self.assertRaises(ValueError):
@@ -150,7 +155,7 @@ class Cycle(_GeneratorsTestCase):
     def test_n__positive(self):
         cycled = __unit__.cycle(self.ITERABLE, self.CYCLES_COUNT)
 
-        # iterate for a exactly the expected number of elements
+        # iterate for an exactly the expected number of elements
         for i, elem in izip(xrange(self.LENGTH * self.CYCLES_COUNT), cycled):
             self.assertEquals(self.ITERABLE[i % self.LENGTH], elem)
 
@@ -160,7 +165,48 @@ class Cycle(_GeneratorsTestCase):
 
 
 class Intertwine(_GeneratorsTestCase):
-    pass
+    FIRST = [1, 2, 3]
+    SECOND = ['a', 'b', 'c']
+    FIRST_AND_SECOND = [1, 'a', 2, 'b', 3, 'c']
+
+    LONGER = [13, 21, 34, 55, 89]
+    SHORTER = ['foo', 'bar', 'baz']
+    LONGER_AND_SHORTER = [13, 'foo', 21, 'bar', 34, 'baz', 55, 89]
+
+    def test_no_args(self):
+        intertwined = __unit__.intertwine()
+        self._assertEmptyIterable(intertwined)
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.intertwine(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.intertwine(object())
+
+    def test_single_iterable(self):
+        self.assertItemsEqual(self.FIRST, __unit__.intertwine(self.FIRST))
+        self.assertItemsEqual(self.SECOND, __unit__.intertwine(self.SECOND))
+
+    def test_single_iterable__passed_twice(self):
+        self.assertItemsEqual(
+            self.FIRST * 2, __unit__.intertwine(self.FIRST, self.FIRST))
+        self.assertItemsEqual(
+            self.SECOND * 2, __unit__.intertwine(self.SECOND, self.SECOND))
+
+    def test_two_iterables__one_empty(self):
+        self.assertItemsEqual(self.FIRST, __unit__.intertwine(self.FIRST, ()))
+        self.assertItemsEqual(self.SECOND, __unit__.intertwine(self.SECOND, ()))
+
+    def test_two_iterables__equal_lengths(self):
+        self.assertItemsEqual(self.FIRST_AND_SECOND,
+                              __unit__.intertwine(self.FIRST, self.SECOND))
+
+    def test_two_iterables__inequal_lengths(self):
+        self.assertItemsEqual(
+            self.LONGER_AND_SHORTER,
+            __unit__.intertwine(self.LONGER, self.SHORTER))
 
 
 class Iterate(_GeneratorsTestCase):

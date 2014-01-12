@@ -109,6 +109,60 @@ class Batch(_GeneratorsTestCase):
         self.assertTrue(is_tuple(obj), msg="%r is not a tuple" % (obj,))
 
 
+class Cycle(_GeneratorsTestCase):
+    LENGTH = 10
+    ITERABLE = list(xrange(LENGTH))
+    CYCLES_COUNT = 64
+
+    def test_iterable__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.cycle(None)
+
+    def test_iterable__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.cycle(object())
+
+    def test_iterable__empty(self):
+        cycled = __unit__.cycle(())
+        for _ in cycled:
+            self.fail("cycled empty iterable expected to be also empty")
+
+    def test_n__none(self):
+        cycled = __unit__.cycle(self.ITERABLE)
+
+        # iterate for a few cycles and check if elements match
+        for i, elem in izip(xrange(self.LENGTH * self.CYCLES_COUNT), cycled):
+            self.assertEquals(self.ITERABLE[i % self.LENGTH], elem)
+
+        # make sure there is still some more
+        for _ in xrange(self.CYCLES_COUNT):
+            next(cycled)
+
+    def test_n__zero(self):
+        cycled = __unit__.cycle(self.ITERABLE, 0)
+        for _ in cycled:
+            self.fail("iterable cycled 0 times expected to be empty")
+
+    def test_n__negative(self):
+        with self.assertRaises(ValueError):
+            __unit__.cycle(self.ITERABLE, -1)
+
+    def test_n__positive(self):
+        cycled = __unit__.cycle(self.ITERABLE, self.CYCLES_COUNT)
+
+        # iterate for a exactly the expected number of elements
+        for i, elem in izip(xrange(self.LENGTH * self.CYCLES_COUNT), cycled):
+            self.assertEquals(self.ITERABLE[i % self.LENGTH], elem)
+
+        # make sure the cycled iterable has been exhausted this way
+        with self.assertRaises(StopIteration):
+            next(cycled)
+
+
+class Intertwine(_GeneratorsTestCase):
+    pass
+
+
 class Iterate(_GeneratorsTestCase):
     MAX = 10
     FEW = MAX / 2

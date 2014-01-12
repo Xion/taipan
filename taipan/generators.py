@@ -4,7 +4,7 @@ Generator-related functions and classes.
 from __future__ import absolute_import
 
 from collections import deque
-from itertools import chain, islice, repeat
+from itertools import chain, cycle as cycle_, islice, repeat
 
 from taipan._compat import imap, izip_longest, Numeric
 from taipan.collections import ensure_iterable
@@ -48,6 +48,42 @@ def batch(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     zipped = izip_longest(*args, fillvalue=fillvalue)
     return imap(trimmer, zipped)
+
+
+def cycle(iterable, n=None):
+    """Cycle through given iterable specific (or infinite) number of times.
+
+    :param n: Number of cycles.
+              If None, result cycles through ``iterable`` indefinitely.
+
+    :return: Iterable that cycles through given one
+    """
+    ensure_iterable(iterable)
+
+    if n is None:
+        return cycle_(iterable)
+    else:
+        if not isinstance(n, Numeric):
+            raise TypeError("invalid number of cycles")
+        if n < 0:
+            raise ValueError("number of cycles cannot be negative")
+
+        return chain.from_iterable(repeat(tuple(iterable), n))
+
+
+def intertwine(*iterables):
+    """Constructs an iterable which intertwines given iterables.
+
+    The resulting iterable will return an item from first sequence,
+    then second, etc. until the last one - and then another item from
+    first, then second, etc. - up until all iterables are exhausted.
+    """
+    iterables = tuple(map(ensure_iterable, iterables))
+
+    empty = object()
+    return (item
+            for iterable in izip_longest(*iterables, fillvalue=empty)
+            for item in iterable if item is not empty)
 
 
 def iterate(iterator, n=None):

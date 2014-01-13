@@ -26,7 +26,7 @@ def filteritems(function, dict_):
     else:
         ensure_callable(function)
 
-    return dict((k, v) for k, v in _items(dict_) if function(k, v))
+    return dict_.__class__((k, v) for k, v in _items(dict_) if function(k, v))
 
 
 def filterkeys(function, dict_):
@@ -37,7 +37,7 @@ def filterkeys(function, dict_):
     """
     function = bool if function is None else ensure_callable(function)
     ensure_mapping(dict_)
-    return dict((k, v) for k, v in _items(dict_) if function(k))
+    return dict_.__class__((k, v) for k, v in _items(dict_) if function(k))
 
 
 def filtervalues(function, dict_):
@@ -48,7 +48,7 @@ def filtervalues(function, dict_):
     """
     function = bool if function is None else ensure_callable(function)
     ensure_mapping(dict_)
-    return dict((k, v) for k, v in _items(dict_) if function(v))
+    return dict_.__class__((k, v) for k, v in _items(dict_) if function(v))
 
 
 # TODO(xion): this may need a better name
@@ -103,7 +103,7 @@ def reverse(dict_):
     :return: Reversed dictionary
     """
     ensure_mapping(dict_)
-    return dict((v, k) for k, v in _items(dict_))
+    return dict_.__class__((v, k) for k, v in _items(dict_))
 
 
 def select(keys, from_, strict=False):
@@ -121,9 +121,9 @@ def select(keys, from_, strict=False):
     ensure_mapping(from_)
 
     if strict:
-        return dict((k, from_[k]) for k in keys)
+        return from_.__class__((k, from_[k]) for k in keys)
     else:
-        return dict((k, from_[k]) for k in keys if k in from_)
+        return from_.__class__((k, from_[k]) for k in keys if k in from_)
 
 
 # Utility functions

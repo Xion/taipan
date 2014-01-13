@@ -17,10 +17,16 @@ from taipan.functional import identity
 from taipan.strings import BaseString
 
 
-__all__ = ['TestCase']
+__all__ = [
+    'TestCase',
+    'skipIfReturnsTrue', 'skipUnlessReturnsTrue',
+    'skipIfReturnsFalse', 'skipUnlessReturnsFalse',
+    'skipIfHasattr', 'skipUnlessHasattr',
+]
 
 
 _BaseTestCase = TestCase
+
 
 class TestCase(_BaseTestCase):
     """Base test case class.
@@ -38,9 +44,9 @@ class TestCase(_BaseTestCase):
     def assertEmpty(self, argument, msg=None):
         """Assert that ``argument`` is an empty collection."""
         if not is_countable(argument):
-            self.__fail(msg, "%r is not a countable collection" % argument)
+            self.__fail(msg, "%r is not a countable collection" % (argument,))
         if argument:
-            self.__fail(msg, "%r is not empty" % argument)
+            self.__fail(msg, "%r is not empty" % (argument,))
 
     # Python 3 changes name of the following assert function,
     # so we provide backward and forward synonyms for compatibility
@@ -80,7 +86,7 @@ class TestCase(_BaseTestCase):
             self.assertThat(is_pair, some_tuple)
         """
         if not callable(predicate):
-            self.fail("%r is not a callable predicate" % predicate)
+            self.fail("%r is not a callable predicate" % (predicate,))
 
         satisfied = (predicate()
                      if argument is self.__missing
@@ -90,8 +96,8 @@ class TestCase(_BaseTestCase):
             predicate_part = (getattr(predicate, '__doc__', None)
                               or repr(predicate))
             argument_part = ("" if argument is self.__missing
-                             else " for %r" % argument)
-            self.__fail(msg, "predicate %r not satisfied%s" % (
+                             else " for %r" % (argument,))
+            self.__fail(msg, "predicate %s not satisfied%s" % (
                 predicate_part, argument_part))
 
     def assertNoop(self, function, argument, msg=None):
@@ -103,7 +109,7 @@ class TestCase(_BaseTestCase):
             self.assertNoop(str.upper, "WAT")
         """
         if not callable(function):
-            self.fail("%r is not a callable function" % function)
+            self.fail("%r is not a callable function" % (function,))
 
         result = function(argument)
         if result != argument:
@@ -126,7 +132,7 @@ def skipIfReturnsTrue(predicate):
     """
     if predicate():
         desc = getattr(predicate, '__doc__', None) or repr(predicate)
-        return skip("predicate evaluated to true: %s", desc)
+        return skip("predicate evaluated to true: %s" % desc)
     return identity()
 
 
@@ -136,7 +142,7 @@ def skipUnlessReturnsTrue(predicate):
     """
     if not predicate():
         desc = getattr(predicate, '__doc__', None) or repr(predicate)
-        return skip("predicate evaluated to false: %s", desc)
+        return skip("predicate evaluated to false: %s" % desc)
     return identity()
 
 # TODO(xion): seriously weigh pros & cons of having those

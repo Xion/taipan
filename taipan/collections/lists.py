@@ -7,7 +7,7 @@ from taipan.collections import ensure_sequence
 
 __all__ = [
     'head', 'last', 'tail', 'init',
-    'intersperse', 'intercalate', 'concat', 'join',
+    'intersperse', 'intercalate', 'concat', 'join', 'flatten',
 ]
 
 
@@ -37,7 +37,7 @@ def init(list_):
     """Returns all the elements of a list except the last one."""
     ensure_sequence(list_)
     if not list_:
-        raise ValueError("can't extract initial part of an emty list")
+        raise ValueError("can't extract initial part of an empty list")
     return list(list_[:-1])
 
 

@@ -12,7 +12,7 @@ except ImportError:
     from unittest import *
 
 from taipan._compat import IS_PY3
-from taipan.collections import is_iterable
+from taipan.collections import is_countable
 from taipan.functional import identity
 from taipan.strings import BaseString
 
@@ -36,9 +36,9 @@ class TestCase(_BaseTestCase):
         self.assertEqual(0, argument, msg=msg)
 
     def assertEmpty(self, argument, msg=None):
-        """Assert that ``argument`` is an empty iterable."""
-        if not is_iterable(argument):
-            self.__fail(msg, "%r is not an iterable" % argument)
+        """Assert that ``argument`` is an empty collection."""
+        if not is_countable(argument):
+            self.__fail(msg, "%r is not a countable collection" % argument)
         if argument:
             self.__fail(msg, "%r is not empty" % argument)
 

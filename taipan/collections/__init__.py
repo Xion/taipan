@@ -7,12 +7,20 @@ import collections
 
 
 __all__ = [
-    'is_iterable', 'is_mapping', 'is_sequence',
-    'ensure_iterable', 'ensure_mapping', 'ensure_sequence',
+    'is_countable', 'is_iterable', 'is_mapping', 'is_sequence', 'is_sized',
+    'ensure_countable', 'ensure_iterable', 'ensure_mapping', 'ensure_sequence',
+    'ensure_sized',
 ]
 
 
 # Collection kind checks
+
+def is_countable(obj):
+    """Check whether given object is a countable collection (has a length).
+    :return: ``True`` if argument has a length, ``False`` otherwise
+    """
+    return isinstance(obj, collections.Sized)
+
 
 def is_iterable(obj):
     """Checks whether given object is an iterable.
@@ -35,7 +43,22 @@ def is_sequence(obj):
     return isinstance(obj, collections.Sequence)
 
 
+#: Alias for :func:`is_countable`.
+is_sized = is_countable
+
+
 # Collection kind assertions
+
+def ensure_countable(arg):
+    """Check whether argument is a countable collection (has a length).
+    :return: Argument, if it's a countable collection
+    :raise TypeError: When argument is not a countable collection
+    """
+    if not is_countable(arg):
+        raise TypeError(
+            "expected a countable collection, got %s" % type(arg).__name__)
+    return arg
+
 
 def ensure_iterable(arg):
     """Checks whether argument is an iterable.
@@ -65,3 +88,7 @@ def ensure_sequence(arg):
     if not is_sequence(arg):
         raise TypeError("expected a sequence, got %s" % type(arg).__name__)
     return arg
+
+
+#: Alias for :func:`ensure_countable`.
+ensure_sized = ensure_countable

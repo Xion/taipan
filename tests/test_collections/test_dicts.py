@@ -1,10 +1,100 @@
 """
 Tests for the .collections.dicts module.
 """
+from taipan.collections import is_mapping
 from taipan.testing import TestCase
 
 import taipan.collections.dicts as __unit__
 
+
+class AbsentDict(TestCase):
+    EXISTING_KEY = 'foo'
+    EXISTING_VALUE = 0
+    NONEXISTING_KEY = 'baz'
+    DICT_WITH_ALL_PRESENT = {EXISTING_KEY: EXISTING_VALUE, 'bar': 2}
+
+    ABSENT_KEY = 'bar'
+    DICT_WITH_ONE_ABSENT = {EXISTING_KEY: EXISTING_VALUE,
+                            ABSENT_KEY: __unit__.ABSENT}
+    DICT_WITH_ALL_ABSENT = {'foo': __unit__.ABSENT, 'bar': __unit__.ABSENT}
+
+    def test_ctor__no_args(self):
+        dict_ = __unit__.AbsentDict()
+        self._assertIsMapping(dict_)
+        self.assertEmpty(dict_)
+
+    def test_ctor__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.AbsentDict(None)
+
+    def test_ctor__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.AbsentDict(object())
+
+    def test_ctor__dict__empty(self):
+        self.assertEquals({}, __unit__.AbsentDict({}))
+
+    def test_ctor__dict__all_present(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_PRESENT)
+        self.assertEquals(self.DICT_WITH_ALL_PRESENT, dict_)
+
+    def test_ctor__dict__one_absent(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ONE_ABSENT)
+        self.assertEquals(len(self.DICT_WITH_ONE_ABSENT) - 1, len(dict_))
+        self.assertNotIn(self.ABSENT_KEY, dict_)
+
+    def test_ctor__dict__all_absent(self):
+        self.assertEquals({}, __unit__.AbsentDict(self.DICT_WITH_ALL_ABSENT))
+
+    def test_ctor__pairlist__empty(self):
+        self.assertEquals({}, __unit__.AbsentDict([]))
+
+    def test_ctor__pairlist__all_present(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_PRESENT.items())
+        self.assertEquals(self.DICT_WITH_ALL_PRESENT, dict_)
+
+    def test_ctor__pairlist__one_absent(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ONE_ABSENT.items())
+        self.assertEquals(len(self.DICT_WITH_ONE_ABSENT) - 1, len(dict_))
+        self.assertNotIn(self.ABSENT_KEY, dict_)
+
+    def test_ctor__dict__all_absent(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_ABSENT.items())
+        self.assertEquals({}, dict_)
+
+    def test_setitem__existing_present(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_PRESENT)
+        dict_[self.EXISTING_KEY] = self.EXISTING_VALUE  # should be no-op
+        self.assertEquals(self.DICT_WITH_ALL_PRESENT, dict_)
+
+    def test_setitem__nonexisting_present(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_PRESENT)
+        dict_[self.NONEXISTING_KEY] = 42  # should add the key normally
+        self.assertIn(self.NONEXISTING_KEY, dict_)
+
+    def test_setitem__present_to_absent(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_PRESENT)
+        dict_[self.EXISTING_KEY] = __unit__.ABSENT  # should delete the key
+        self.assertNotIn(self.EXISTING_KEY, dict_)
+
+    def test_setitem__absent_to_present(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ONE_ABSENT)
+        dict_[self.ABSENT_KEY] = 42  # should add the key
+        self.assertIn(self.ABSENT_KEY, dict_)
+
+    def test_setitem__still_absent(self):
+        dict_ = __unit__.AbsentDict(self.DICT_WITH_ONE_ABSENT)
+        dict_[self.ABSENT_KEY] = __unit__.ABSENT  # should be no-op
+        self.assertNotIn(self.ABSENT_KEY, dict_)
+
+    # Assertions
+
+    def _assertIsMapping(self, obj, msg=None):
+        if not is_mapping(obj):
+            self.fail(msg or "%r is not a mapping" % (obj,))
+
+
+# Dictionary operations
 
 ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 

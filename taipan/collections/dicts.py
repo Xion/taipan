@@ -1,17 +1,59 @@
 """
 Dictionary-related functions and classes.
 """
+from itertools import chain
+
 from taipan._compat import IS_PY3
-from taipan.collections import ensure_iterable, ensure_mapping
+from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
 from taipan.functional import ensure_callable
 
 
 __all__ = [
+    'AbsentDict', 'ABSENT',
     'filteritems', 'filterkeys', 'filtervalues',
     'get',
     'merge', 'select',
 ]
 
+
+class AbsentDict(dict):
+    """Improved dictionary that supports a special ``ABSENT`` value.
+
+    Assigning the ``ABSENT`` value to key will remove the key from dictionary.
+    Initializing a key with ``ABSENT`` value will result in key not being
+    added to dictionary at all.
+
+    Rationale is to eliminate 'ifs' which are sometimes needed when creating
+    dictionaries e.g. when sometimes we want default value for keyword argument.
+
+    Example::
+
+        >>> dicts.AbsentDict({
+            'zero': 0 or dicts.ABSENT,
+            'one': 1,
+        })
+        {'one': 1}
+    """
+    def __init__(self, iterable=(), **kwargs):
+        if is_mapping(iterable):
+            iterable = _items(iterable)
+        super(AbsentDict, self).__init__(chain(
+            ((k, v) for k, v in iterable if v is not ABSENT),
+            ((k, v) for k, v in _items(kwargs) if v is not ABSENT)
+        ))
+
+    def __setitem__(self, key, obj):
+        if obj is ABSENT:
+            self.pop(key, None)
+        else:
+            super(AbsentDict, self).__setitem__(key, obj)
+
+
+#: Value which indicates that its key is absent from :class:`AbsentDict`.
+ABSENT = object()
+
+
+# Dictionary operations
 
 def filteritems(function, dict_):
     """Return a new dictionary comprising of items

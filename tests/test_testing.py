@@ -12,6 +12,8 @@ try:
 except ImportError:
     from unittest import TestCase, skipIf
 
+import operator
+
 from taipan._compat import IS_PY3
 
 import taipan.testing as __unit__
@@ -256,6 +258,86 @@ class AssertThat(_Assertion):
         self._TESTCASE.assertThat(AssertThat.IDENTITY, object())
         with self._assertFailure():
             self._TESTCASE.assertThat(AssertThat.NOT, object())
+
+
+class _IterableAssertion(_Assertion):
+    LENGTH = 10
+
+    ALL_TRUE = [True] * LENGTH
+    ALL_FALSE = [False] * LENGTH
+    ONE_TRUE = [True] + [False] * (LENGTH - 1)
+    ONE_FALSE = [False] + [True] * (LENGTH - 1)
+
+    IS_POSITIVE = staticmethod(lambda x: x > 0)
+    IS_NEGATIVE = staticmethod(lambda x: x < 0)
+
+    POSITIVES = list(range(1, LENGTH))
+    NEGATIVES = list(map(operator.neg, POSITIVES))
+    ALMOST_ALL_POSITIVES = [0] + POSITIVES[1:]
+    ALMOST_ALL_NEGATIVES = [0] + NEGATIVES[1:]
+
+
+class AssertAll(_IterableAssertion):
+
+    def test_iterable__none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(None)
+
+    def test_iterable__some_object(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(object())
+
+    def test_iterable__empty(self):
+        self._TESTCASE.assertAll(())
+
+    def test_iterable__all_true(self):
+        self._TESTCASE.assertAll(self.ALL_TRUE)
+
+    def test_iterable__one_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(self.ONE_FALSE)
+
+    def test_iterable__one_true(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(self.ONE_TRUE)
+
+    def test_iterable__all_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(self.ALL_FALSE)
+
+    def test_predicate__empty_iterable(self):
+        self._TESTCASE.assertAll(self.IS_POSITIVE, ())
+        self._TESTCASE.assertAll(self.IS_NEGATIVE, ())
+
+    def test_predicate__all_true(self):
+        self._TESTCASE.assertAll(self.IS_POSITIVE, self.POSITIVES)
+        self._TESTCASE.assertAll(self.IS_NEGATIVE, self.NEGATIVES)
+
+    def test_predicate__one_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(
+                self.IS_POSITIVE, self.ALMOST_ALL_POSITIVES)
+        with self._assertFailure():
+            self._TESTCASE.assertAll(
+                self.IS_NEGATIVE, self.ALMOST_ALL_NEGATIVES)
+
+    def test_predicate__one_true(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(
+                self.IS_POSITIVE, self.ALMOST_ALL_NEGATIVES)
+        with self._assertFailure():
+            self._TESTCASE.assertAll(
+                self.IS_NEGATIVE, self.ALMOST_ALL_POSITIVES)
+
+    def test_predicate__all_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAll(self.IS_POSITIVE, self.NEGATIVES)
+        with self._assertFailure():
+            self._TESTCASE.assertAll(self.IS_NEGATIVE, self.POSITIVES)
+
+
+class AssertAny(_IterableAssertion):
+    pass
 
 
 class AssertNoop(_Assertion):

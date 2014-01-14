@@ -126,7 +126,7 @@ class TestCase(_BaseTestCase):
             self.__fail_unless_iterable(arg)
 
             # shift arguments to the left
-            if msg is None and iterable is not __missing:
+            if msg is None and iterable is not self.__missing:
                 msg = iterable
             iterable = arg
 
@@ -158,7 +158,7 @@ class TestCase(_BaseTestCase):
             self.__fail_unless_iterable(arg)
 
             # shift arguments to the left
-            if msg is None and iterable is not __missing:
+            if msg is None and iterable is not self.__missing:
                 msg = iterable
 
             if not any(arg):

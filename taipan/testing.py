@@ -12,7 +12,7 @@ except ImportError:
     from unittest import *
 
 from taipan._compat import IS_PY3
-from taipan.collections import is_countable
+from taipan.collections import is_countable, is_iterable
 from taipan.functional import identity
 from taipan.strings import BaseString
 
@@ -93,12 +93,76 @@ class TestCase(_BaseTestCase):
                      else predicate(argument))
 
         if not satisfied:
-            predicate_part = (getattr(predicate, '__doc__', None)
-                              or repr(predicate))
             argument_part = ("" if argument is self.__missing
                              else " for %r" % (argument,))
-            self.__fail(msg, "predicate %s not satisfied%s" % (
-                predicate_part, argument_part))
+            self.__fail(msg, "predicate not satisfied%s" % (argument_part,))
+
+    def assertAll(self, arg, iterable=__missing, msg=None):
+        """Assert that all elements of an iterable are truthy
+        or satisfy given predicate.
+
+        :param arg: Predicate, or iterable of elements to check for truthiness
+        :param iterable: Iterable of predicate arguments
+                         (if predicate was given)
+
+        Examples::
+
+            # check if all elements satisfy a predicate
+            self.assertAll(is_valid, iterable)
+
+            # check if all elements are already truthy
+            self.assertAll(iterable_of_maybe_truthies)
+        """
+        if callable(arg):
+            self.__fail_unless_iterable(iterable)
+
+            predicate = arg
+            for i, elem in enumerate(iterable):
+                if not predicate(elem):
+                    self.__fail(
+                        msg, "predicate not satisfied for element #%d: %r" % (
+                            i, elem))
+        else:
+            self.__fail_unless_iterable(arg)
+
+            # shift arguments to the left
+            if msg is None and iterable is not __missing:
+                msg = iterable
+            iterable = arg
+
+            for i, elem in enumerate(iterable):
+                if not elem:
+                    self.__fail(msg, "falsy element #%d: %r" % (i, elem))
+
+    def assertAny(self, arg, iterable=__missing, msg=None):
+        """Assert that at least one element of an iterable is truthy
+        or satisfies given predicate.
+
+        :param arg: Predicate, or iterable of elements to check for truthiness
+        :param iterable: Iterable of predicate arguments
+                         (if predicate was given)
+
+        Examples::
+
+            # check if any element satisfies a predicate
+            self.assertAny(is_valid, iterable)
+
+            # check if any element is already truthy
+            self.assertAny(iterable_of_maybe_truthies)
+        """
+        if callable(arg):
+            self.__fail_unless_iterable(iterable)
+            if not any(imap(arg, iterable)):
+                self.__fail(msg, "predicate not satisfied for any element")
+        else:
+            self.__fail_unless_iterable(arg)
+
+            # shift arguments to the left
+            if msg is None and iterable is not __missing:
+                msg = iterable
+
+            if not any(arg):
+                self.__fail(msg, "all elements found falsy")
 
     def assertNoop(self, function, argument, msg=None):
         """Assert that ``function`` returns given ``argument`` verbatim
@@ -109,7 +173,7 @@ class TestCase(_BaseTestCase):
             self.assertNoop(str.upper, "WAT")
         """
         if not callable(function):
-            self.fail("%r is not a callable function" % (function,))
+            self.fail("%r is not a callable" % (function,))
 
         result = function(argument)
         if result != argument:
@@ -121,6 +185,10 @@ class TestCase(_BaseTestCase):
 
     def __fail(self, custom_msg, standard_msg):
         self.fail(self._formatMessage(custom_msg, standard_msg))
+
+    def __fail_unless_iterable(self, arg):
+        if not is_iterable(arg):
+            self.fail("%r is not an iterable" % (arg,))
 
 
 # Skip decorators

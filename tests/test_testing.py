@@ -273,8 +273,8 @@ class _IterableAssertion(_Assertion):
 
     POSITIVES = list(range(1, LENGTH))
     NEGATIVES = list(map(operator.neg, POSITIVES))
-    ALMOST_ALL_POSITIVES = [0] + POSITIVES[1:]
-    ALMOST_ALL_NEGATIVES = [0] + NEGATIVES[1:]
+    ALMOST_ALL_POSITIVES = [-1] + POSITIVES[1:]
+    ALMOST_ALL_NEGATIVES = NEGATIVES[1:] + [1]
 
 
 class AssertAll(_IterableAssertion):
@@ -337,7 +337,55 @@ class AssertAll(_IterableAssertion):
 
 
 class AssertAny(_IterableAssertion):
-    pass
+
+    def test_iterable__none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAny(None)
+
+    def test_iterable__some_object(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAny(object())
+
+    def test_iterable__empty(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAny(())
+
+    def test_iterable__all_true(self):
+        self._TESTCASE.assertAny(self.ALL_TRUE)
+
+    def test_iterable__one_false(self):
+        self._TESTCASE.assertAny(self.ONE_FALSE)
+
+    def test_iterable__one_true(self):
+        self._TESTCASE.assertAny(self.ONE_TRUE)
+
+    def test_iterable__all_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAny(self.ALL_FALSE)
+
+    def test_predicate__empty_iterable(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAny(self.IS_POSITIVE, ())
+        with self._assertFailure():
+            self._TESTCASE.assertAny(self.IS_NEGATIVE, ())
+
+    def test_predicate__all_true(self):
+        self._TESTCASE.assertAny(self.IS_POSITIVE, self.POSITIVES)
+        self._TESTCASE.assertAny(self.IS_NEGATIVE, self.NEGATIVES)
+
+    def test_predicate__one_false(self):
+        self._TESTCASE.assertAny(self.IS_POSITIVE, self.ALMOST_ALL_POSITIVES)
+        self._TESTCASE.assertAny(self.IS_NEGATIVE, self.ALMOST_ALL_NEGATIVES)
+
+    def test_predicate__one_true(self):
+        self._TESTCASE.assertAny(self.IS_POSITIVE, self.ALMOST_ALL_NEGATIVES)
+        self._TESTCASE.assertAny(self.IS_NEGATIVE, self.ALMOST_ALL_POSITIVES)
+
+    def test_predicate__all_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertAny(self.IS_POSITIVE, self.NEGATIVES)
+        with self._assertFailure():
+            self._TESTCASE.assertAny(self.IS_NEGATIVE, self.POSITIVES)
 
 
 class AssertNoop(_Assertion):

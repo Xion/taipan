@@ -11,7 +11,7 @@ try:
 except ImportError:
     from unittest import *
 
-from taipan._compat import IS_PY3
+from taipan._compat import IS_PY3, imap
 from taipan.collections import is_countable, is_iterable
 from taipan.functional import identity
 from taipan.strings import BaseString
@@ -162,7 +162,7 @@ class TestCase(_BaseTestCase):
                 msg = iterable
 
             if not any(arg):
-                self.__fail(msg, "all elements found falsy")
+                self.__fail(msg, "no truthy elements found")
 
     def assertNoop(self, function, argument, msg=None):
         """Assert that ``function`` returns given ``argument`` verbatim

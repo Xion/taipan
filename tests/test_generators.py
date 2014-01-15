@@ -1,7 +1,7 @@
 """
 Tests for .generators module.
 """
-from taipan._compat import izip, xrange
+from taipan._compat import IS_PY3, izip, xrange
 from taipan.collections import is_iterable, is_sequence
 from taipan.collections.tuples import is_tuple
 from taipan.testing import TestCase
@@ -211,7 +211,7 @@ class Intertwine(_GeneratorsTestCase):
 
 class Iterate(_GeneratorsTestCase):
     MAX = 10
-    FEW = MAX / 2
+    FEW = int(MAX / 2)
 
     class Counter(object):
         """Simplest iterable that can tell how much it's been iterated over."""
@@ -228,6 +228,9 @@ class Iterate(_GeneratorsTestCase):
                     raise StopIteration()
             self.current_count += 1
             return self.current_count
+
+        if IS_PY3:
+            __next__ = next
 
     def test_iterable__none(self):
         with self.assertRaises(TypeError):

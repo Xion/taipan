@@ -7,9 +7,10 @@ import collections
 
 
 __all__ = [
-    'is_countable', 'is_iterable', 'is_mapping', 'is_sequence', 'is_sized',
+    'is_countable', 'is_iterable', 'is_mapping', 'is_sequence', 'is_set',
+    'is_sized',
     'ensure_countable', 'ensure_iterable', 'ensure_mapping', 'ensure_sequence',
-    'ensure_sized',
+    'ensure_set', 'ensure_sized',
 ]
 
 
@@ -41,6 +42,13 @@ def is_sequence(obj):
     :return: ``True`` if argument is a sequence, ``False`` otherwise
     """
     return isinstance(obj, collections.Sequence)
+
+
+def is_set(obj):
+    """Checks whether given object is a set.
+    :return: ``True`` if argument is a set, ``False`` otherwise
+    """
+    return isinstance(obj, collections.Set)
 
 
 #: Alias for :func:`is_countable`.
@@ -87,6 +95,16 @@ def ensure_sequence(arg):
     """
     if not is_sequence(arg):
         raise TypeError("expected a sequence, got %s" % type(arg).__name__)
+    return arg
+
+
+def ensure_set(arg):
+    """Checks whether given argument is a set.
+    :return: Argument, if it's a set
+    :raise TypeError: When argument is not a set
+    """
+    if not is_set(arg):
+        raise TypeError("expected a set got, %s" % type(arg).__name__)
     return arg
 
 

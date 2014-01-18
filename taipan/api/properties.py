@@ -58,7 +58,7 @@ class objectproperty(object):
 
         def trace_func(frame, event, arg):
             """Trace function for fetching locals defined within ``func``."""
-            is_from_func = frame.f_code == func.func_code
+            is_from_func = frame.f_code == func.__code__
             if event == 'return' and is_from_func:  # ``arg`` is return value
                 accessors.update(arg or frame.f_locals)
             return trace_func

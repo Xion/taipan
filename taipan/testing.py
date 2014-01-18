@@ -43,9 +43,18 @@ class TestCase(_BaseTestCase):
 
     def assertEmpty(self, argument, msg=None):
         """Assert that ``argument`` is an empty collection."""
-        if not is_countable(argument):
-            self.__fail(msg, "%r is not a countable collection" % (argument,))
-        if argument:
+        if is_countable(argument):
+            nonempty = len(argument) > 0
+        else:
+            if not is_iterable(argument):
+                self.__fail(msg, "%r is not an iterable" % (argument,))
+
+            nonempty = False
+            for _ in argument:
+                nonempty = True
+                break
+
+        if nonempty:
             self.__fail(msg, "%r is not empty" % (argument,))
 
     # Python 3 changes name of the following assert function,

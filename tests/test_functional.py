@@ -339,7 +339,7 @@ class _Combinator(TestCase):
             self.assertEquals(f(*args), g(*args))
 
 
-class Uncurry(_Combinator):
+class _UnaryCombinator(_Combinator):
     VERBATIM = staticmethod(lambda *args, **kwargs: (args, kwargs))
 
     SINGLE_VARARG = ((42,), {})
@@ -350,6 +350,9 @@ class Uncurry(_Combinator):
 
     ARG_AND_KWARG = ((42,), {'foo': 1})
     ARGS_AND_KWARGS = ((13, 42), {'foo': 1, 'bar': 2})
+
+
+class Uncurry(_UnaryCombinator):
 
     def test_none(self):
         with self.assertRaises(TypeError):
@@ -374,6 +377,40 @@ class Uncurry(_Combinator):
         self.assertEquals(self.ARG_AND_KWARG, uncurried(*self.ARG_AND_KWARG))
         self.assertEquals(
             self.ARGS_AND_KWARGS, uncurried(*self.ARGS_AND_KWARGS))
+
+
+class Flip(_UnaryCombinator):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.flip(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.flip(object())
+
+    def test_callable__positional_args(self):
+        flipped = __unit__.flip(Flip.VERBATIM)
+        self.assertEquals(self.SINGLE_VARARG, flipped(*self.SINGLE_VARARG))
+        self.assertEquals(
+            self._reverse_first(self.TWO_VARARGS), flipped(*self.TWO_VARARGS))
+
+    def test_callable__keyword_args(self):
+        flipped = __unit__.flip(Flip.VERBATIM)
+        self.assertEquals(self.SINGLE_KWARG, flipped(*self.SINGLE_KWARG))
+        self.assertEquals(self.TWO_KWARGS, flipped(*self.TWO_KWARGS))
+
+    def test_callable__both(self):
+        flipped = __unit__.flip(Flip.VERBATIM)
+        self.assertEquals(self.ARG_AND_KWARG, flipped(*self.ARG_AND_KWARG))
+        self.assertEquals(
+            self._reverse_first(self.ARGS_AND_KWARGS),
+            flipped(*self.ARGS_AND_KWARGS))
+
+    # Utility functions
+
+    def _reverse_first(self, tuple_):
+        return (tuple(reversed(tuple_[0])),) + tuple_[1:]
 
 
 class Compose(_Combinator):

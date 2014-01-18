@@ -171,6 +171,15 @@ def uncurry(f):
     return result
 
 
+def flip(f):
+    """Flip the order of positonal arguments of given function."""
+    ensure_callable(f)
+
+    result = lambda args=(), kwargs=None: f(*reversed(args), **(kwargs or {}))
+    functools.update_wrapper(result, f, ('__name__', '__module__'))
+    return result
+
+
 def compose(*fs):
     """Creates composition of the functions passed in.
 

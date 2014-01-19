@@ -1,8 +1,10 @@
-*.pyc
+*.py[co]
 *.egg-info
 dist
 
 .tox
+
+docs/_build
 
 *.sublime-*
 .ropeproject

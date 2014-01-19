@@ -2,8 +2,6 @@
 """
 taipan
 ======
-
-General purpose toolkit for Python
 """
 from setuptools import find_packages, setup
 import os
@@ -55,7 +53,7 @@ def get_test_requirements():
 setup(
     name="taipan",
     version=taipan.__version__,
-    description="General purpose toolkit for Python",
+    description=taipan.__description__,
     long_description=__doc__,  # TODO(xion): add README.rst
     author=taipan.__author__,
     url="http://github.com/Xion/taipan",

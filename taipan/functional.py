@@ -211,20 +211,24 @@ def compose(*fs):
 
 def not_(f):
     """Creates a function that returns a Boolean negative of provided function.
+
     :param f: Function to create a Boolean negative of
-    :return: Function ``g`` such that ``g(x) == not f(x)`` for every ``x``
+
+    :return: Function ``g`` such that ``g(<args>) == not f(<args>)``
+             for any ``<args>``
     """
     ensure_callable(f)
-    return lambda x: not f(x)
+    return lambda *args, **kwargs: not f(*args, **kwargs)
 
 
 def and_(*fs):
-    """Creates a function that returns true for an argument
-    if every given function evalutes to true for that argument.
+    """Creates a function that returns true for given arguments
+    if every given function evalutes to true for those arguments.
 
-    :param fs: One-argument functions
+    :param fs: Functions to combine
+
     :return: Short-circuiting function performing logical conjunction
-             on results of ``fs`` applied to its argument
+             on results of ``fs`` applied to its arguments
     """
     ensure_argcount(fs, min_=1)
     fs = list(imap(ensure_callable, fs))
@@ -233,11 +237,12 @@ def and_(*fs):
         return fs[0]
     if len(fs) == 2:
         f1, f2 = fs
-        return lambda x: f1(x) and f2(x)
+        return lambda *args, **kwargs: (
+            f1(*args, **kwargs) and f2(*args, **kwargs))
 
-    def g(x):
+    def g(*args, **kwargs):
         for f in fs:
-            if not f(x):
+            if not f(*args, **kwargs):
                 return False
         return True
 
@@ -245,12 +250,13 @@ def and_(*fs):
 
 
 def or_(*fs):
-    """Creates a function that returns false for an argument
-    if every given function evaluates to false for that argument.
+    """Creates a function that returns false for given arugments
+    if every given function evaluates to false for those arguments.
 
-    :param fs: One-argument functions
+    :param fs: Functions to combine
+
     :return: Short-circuiting function performing logical alternative
-             on results of ``fs`` applied to its argument
+             on results of ``fs`` applied to its arguments
     """
     ensure_argcount(fs, min_=1)
     fs = list(imap(ensure_callable, fs))
@@ -259,11 +265,12 @@ def or_(*fs):
         return fs[0]
     if len(fs) == 2:
         f1, f2 = fs
-        return lambda x: f1(x) or f2(x)
+        return lambda *args, **kwargs: (
+            f1(*args, **kwargs) or f2(*args, **kwargs))
 
-    def g(x):
+    def g(*args, **kwargs):
         for f in fs:
-            if f(x):
+            if f(*args, **kwargs):
                 return True
         return False
 

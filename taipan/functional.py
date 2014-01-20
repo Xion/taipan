@@ -1,5 +1,5 @@
 """
-Functional utilities.
+Functional programming utilities.
 """
 import functools
 import operator

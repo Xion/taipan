@@ -106,3 +106,110 @@ class IsMethod(TestCase):
         obj = Foo()
         obj.foo = foo
         self.assertTrue(__unit__.is_method(obj.foo))
+
+
+class EnsureMethod(TestCase):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_method(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_method(object())
+
+    def test_lambda(self):
+        foo = lambda: None
+        with self.assertRaises(TypeError):
+            __unit__.ensure_method(foo)
+
+    def test_regular_function(self):
+        def foo():
+            pass
+        with self.assertRaises(TypeError):
+            __unit__.ensure_method(foo)
+
+    def test_staticmethod(self):
+        class Foo(object):
+            @staticmethod
+            def foo():
+                pass
+        with self.assertRaises(TypeError):
+            __unit__.ensure_method(Foo.foo)
+
+    def test_classmethod__of_class(self):
+        class Foo(object):
+            @classmethod
+            def foo(cls):
+                pass
+        __unit__.ensure_method(Foo.foo)
+
+    def test_classmethod__of_instance(self):
+        class Foo(object):
+            @classmethod
+            def foo(cls):
+                pass
+        __unit__.ensure_method(Foo().foo)
+
+    def test_regular_method__of_class(self):
+        class Foo(object):
+            def foo(self):
+                pass
+        __unit__.ensure_method(Foo.foo)
+
+    def test_regular_method__of_instance(self):
+        class Foo(object):
+            def foo(self):
+                pass
+        __unit__.ensure_method(Foo().foo)
+
+    def test_classmethod_attached_to_class(self):
+        class Foo(object):
+            pass
+        @classmethod
+        def foo(cls):
+            pass
+        Foo.foo = foo
+
+        __unit__.ensure_method(Foo.foo)
+
+    def test_regular_method_attached_to_class__of_class(self):
+        class Foo(object):
+            pass
+        def foo(self):
+            pass
+        Foo.foo = foo
+
+        __unit__.ensure_method(Foo.foo)
+
+    def test_regular_method_attached_to_class__of_instance(self):
+        class Foo(object):
+            pass
+        def foo(self):
+            pass
+        Foo.foo = foo
+
+        __unit__.ensure_method(Foo().foo)
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_function_attached_to_object__py2(self):
+        class Foo(object):
+            pass
+        def foo(self):
+            pass
+
+        obj = Foo()
+        obj.foo = foo
+        with self.assertRaises(TypeError):
+            __unit__.ensure_method(obj.foo)
+
+    @skipUnless(IS_PY3, "requires Python 3.x")
+    def test_function_attached_to_object__py3(self):
+        class Foo(object):
+            pass
+        def foo(self):
+            pass
+
+        obj = Foo()
+        obj.foo = foo
+        __unit__.ensure_method(obj.foo)

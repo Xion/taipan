@@ -19,11 +19,26 @@ __all__ = [
 # Method-related functions
 
 def is_method(arg):
-    """Checks whether given object is a class or instance method."""
-    # in Python 3, methods in class are ordinary functions,
-    # but in Python 2 they are special "bound method" objects
-    predicate = inspect.isfunction if IS_PY3 else inspect.ismethod
-    return predicate(arg)
+    """Checks whether given object is a class or instance method.
+
+    .. note::
+
+        Static methods are equivalent to namespaced functions and as such,
+        they are _not_ detected by this function.
+    """
+    if inspect.ismethod(arg):
+        return True
+
+    # Unlike in Python 2, in Python 3 there is no distinction between
+    # unbound instance methods and regular functions.
+    # We attempt to evade this little gray zone by relying on extremely strong
+    # convention (which is nevertheless _not_ enforced by the intepreter)
+    # that first argument of an instance method must be always named ``self``.
+    if IS_PY3 and inspect.isfunction(arg):
+        argnames, _, _, _ = inspect.getargspec(arg)
+        return len(argnames) > 0 and argnames[0] == 'self'
+
+    return False
 
 
 def ensure_method(arg):

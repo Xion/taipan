@@ -1,11 +1,17 @@
 """
 Tests for the .objective module.
 """
+import inspect
+import re
+
 from taipan._compat import IS_PY3
+from taipan.collections.lists import head, tail
 from taipan.testing import TestCase, skipIf, skipUnless
 
 import taipan.objective as __unit__
 
+
+# Method-related functions
 
 class IsMethod(TestCase):
 
@@ -213,3 +219,42 @@ class EnsureMethod(TestCase):
         obj = Foo()
         obj.foo = foo
         __unit__.ensure_method(obj.foo)
+
+
+class GetMethods(TestCase):
+    """Tests for ``get_methods`` would be only a repetition of what is
+    already verified by tests for ``is_method``, so we don't provide any.
+
+    We ensure, however, that this fact doesn't suddenly cease to hold
+    by maintaining few spots checks of the properties of ``get_methods``
+    _implementation_.
+    """
+    FUNC = __unit__.get_methods
+    CODE = FUNC.__code__
+
+    def test_no_local_variables(self):
+        # count the new locals introduced inside function's body, not args
+        local_vars_count = self.CODE.co_nlocals - self.CODE.co_argcount
+        self.assertZero(local_vars_count)
+
+    def test_no_literal_constants(self):
+        # make sure docstring is the only literal constant used in the code
+        self.assertEquals(
+            __unit__.get_methods.__doc__, head(self.CODE.co_consts))
+        self.assertEmpty(tail(self.CODE.co_consts))
+
+    def test_no_nesting(self):
+        """Make sure function's code uses no nested control structures."""
+        # retrieve the source lines and determine where the docstring ends
+        source_lines, _ = inspect.getsourcelines(self.FUNC)
+        last_docstring_line, _ = next(
+            (i, line) for i, line in enumerate(source_lines)
+            if line.rstrip().endswith('"""'))
+        code_lines = source_lines[last_docstring_line + 1:]
+        self.assertGreater(len(code_lines), 0)
+
+        # make sure no code line is indented any further than the first one
+        initial_indent = re.search(r'^\s+', source_lines[1]).group(0)
+        for line in code_lines:
+            self.assertStartsWith(initial_indent, line)
+            self.assertIsNone(re.search(r'^\s+', line[len(initial_indent):]))

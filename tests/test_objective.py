@@ -247,10 +247,10 @@ class GetMethods(TestCase):
         """Make sure function's code uses no nested control structures."""
         # retrieve the source lines and determine where the docstring ends
         source_lines, _ = inspect.getsourcelines(self.FUNC)
-        last_docstring_line, _ = next(
-            (i, line) for i, line in enumerate(source_lines)
+        last_docstring_line_index = next(
+            idx for idx, line in enumerate(source_lines)
             if line.rstrip().endswith('"""'))
-        code_lines = source_lines[last_docstring_line + 1:]
+        code_lines = source_lines[last_docstring_line_index + 1:]
         self.assertGreater(len(code_lines), 0)
 
         # make sure no code line is indented any further than the first one
@@ -258,3 +258,86 @@ class GetMethods(TestCase):
         for line in code_lines:
             self.assertStartsWith(initial_indent, line)
             self.assertIsNone(re.search(r'^\s+', line[len(initial_indent):]))
+
+
+# Class member checks
+
+class IsInternal(TestCase):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.is_internal(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.is_internal(object())
+
+    def test_string__empty(self):
+        self.assertFalse(__unit__.is_internal(''))
+
+    def test_string__public_identifiers(self):
+        self.assertFalse(__unit__.is_internal('foo'))
+        self.assertFalse(__unit__.is_internal('Bar'))
+        self.assertFalse(__unit__.is_internal('foo_bar'))
+        self.assertFalse(__unit__.is_internal('FooBar'))
+
+    def test_string__internal_identifiers(self):
+        self.assertTrue(__unit__.is_internal('_foo'))
+        self.assertTrue(__unit__.is_internal('_Bar'))
+        self.assertTrue(__unit__.is_internal('_foo_bar'))
+        self.assertTrue(__unit__.is_internal('_FooBar'))
+
+    def test_string__magic_identifiers(self):
+        self.assertFalse(__unit__.is_internal('__foo__'))
+        self.assertFalse(__unit__.is_internal('__Bar__'))
+        self.assertFalse(__unit__.is_internal('__foo_bar__'))
+        self.assertFalse(__unit__.is_internal('__FooBar__'))
+
+    def test_method__public(self):
+        class Class(object):
+            def foo(self):
+                pass
+            def Bar(self):
+                pass
+            def foo_bar(self):
+                pass
+            def FooBar(self):
+                pass
+        self.assertFalse(__unit__.is_internal(Class.foo))
+        self.assertFalse(__unit__.is_internal(Class.Bar))
+        self.assertFalse(__unit__.is_internal(Class.foo_bar))
+        self.assertFalse(__unit__.is_internal(Class.FooBar))
+
+    def test_method__internal(self):
+        class Class(object):
+            def _foo(self):
+                pass
+            def _Bar(self):
+                pass
+            def _foo_bar(self):
+                pass
+            def _FooBar(self):
+                pass
+        self.assertTrue(__unit__.is_internal(Class._foo))
+        self.assertTrue(__unit__.is_internal(Class._Bar))
+        self.assertTrue(__unit__.is_internal(Class._foo_bar))
+        self.assertTrue(__unit__.is_internal(Class._FooBar))
+
+    def test_method__magic(self):
+        class Class(object):
+            def __foo__(self):
+                pass
+            def __Bar__(self):
+                pass
+            def __foo_bar__(self):
+                pass
+            def __FooBar__(self):
+                pass
+        self.assertFalse(__unit__.is_internal(Class.__foo__))
+        self.assertFalse(__unit__.is_internal(Class.__Bar__))
+        self.assertFalse(__unit__.is_internal(Class.__foo_bar__))
+        self.assertFalse(__unit__.is_internal(Class.__FooBar__))
+
+
+class IsMagic(TestCase):
+    pass

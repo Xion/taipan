@@ -3,7 +3,7 @@ Object-oriented programming utilities.
 """
 import inspect
 
-from taipan._compat import IS_PY3
+from taipan._compat import IS_PY26, IS_PY3
 from taipan.functional import ensure_callable
 from taipan.strings import is_string
 
@@ -116,6 +116,8 @@ class ObjectMetaclass(type):
         own_methods = ((name, member) for name, member in dict_.items()
                        if is_method(member))
         for name, method in own_methods:
+            if IS_PY26 and isinstance(method, NonInstanceMethod):
+                continue  # see TODO in :func:`override`
             shadows_base = any(hasattr(base, name) for base in super_mro)
             if meta._is_override(method):
                 if not shadows_base:
@@ -198,7 +200,12 @@ def override(method):
     # non-instance methods do not allow setting attributes on them,
     # so we mark the underlying raw functions instead
     if isinstance(method, NonInstanceMethod):
-        # XXX: fix for Python 2.6, it doesn't have ``__func__``
+        # TODO(xion): support @override on non-instance methods in Python 2.6
+        # by introducing custom subclasses of classmethod and staticmethod
+        # where we would store the __is_override flag
+        if IS_PY26:
+            raise NotImplementedError("@override on non-instance methods "
+                                      "is not supported in Python 2.6")
         method.__func__.__is_override = True
     else:
         method.__is_override = True

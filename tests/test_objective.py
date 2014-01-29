@@ -5,9 +5,9 @@ from contextlib import contextmanager
 import inspect
 import re
 
-from taipan._compat import IS_PY3
+from taipan._compat import IS_PY26, IS_PY3
 from taipan.collections.lists import head, tail
-from taipan.testing import TestCase
+from taipan.testing import TestCase, skipIf
 
 import taipan.objective as __unit__
 
@@ -469,7 +469,41 @@ class Final(TestCase):
         self.assertIn(base.__name__, msg)
 
 
-class Override(TestCase):
+class _Override(TestCase):
+
+    def _create_regular_class(self):
+        return self._create_class(base=object)
+
+    def _create_objective_class(self):
+        return self._create_class(base=__unit__.Object)
+
+    def _create_class(self, base):
+        class Class(base):
+            def florb(self):
+                pass
+            @classmethod
+            def class_florb(cls):
+                pass
+            @staticmethod
+            def static_florb():
+                pass
+
+        return Class
+
+    @contextmanager
+    def _assertRaisesUnnecessaryOverrideException(self):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+        self.assertIn("unnecessary", str(r.exception))
+
+    @contextmanager
+    def _assertRaisesMissingOverrideException(self):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+        self.assertIn("must be marked", str(r.exception))
+
+
+class Override_Basics(_Override):
 
     def test_none(self):
         with self.assertRaises(TypeError):
@@ -490,6 +524,9 @@ class Override(TestCase):
             @__unit__.override
             def foo():
                 pass
+
+
+class Override_InstanceMethods(_Override):
 
     def test_instance_method__unnecessary(self):
         with self._assertRaisesUnnecessaryOverrideException():
@@ -532,6 +569,10 @@ class Override(TestCase):
             @__unit__.override
             def florb(self):
                 pass
+
+
+@skipIf(IS_PY26, "requires Python 2.7+")
+class Override_ClassMethods(_Override):
 
     def test_class_method__unnecessary(self):
         with self._assertRaisesUnnecessaryOverrideException():
@@ -589,6 +630,10 @@ class Override(TestCase):
                     pass
         self.assertIn("@classmethod", str(r.exception))
 
+
+@skipIf(IS_PY26, "requires Python 2.7+")
+class Override_StaticMethods(_Override):
+
     def test_static_method__unnecessary(self):
         with self._assertRaisesUnnecessaryOverrideException():
             class Baz(__unit__.Object):
@@ -632,36 +677,3 @@ class Override(TestCase):
             @staticmethod
             def static_florb():
                 pass
-
-    # Utility functions
-
-    def _create_regular_class(self):
-        return self._create_class(base=object)
-
-    def _create_objective_class(self):
-        return self._create_class(base=__unit__.Object)
-
-    def _create_class(self, base):
-        class Class(base):
-            def florb(self):
-                pass
-            @classmethod
-            def class_florb(cls):
-                pass
-            @staticmethod
-            def static_florb():
-                pass
-
-        return Class
-
-    @contextmanager
-    def _assertRaisesUnnecessaryOverrideException(self):
-        with self.assertRaises(__unit__.ClassError) as r:
-            yield r
-        self.assertIn("unnecessary", str(r.exception))
-
-    @contextmanager
-    def _assertRaisesMissingOverrideException(self):
-        with self.assertRaises(__unit__.ClassError) as r:
-            yield r
-        self.assertIn("must be marked", str(r.exception))

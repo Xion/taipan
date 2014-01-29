@@ -140,13 +140,16 @@ class ObjectMetaclass(type):
         return getattr(func, '__is_override', False)
 
 
-class Object(object):
-    """Universal base class for objects.
+# We can't use a regular ``class`` block to define :class:`Object`
+# because syntax for metaclasses differ between Python 2.x and 3.x.
+Object = ObjectMetaclass('Object', (object,), {
+    '__doc__': """
+    Universal base class for objects.
 
     Inheriting from this class rather than the standard :class:`object`
     will grant access to additional object-oriented features.
-    """
-    __metaclass__ = ObjectMetaclass
+    """,
+})
 
 
 class ClassError(Exception):
@@ -195,6 +198,7 @@ def override(method):
     # non-instance methods do not allow setting attributes on them,
     # so we mark the underlying raw functions instead
     if isinstance(method, NonInstanceMethod):
+        # XXX: fix for Python 2.6, it doesn't have ``__func__``
         method.__func__.__is_override = True
     else:
         method.__is_override = True

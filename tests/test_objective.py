@@ -399,6 +399,11 @@ class IsMagic(TestCase):
 
 class Object(TestCase):
 
+    def test_definition(self):
+        # make sure unusual definition of ``Object`` class
+        # still has necessary members intact
+        self.assertGreater(len(__unit__.Object.__doc__), 0)
+
     def test_empty_class(self):
         class Foo(__unit__.Object):
             pass

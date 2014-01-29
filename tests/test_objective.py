@@ -414,3 +414,68 @@ class IsMagic(TestCase):
         self.assertTrue(__unit__.is_magic(Class.__Bar__))
         self.assertTrue(__unit__.is_magic(Class.__foo_bar__))
         self.assertTrue(__unit__.is_magic(Class.__FooBar__))
+
+
+# Universal base class
+
+class ObjectBaseClass(TestCase):
+    """Test case for ``Object`` base class and, by extension,
+    for its ``ObjectMetaclass``.
+    """
+    def test_empty_class(self):
+        class Foo(__unit__.Object):
+            pass
+        self.assertIsInstance(Foo, __unit__.ObjectMetaclass)
+
+
+class Final(TestCase):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.final(None)
+
+    def test_function(self):
+        with self.assertRaises(TypeError):
+            @__unit__.final
+            def foo():
+                pass
+
+    def test_class__incompatible(self):
+        with self.assertRaises(ValueError):
+            @__unit__.final
+            class Foo(object):
+                pass
+
+    def test_class__compatible(self):
+        self._create_final_class()
+
+    def test_class__inherit_from_final__single_inheritance(self):
+        Foo = self._create_final_class()
+
+        with self.assertRaises(__unit__.ClassError) as r:
+            class Bar(Foo):
+                pass
+        self._assertFinalInheritanceException(r.exception, Foo)
+
+    def test_class_inherit_from_final__multiple_inheritance(self):
+        Final = self._create_final_class()
+        class Foo(object):
+            pass
+
+        with self.assertRaises(__unit__.ClassError) as r:
+            class Bar(Foo, Final):
+                pass
+        self._assertFinalInheritanceException(r.exception, Final)
+
+    # Utility functions
+
+    def _create_final_class(self):
+        @__unit__.final
+        class Foo(__unit__.Object):
+            pass
+        return Foo
+
+    def _assertFinalInheritanceException(self, exception, class_):
+        msg = str(exception)
+        self.assertIn("cannot inherit", msg)
+        self.assertIn(class_.__name__, msg)

@@ -12,7 +12,7 @@ __all__ = [
     'is_method', 'ensure_method', 'get_methods',
     'is_internal', 'is_magic',
     'Object', 'ObjectMetaclass', 'ClassError',
-    'override',
+    'final', 'override',
 ]
 
 
@@ -93,17 +93,23 @@ class ObjectMetaclass(type):
         '__instancehook__', '__subclasshook__',
     ])
     if IS_PY3:
-        OVERRIDE_EXEMPTIONS.add('__unicode__')
-    else:
         OVERRIDE_EXEMPTIONS.update([
             '__eq__', '__ne__',
             '__ge__', '__gt__', '__le__', '__lt__',
         ])
+    else:
+        OVERRIDE_EXEMPTIONS.add('__unicode__')
 
     def __new__(meta, name, bases, dict_):
         """Creates a new class using this metaclass.
         Usually this means the class is inheriting from :class:`Object`.
         """
+        # prevent class creation if any of its base classes is final
+        for base in bases:
+            if getattr(base, '__is_final', False):
+                raise ClassError(
+                    "cannot inherit from @final class %s" % (base.__name__,))
+
         class_ = type.__new__(meta, name, bases, dict_)
 
         # check for presence of ``@override`` on appropriate methods
@@ -134,6 +140,19 @@ class ClassError(Exception):
     """Exception raised when the class definition of :class:`Object` subclass
     is found to be incorrect.
     """
+
+
+def final(class_):
+    """Mark a class as _final_, forbidding any more class from
+    inheriting from it (subclassing it).
+    """
+    if not inspect.isclass(class_):
+        raise TypeError("@final can only be applied to classes")
+    if not isinstance(class_, ObjectMetaclass):
+        raise ValueError("@final can only be applied to subclasses of Object")
+
+    class_.__is_final = True
+    return class_
 
 
 def override(method):

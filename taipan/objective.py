@@ -9,7 +9,7 @@ from taipan.strings import is_string
 
 
 __all__ = [
-    'is_method', 'ensure_method', 'get_methods',
+    'NonInstanceMethod', 'is_method', 'ensure_method', 'get_methods',
     'is_internal', 'is_magic',
     'Object', 'ObjectMetaclass', 'ClassError',
     'final', 'override',
@@ -18,25 +18,24 @@ __all__ = [
 
 # Method-related functions
 
+#: Tuple of non-instance method types (class method & static method).
+NonInstanceMethod = (classmethod, staticmethod)
+
+
 def is_method(arg):
-    """Checks whether given object is a class or instance method.
-
-    .. note::
-
-        Static methods are equivalent to namespaced functions and as such,
-        they are _not_ detected by this function.
-    """
+    """Checks whether given object is a method."""
     if inspect.ismethod(arg):
         return True
+    if isinstance(arg, NonInstanceMethod):
+        return True
 
-    # Unlike in Python 2, in Python 3 there is no distinction between
-    # unbound instance methods and regular functions.
+    # Unfortunately, there is no disctinction between instance methods
+    # that are yet to become part of a class, and regular functions.
     # We attempt to evade this little gray zone by relying on extremely strong
     # convention (which is nevertheless _not_ enforced by the intepreter)
     # that first argument of an instance method must be always named ``self``.
-    if IS_PY3 and inspect.isfunction(arg):
-        argnames, _, _, _ = inspect.getargspec(arg)
-        return len(argnames) > 0 and argnames[0] == 'self'
+    if inspect.isfunction(arg):
+        return _get_first_arg_name(arg) == 'self'
 
     return False
 
@@ -114,17 +113,31 @@ class ObjectMetaclass(type):
 
         # check for presence of ``@override`` on appropriate methods
         super_mro = class_.__mro__[1:]
-        for name, method in get_methods(class_):
-            if name in meta.OVERRIDE_EXEMPTIONS:
-                continue
-            if any(hasattr(base, name) for base in super_mro):
-                is_override = getattr(method, '__is_override', False)
-                if not is_override:
+        own_methods = ((name, member) for name, member in dict_.items()
+                       if is_method(member))
+        for name, method in own_methods:
+            shadows_base = any(hasattr(base, name) for base in super_mro)
+            if meta._is_override(method):
+                if not shadows_base:
+                    raise ClassError("unnecessary @override on %s.%s" % (
+                        class_.__name__, name))
+            else:
+                if shadows_base and name not in meta.OVERRIDE_EXEMPTIONS:
                     raise ClassError(
                         "overridden method %s.%s must be marked with @override"
                         % (class_.__name__, name))
 
         return class_
+
+    @classmethod
+    def _is_override(meta, method):
+        """Checks whether given class or instance method has been marked
+        with the ``@override`` decorator.
+        """
+        func = method.__func__ \
+            if isinstance(method, NonInstanceMethod) \
+            else method
+        return getattr(func, '__is_override', False)
 
 
 class Object(object):
@@ -156,9 +169,36 @@ def final(class_):
 
 
 def override(method):
-    """Mark a method as overriding a corresponding method from superclass."""
-    ensure_callable(method)
-    method.__is_override = True
+    """Mark a method as overriding a corresponding method from superclass.
+
+    .. note::
+
+        When overriding a :class:`classmethod`, remember to place ``@override``
+        above the ``@classmethod`` decorator::
+
+            class Foo(Bar):
+                @override
+                @classmethod
+                def florb(cls):
+                    pass
+    """
+    try:
+        ensure_method(method)
+    except TypeError:
+        # in case user mixed up the order of ``@override`` and ``@classmethod``,
+        # we can detect the issue and provide a targeted exception message
+        if inspect.isfunction(method) and _get_first_arg_name(method) == 'cls':
+            raise TypeError("@override must be applied above @classmethod")
+        else:
+            raise
+
+    # non-instance methods do not allow setting attributes on them,
+    # so we mark the underlying raw functions instead
+    if isinstance(method, NonInstanceMethod):
+        method.__func__.__is_override = True
+    else:
+        method.__is_override = True
+
     return method
 
 
@@ -172,3 +212,8 @@ def _get_member_name(member):
     # class or instance member is actually a method
     ensure_method(member)
     return member.__name__
+
+
+def _get_first_arg_name(function):
+    argnames, _, _, _ = inspect.getargspec(function)
+    return argnames[0] if argnames else None

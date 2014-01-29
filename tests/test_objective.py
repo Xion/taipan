@@ -1,12 +1,13 @@
 """
 Tests for the .objective module.
 """
+from contextlib import contextmanager
 import inspect
 import re
 
 from taipan._compat import IS_PY3
 from taipan.collections.lists import head, tail
-from taipan.testing import TestCase, skipIf, skipUnless
+from taipan.testing import TestCase
 
 import taipan.objective as __unit__
 
@@ -91,19 +92,7 @@ class IsMethod(TestCase):
 
         self.assertTrue(__unit__.is_method(Foo().foo))
 
-    @skipIf(IS_PY3, "requires Python 2.x")
-    def test_function_attached_to_object__py2(self):
-        class Foo(object):
-            pass
-        def foo(self):
-            pass
-
-        obj = Foo()
-        obj.foo = foo
-        self.assertFalse(__unit__.is_method(obj.foo))
-
-    @skipUnless(IS_PY3, "requires Python 3.x")
-    def test_function_attached_to_object__py3(self):
+    def test_function_attached_to_object(self):
         class Foo(object):
             pass
         def foo(self):
@@ -197,20 +186,7 @@ class EnsureMethod(TestCase):
 
         __unit__.ensure_method(Foo().foo)
 
-    @skipIf(IS_PY3, "requires Python 2.x")
-    def test_function_attached_to_object__py2(self):
-        class Foo(object):
-            pass
-        def foo(self):
-            pass
-
-        obj = Foo()
-        obj.foo = foo
-        with self.assertRaises(TypeError):
-            __unit__.ensure_method(obj.foo)
-
-    @skipUnless(IS_PY3, "requires Python 3.x")
-    def test_function_attached_to_object__py3(self):
+    def test_function_attached_to_object(self):
         class Foo(object):
             pass
         def foo(self):
@@ -418,10 +394,11 @@ class IsMagic(TestCase):
 
 # Universal base class
 
-class ObjectBaseClass(TestCase):
-    """Test case for ``Object`` base class and, by extension,
-    for its ``ObjectMetaclass``.
-    """
+# TODO(xion): test how ObjectMetaclass plays with possible other metaclasses
+# in the same inheritance chain
+
+class Object(TestCase):
+
     def test_empty_class(self):
         class Foo(__unit__.Object):
             pass
@@ -433,6 +410,10 @@ class Final(TestCase):
     def test_none(self):
         with self.assertRaises(TypeError):
             __unit__.final(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.final(object())
 
     def test_function(self):
         with self.assertRaises(TypeError):
@@ -452,20 +433,18 @@ class Final(TestCase):
     def test_class__inherit_from_final__single_inheritance(self):
         Foo = self._create_final_class()
 
-        with self.assertRaises(__unit__.ClassError) as r:
+        with self._assertRaisesFinalInheritanceException(base=Foo):
             class Bar(Foo):
                 pass
-        self._assertFinalInheritanceException(r.exception, Foo)
 
     def test_class_inherit_from_final__multiple_inheritance(self):
-        Final = self._create_final_class()
+        FinalBase = self._create_final_class()
         class Foo(object):
             pass
 
-        with self.assertRaises(__unit__.ClassError) as r:
-            class Bar(Foo, Final):
+        with self._assertRaisesFinalInheritanceException(base=FinalBase):
+            class Bar(Foo, FinalBase):
                 pass
-        self._assertFinalInheritanceException(r.exception, Final)
 
     # Utility functions
 
@@ -475,7 +454,209 @@ class Final(TestCase):
             pass
         return Foo
 
-    def _assertFinalInheritanceException(self, exception, class_):
-        msg = str(exception)
+    @contextmanager
+    def _assertRaisesFinalInheritanceException(self, base):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+
+        msg = str(r.exception)
         self.assertIn("cannot inherit", msg)
-        self.assertIn(class_.__name__, msg)
+        self.assertIn(base.__name__, msg)
+
+
+class Override(TestCase):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.override(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.override(object())
+
+    def test_class(self):
+        with self.assertRaises(TypeError):
+            @__unit__.override
+            class Foo(object):
+                pass
+
+    def test_regular_function(self):
+        with self.assertRaises(TypeError):
+            @__unit__.override
+            def foo():
+                pass
+
+    def test_instance_method__unnecessary(self):
+        with self._assertRaisesUnnecessaryOverrideException():
+            class Foo(__unit__.Object):
+                @__unit__.override
+                def foo(self):
+                    pass
+
+    def test_instance_method__missing(self):
+        Base = self._create_objective_class()
+
+        with self._assertRaisesMissingOverrideException():
+            class Bar(Base):
+                def florb(self):
+                    pass
+
+    def test_instance_method__missing__hiding_method_from_regular_base(self):
+        Base = self._create_regular_class()
+
+        # even though the improperly overridden method comes from
+        # non-Object-inheriting base class, the presence of
+        # other Object-inherting base class should ellicit the error
+        with self._assertRaisesMissingOverrideException():
+            class Bar(Base, __unit__.Object):
+                def florb(self):
+                    pass
+
+    def test_instance_method__present(self):
+        Base = self._create_objective_class()
+
+        class Bar(Base):
+            @__unit__.override
+            def florb(self):
+                pass
+
+    def test_instance_method__present__hiding_method_from_regular_base(self):
+        Base = self._create_regular_class()
+
+        class Bar(Base, __unit__.Object):
+            @__unit__.override
+            def florb(self):
+                pass
+
+    def test_class_method__unnecessary(self):
+        with self._assertRaisesUnnecessaryOverrideException():
+            class Foo(__unit__.Object):
+                @__unit__.override
+                @classmethod
+                def class_florb(cls):
+                    pass
+
+    def test_class_method__missing(self):
+        Base = self._create_objective_class()
+
+        with self._assertRaisesMissingOverrideException():
+            class Foo(Base):
+                @classmethod
+                def class_florb(cls):
+                    pass
+
+    def test_class_method__missing__hiding_method_from_regular_base(self):
+        Base = self._create_regular_class()
+
+        # see comment in analogous test case for instance methods
+        with self._assertRaisesMissingOverrideException():
+            class Foo(Base, __unit__.Object):
+                @classmethod
+                def class_florb(cls):
+                    pass
+
+    def test_class_method__present(self):
+        Base = self._create_objective_class()
+
+        class Foo(Base):
+            @__unit__.override
+            @classmethod
+            def class_florb(cls):
+                pass
+
+    def test_class_method__present__hiding_method_from_regular_base(self):
+        Base = self._create_regular_class()
+
+        class Foo(Base, __unit__.Object):
+            @__unit__.override
+            @classmethod
+            def class_florb(cls):
+                pass
+
+    def test_class_method__present__but_below_classmethod_decorator(self):
+        Base = self._create_objective_class()
+
+        with self.assertRaises(TypeError) as r:
+            class Foo(Base):
+                @classmethod
+                @__unit__.override
+                def class_florb(cls):
+                    pass
+        self.assertIn("@classmethod", str(r.exception))
+
+    def test_static_method__unnecessary(self):
+        with self._assertRaisesUnnecessaryOverrideException():
+            class Baz(__unit__.Object):
+                @__unit__.override
+                @staticmethod
+                def static_florb():
+                    pass
+
+    def test_static_method__missing(self):
+        Base = self._create_objective_class()
+
+        with self._assertRaisesMissingOverrideException():
+            class Baz(Base):
+                @staticmethod
+                def static_florb():
+                    pass
+
+    def test_static_method__missing__hiding_method_from_regular_base(self):
+        Base = self._create_regular_class()
+
+        with self._assertRaisesMissingOverrideException():
+            class Baz(Base, __unit__.Object):
+                @staticmethod
+                def static_florb():
+                    pass
+
+    def test_static_method__present(self):
+        Base = self._create_objective_class()
+
+        class Baz(Base):
+            @__unit__.override
+            @staticmethod
+            def static_florb():
+                pass
+
+    def test_static_method__present__hiding_method_from_regular_base(self):
+        Base = self._create_regular_class()
+
+        class Baz(Base, __unit__.Object):
+            @__unit__.override
+            @staticmethod
+            def static_florb():
+                pass
+
+    # Utility functions
+
+    def _create_regular_class(self):
+        return self._create_class(base=object)
+
+    def _create_objective_class(self):
+        return self._create_class(base=__unit__.Object)
+
+    def _create_class(self, base):
+        class Class(base):
+            def florb(self):
+                pass
+            @classmethod
+            def class_florb(cls):
+                pass
+            @staticmethod
+            def static_florb():
+                pass
+
+        return Class
+
+    @contextmanager
+    def _assertRaisesUnnecessaryOverrideException(self):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+        self.assertIn("unnecessary", str(r.exception))
+
+    @contextmanager
+    def _assertRaisesMissingOverrideException(self):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+        self.assertIn("must be marked", str(r.exception))

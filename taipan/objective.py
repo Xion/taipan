@@ -109,7 +109,7 @@ class ObjectMetaclass(type):
                 raise ClassError(
                     "cannot inherit from @final class %s" % (base.__name__,))
 
-        class_ = type.__new__(meta, name, bases, dict_)
+        class_ = super(ObjectMetaclass, meta).__new__(meta, name, bases, dict_)
 
         # check for presence of ``@override`` on appropriate methods
         super_mro = class_.__mro__[1:]

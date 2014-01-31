@@ -105,7 +105,7 @@ class ObjectMetaclass(type):
         """
         # prevent class creation if any of its base classes is final
         for base in bases:
-            if getattr(base, '__is_final', False):
+            if getattr(base, '__final__', False):
                 raise ClassError(
                     "cannot inherit from @final class %s" % (base.__name__,))
 
@@ -139,7 +139,7 @@ class ObjectMetaclass(type):
         func = method.__func__ \
             if isinstance(method, NonInstanceMethod) \
             else method
-        return getattr(func, '__is_override', False)
+        return getattr(func, '__override__', False)
 
 
 # We can't use a regular ``class`` block to define :class:`Object`
@@ -169,7 +169,7 @@ def final(class_):
     if not isinstance(class_, ObjectMetaclass):
         raise ValueError("@final can only be applied to subclasses of Object")
 
-    class_.__is_final = True
+    class_.__final__ = True
     return class_
 
 
@@ -202,13 +202,13 @@ def override(method):
     if isinstance(method, NonInstanceMethod):
         # TODO(xion): support @override on non-instance methods in Python 2.6
         # by introducing custom subclasses of classmethod and staticmethod
-        # where we would store the __is_override flag
+        # where we would store the __override__ flag
         if IS_PY26:
             raise NotImplementedError("@override on non-instance methods "
                                       "is not supported in Python 2.6")
-        method.__func__.__is_override = True
+        method.__func__.__override__ = True
     else:
-        method.__is_override = True
+        method.__override__ = True
 
     return method
 

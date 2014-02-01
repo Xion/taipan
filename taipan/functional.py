@@ -155,6 +155,33 @@ def key_func(*keys):
 item_func = key_func
 
 
+def dotcall(name, *args, **kwargs):
+    """Creates a function that accepts an object and invokes a member function
+    (a "method") on it. The object can be a class instance, a class, a type,
+    or even a module.
+
+    :param name: Name of member function to invoke
+
+    The rest of positional and keyword arguments will be passed
+    to the member function as its parameters.
+
+    :return: Unary function invoking member function ``name`` on its argument
+    """
+    ensure_string(name)
+
+    get_member_func = attr_func(name)
+
+    def call(obj):
+        member_func = ensure_callable(get_member_func(obj))
+        return member_func(*args, **kwargs)
+
+    # through :func:`attr_func`, we may support ``name`` containing dots,
+    # but we need to turn it into valid Python identifier for function's name
+    call.__name__ = name.replace('.', '__')
+
+    return call
+
+
 # General combinators
 
 curry = functools.partial

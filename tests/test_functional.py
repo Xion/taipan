@@ -323,6 +323,74 @@ class KeyFunc(TestCase):
             func(self.DOUBLY_NESTED_DICT)
 
 
+class Dotcall(TestCase):
+    INSTANCE_RETURN_VALUE = 42
+    CLASS_RETURN_VALUE = 13
+
+    ARGUMENT = 'foobar'
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.dotcall()
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.dotcall(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.dotcall(object())
+
+    def test_string__no_args__class_instance(self):
+        call = __unit__.dotcall('foo')
+        instance = self._create_class_instance()
+        self.assertEquals(Dotcall.INSTANCE_RETURN_VALUE, call(instance))
+
+    def test_string__no_args__class(self):
+        call = __unit__.dotcall('bar')
+        class_ = self._create_class()
+        self.assertEquals(Dotcall.CLASS_RETURN_VALUE, call(class_))
+
+    def test_string__no_args__module(self):
+        call = __unit__.dotcall(__unit__.true.__name__)
+        self.assertResultsEqual(__unit__.true(), call(__unit__))
+
+    def test_string__with_args__class_instance(self):
+        call = __unit__.dotcall('baz', self.ARGUMENT)
+        instance = self._create_class_instance()
+        self.assertEquals(self.ARGUMENT, call(instance))
+
+    def test_string__with_args__class(self):
+        call = __unit__.dotcall('qux', self.ARGUMENT)
+        class_ = self._create_class()
+        self.assertEquals(self.ARGUMENT, call(class_))
+
+    def test_string__with_args__module(self):
+        call = __unit__.dotcall(__unit__.const.__name__, self.ARGUMENT)
+        self.assertResultsEqual(__unit__.const(self.ARGUMENT), call(__unit__))
+
+    # Utility function
+
+    def _create_class(self):
+        class Class(object):
+            def foo(self):
+                return Dotcall.INSTANCE_RETURN_VALUE
+            @classmethod
+            def bar(cls):
+                return Dotcall.CLASS_RETURN_VALUE
+            def baz(self, arg):
+                return arg
+            @classmethod
+            def qux(cls, arg):
+                return arg
+
+        return Class
+
+    def _create_class_instance(self):
+        Class = self._create_class()
+        return Class()
+
+
 # General combinators
 
 class _Combinator(TestCase):

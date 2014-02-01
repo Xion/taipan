@@ -190,6 +190,13 @@ class TestCase(_BaseTestCase):
                 msg, "result %r of function %r differs from argument %r" % (
                     result, function, argument))
 
+    def assertResultsEqual(self, func1, func2, msg=None):
+        """Assert that both functions evaluate to the same result."""
+        self.__fail_unless_callable(func1)
+        self.__fail_unless_callable(func2)
+
+        self.assertEqual(func1(), func2(), msg=msg)
+
     # Utility functions
 
     def __fail(self, custom_msg, standard_msg):
@@ -198,6 +205,10 @@ class TestCase(_BaseTestCase):
     def __fail_unless_iterable(self, arg):
         if not is_iterable(arg):
             self.fail("%r is not an iterable" % (arg,))
+
+    def __fail_unless_callable(self, arg):
+        if not callable(arg):
+            self.fail("%r is not a callable" % (arg,))
 
 
 # Skip decorators

@@ -201,8 +201,8 @@ def override(method):
     # so we mark the underlying raw functions instead
     if isinstance(method, NonInstanceMethod):
         # TODO(xion): support @override on non-instance methods in Python 2.6
-        # by introducing custom subclasses of classmethod and staticmethod
-        # where we would store the __override__ flag
+        # by returning a special wrapper object around them, which would be
+        # subsequently unwrapped by ObjectMetaclass.__new__
         if IS_PY26:
             raise NotImplementedError("@override on non-instance methods "
                                       "is not supported in Python 2.6")

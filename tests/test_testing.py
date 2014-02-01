@@ -408,3 +408,32 @@ class AssertNoop(_Assertion):
     def test__function__effective(self):
         with self._assertFailure():
             self._TESTCASE.assertNoop(self.EFFECTIVE, self.ARGUMENT)
+
+
+class AssertResultsEqual(_Assertion):
+    CONSTANT = staticmethod(lambda: -42)
+
+    @staticmethod
+    def VARIABLE():
+        AssertResultsEqual.variable_result += 1
+        return AssertResultsEqual.variable_result
+    variable_result = 0
+
+    def test_none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(None, self.CONSTANT)
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(self.CONSTANT, None)
+
+    def test_non_callable(self):
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(object(), self.CONSTANT)
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(self.CONSTANT, object())
+
+    def test_constant_functions(self):
+        self._TESTCASE.assertResultsEqual(self.CONSTANT, self.CONSTANT)
+
+    def test_variable_functions(self):
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(self.VARIABLE, self.VARIABLE)

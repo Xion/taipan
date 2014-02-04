@@ -1,5 +1,5 @@
 """
-Generator-related functions and classes.
+General purpose algorithms dealing with data structures.
 """
 from __future__ import absolute_import
 

@@ -1,15 +1,15 @@
 """
-Tests for .generators module.
+Tests for .algorithms module.
 """
 from taipan._compat import IS_PY3, izip, xrange
 from taipan.collections import is_iterable, is_sequence
 from taipan.collections.tuples import is_tuple
 from taipan.testing import TestCase
 
-import taipan.generators as __unit__
+import taipan.algorithms as __unit__
 
 
-class _GeneratorsTestCase(TestCase):
+class _AlgorithmTestCase(TestCase):
 
     def _assertGenerator(self, obj):
         # objects returned by itertools functions are not "generators"
@@ -25,7 +25,7 @@ class _GeneratorsTestCase(TestCase):
             self.fail(msg or "expected empty iterable was found not to be so")
 
 
-class Batch(_GeneratorsTestCase):
+class Batch(_AlgorithmTestCase):
     N = 3
 
     WITHOUT_LEFTOVERS = [1, 2, 3, 4, 5, 6]
@@ -114,7 +114,7 @@ class Batch(_GeneratorsTestCase):
         self.assertTrue(is_tuple(obj), msg="%r is not a tuple" % (obj,))
 
 
-class Cycle(_GeneratorsTestCase):
+class Cycle(_AlgorithmTestCase):
     LENGTH = 10
     ITERABLE = list(xrange(LENGTH))
     CYCLES_COUNT = 64
@@ -164,7 +164,7 @@ class Cycle(_GeneratorsTestCase):
             next(cycled)
 
 
-class Intertwine(_GeneratorsTestCase):
+class Intertwine(_AlgorithmTestCase):
     FIRST = [1, 2, 3]
     SECOND = ['a', 'b', 'c']
     FIRST_AND_SECOND = [1, 'a', 2, 'b', 3, 'c']
@@ -209,7 +209,7 @@ class Intertwine(_GeneratorsTestCase):
             __unit__.intertwine(self.LONGER, self.SHORTER))
 
 
-class Iterate(_GeneratorsTestCase):
+class Iterate(_AlgorithmTestCase):
     MAX = 10
     FEW = int(MAX / 2)
 
@@ -274,7 +274,7 @@ class Iterate(_GeneratorsTestCase):
             self.assertEquals(i * self.FEW, counter.current_count)
 
 
-class Pad(_GeneratorsTestCase):
+class Pad(_AlgorithmTestCase):
     LENGTH = 10
     ITERABLE = list(xrange(LENGTH))
 
@@ -317,7 +317,7 @@ class Pad(_GeneratorsTestCase):
                 self.assertIs(self.PADDING, elem)
 
 
-class Unique(_GeneratorsTestCase):
+class Unique(_AlgorithmTestCase):
     NORMAL_WITHOUT_DUPLICATES = [1, 2, 3, 4, 5]
     NORMAL_WITH_DUPLICATES = [1, 2, 2, 3, 4, 5, 1]
 

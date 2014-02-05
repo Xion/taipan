@@ -1,7 +1,8 @@
 """
 Functional programming utilities.
 """
-from taipan.collections import ensure_sequence
+from taipan.collections import ensure_iterable, ensure_mapping, ensure_sequence
+from taipan.strings import ensure_string
 
 
 def ensure_callable(arg):
@@ -15,7 +16,7 @@ def ensure_callable(arg):
 
 
 def ensure_argcount(args, min_=None, max_=None):
-    """Checks whether iterable of positional arguments satisfies condictions.
+    """Checks whether iterable of positional arguments satisfies conditions.
 
     :param args: Iterable of positional arguments, received via ``*args``
     :param min_: Minimum number of arguments
@@ -43,6 +44,44 @@ def ensure_argcount(args, min_=None, max_=None):
             "expected at most %s arguments, got %s" % (max_, len(args)))
 
     return args
+
+
+def ensure_keyword_args(kwargs, mandatory=(), optional=()):
+    """Checks whether dictionary of keyword arguments satisfies conditions.
+
+    :param kwargs: Dictionary of keyword arguments, received via ``*kwargs``
+    :param mandatory: Iterable of mandatory argument names
+    :param optional: Iterable of optional argument names
+
+    :return: ``kwargs`` if the conditions are met:
+             all ``mandatory`` arguments are present, and besides that
+             no arguments outside of ``optional`` ones are.
+
+    :raise TypeError: When conditions are not met
+    """
+    ensure_mapping(kwargs)
+    mandatory = list(map(ensure_string, ensure_iterable(mandatory)))
+    optional = list(map(ensure_string, ensure_iterable(optional)))
+    if not (mandatory or optional):
+        raise ValueError(
+            "mandatory and/or optional argument names must be provided")
+
+    names = set(kwargs)
+    for name in mandatory:
+        try:
+            names.remove(name)
+        except KeyError:
+            raise TypeError(
+                "no value for mandatory keyword argument '%s'" % name)
+
+    excess = names - set(optional)
+    if excess:
+        if len(excess) == 1:
+            raise TypeError("unexpected keyword argument '%s'" % excess.pop())
+        else:
+            raise TypeError("unexpected keyword arguments: %s" % tuple(excess))
+
+    return kwargs
 
 
 from .combinators import *

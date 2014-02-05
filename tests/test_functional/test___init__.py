@@ -1,6 +1,8 @@
 """
 Tests for the .functional.__init__ module.
 """
+from contextlib import contextmanager
+
 from taipan.testing import TestCase
 
 import taipan.functional as __unit__
@@ -31,7 +33,7 @@ class EnsureCallable(TestCase):
         __unit__.ensure_callable(str.__add__)
 
     def test_lambda(self):
-        func = lambda : self.fail("lambda must not be acually called")
+        func = lambda : self.fail("lambda must not be actually called")
         __unit__.ensure_callable(func)
 
     def test_function(self):
@@ -105,3 +107,98 @@ class EnsureArgcount(TestCase):
     def test_args__exact(self):
         __unit__.ensure_argcount(self.FEW_ARGS, min_=self.FEW, max_=self.FEW)
         __unit__.ensure_argcount(self.MANY_ARGS, min_=self.MANY, max_=self.MANY)
+
+
+class EnsureKeywordArgs(TestCase):
+    MANDATORY = ('foo',)
+    OPTIONAL = ('bar',)
+
+    JUST_MANDATORY = {'foo': 1}
+    JUST_OPTIONAL = {'bar': 2}
+    ALL_KWARGS = {'foo': 1, 'bar': 2}
+
+    def test_no_specs(self):
+        with self.assertRaises(ValueError):
+            __unit__.ensure_keyword_args(self.ALL_KWARGS)
+
+    def test_kwargs__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_keyword_args(None)
+
+    def test_kwargs__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_keyword_args(object())
+
+    def test_kwargs__empty(self):
+        __unit__.ensure_keyword_args({}, optional=self.OPTIONAL)
+        with self._assertMissingKwargsException(self.MANDATORY):
+            __unit__.ensure_keyword_args({}, mandatory=self.MANDATORY)
+        with self._assertMissingKwargsException(self.MANDATORY):
+            __unit__.ensure_keyword_args(
+                {}, mandatory=self.MANDATORY, optional=self.OPTIONAL)
+
+    def test_kwargs__just_mandatory(self):
+        __unit__.ensure_keyword_args(
+            self.JUST_MANDATORY, mandatory=self.MANDATORY)
+        with self._assertUnexpectedKwargsException(self.MANDATORY):
+            __unit__.ensure_keyword_args(
+                self.JUST_MANDATORY, optional=self.OPTIONAL)
+        __unit__.ensure_keyword_args(self.JUST_MANDATORY,
+                                     mandatory=self.MANDATORY,
+                                     optional=self.OPTIONAL)
+
+    def test_kwargs__just_optional(self):
+        with self._assertMissingKwargsException(self.MANDATORY):
+            __unit__.ensure_keyword_args(
+                self.JUST_OPTIONAL, mandatory=self.MANDATORY)
+        __unit__.ensure_keyword_args(
+            self.JUST_OPTIONAL, optional=self.OPTIONAL)
+        with self._assertMissingKwargsException(self.MANDATORY):
+            __unit__.ensure_keyword_args(self.JUST_OPTIONAL,
+                                         mandatory=self.MANDATORY,
+                                         optional=self.OPTIONAL)
+
+    def test_kwargs__mandatory_and_optional(self):
+        with self._assertUnexpectedKwargsException(self.OPTIONAL):
+            __unit__.ensure_keyword_args(
+                self.ALL_KWARGS, mandatory=self.MANDATORY)
+        __unit__.ensure_keyword_args(
+            self.ALL_KWARGS, mandatory=self.MANDATORY, optional=self.OPTIONAL)
+
+    def test_mandatory__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_keyword_args(self.ALL_KWARGS, mandatory=None)
+
+    def test_mandatory__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_keyword_args(self.ALL_KWARGS, mandatory=object())
+
+    def test_optional__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_keyword_args(self.ALL_KWARGS, optional=None)
+
+    def test_optional__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_keyword_args(self.ALL_KWARGS, optional=object())
+
+    # Utility functions
+
+    @contextmanager
+    def _assertMissingKwargsException(self, names):
+        with self.assertRaises(TypeError) as r:
+            yield r
+
+        msg = str(r.exception)
+        self.assertIn("mandatory", msg)
+        for name in names:
+            self.assertIn("'%s'" % name, msg)
+
+    @contextmanager
+    def _assertUnexpectedKwargsException(self, names):
+        with self.assertRaises(TypeError) as r:
+            yield r
+
+        msg = str(r.exception)
+        self.assertIn("unexpected", msg)
+        for name in names:
+            self.assertIn("'%s'" % name, msg)

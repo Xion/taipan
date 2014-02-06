@@ -141,6 +141,8 @@ class AttrFunc(TestCase):
     SINGLE_NESTED_OBJECT = CLASS(foo=1, bar='baz')
     DOUBLY_NESTED_OBJECT = CLASS(foo=CLASS(foo=1, bar=2), bar='a')
 
+    DEFAULT = 42
+
     def test_no_args(self):
         with self.assertRaises(TypeError):
             __unit__.attr_func()
@@ -177,10 +179,33 @@ class AttrFunc(TestCase):
         with self.assertRaises(AttributeError):
             func(self.DOUBLY_NESTED_OBJECT)
 
+    def test_single_attr__good__with_default(self):
+        func = __unit__.attr_func('foo', default=self.DEFAULT)
+        self.assertEquals(
+            self.SINGLE_NESTED_OBJECT.foo, func(self.SINGLE_NESTED_OBJECT))
+        self.assertEquals(
+            self.DOUBLY_NESTED_OBJECT.foo, func(self.DOUBLY_NESTED_OBJECT))
+
+    def test_single_attr__bad__with_default(self):
+        func = __unit__.attr_func('doesnt_exist', default=self.DEFAULT)
+        self.assertEquals(self.DEFAULT, func(self.SINGLE_NESTED_OBJECT))
+        self.assertEquals(self.DEFAULT, func(self.DOUBLY_NESTED_OBJECT))
+
+    def test_two_atttrs__good__with_default(self):
+        func = __unit__.attr_func('foo', 'bar', default=self.DEFAULT)
+        self.assertEquals(
+            self.DOUBLY_NESTED_OBJECT.foo.bar, func(self.DOUBLY_NESTED_OBJECT))
+
+    def test_two_attrs__bad__with_default(self):
+        func = __unit__.attr_func('foo', 'doesnt_exist', default=self.DEFAULT)
+        self.assertEquals(self.DEFAULT, func(self.DOUBLY_NESTED_OBJECT))
+
 
 class KeyFunc(TestCase):
     SINGLY_NESTED_DICT = dict(foo=1, bar='baz')
     DOUBLY_NESTED_DICT = dict(foo=dict(foo=1, bar=2), bar='a')
+
+    DEFAULT = 42
 
     def test_no_args(self):
         with self.assertRaises(TypeError):
@@ -218,6 +243,28 @@ class KeyFunc(TestCase):
         func = __unit__.key_func('doesnt_exist', 'foo')
         with self.assertRaises(LookupError):
             func(self.DOUBLY_NESTED_DICT)
+
+    def test_single_key__good__with_default(self):
+        func = __unit__.key_func('foo', default=self.DEFAULT)
+        self.assertEquals(
+            self.SINGLY_NESTED_DICT['foo'], func(self.SINGLY_NESTED_DICT))
+        self.assertEquals(
+            self.DOUBLY_NESTED_DICT['foo'], func(self.DOUBLY_NESTED_DICT))
+
+    def test_single_key__bad__with_default(self):
+        func = __unit__.key_func('doesnt_exist', default=self.DEFAULT)
+        self.assertEquals(self.DEFAULT, func(self.SINGLY_NESTED_DICT))
+        self.assertEquals(self.DEFAULT, func(self.DOUBLY_NESTED_DICT))
+
+    def test_two_keys__good__with_default(self):
+        func = __unit__.key_func('foo', 'bar', default=self.DEFAULT)
+        self.assertEquals(
+            self.DOUBLY_NESTED_DICT['foo']['bar'],
+            func(self.DOUBLY_NESTED_DICT))
+
+    def test_two_keys__bad__with_default(self):
+        func = __unit__.key_func('foo', 'doesnt_exist', default=self.DEFAULT)
+        self.assertEquals(self.DEFAULT, func(self.DOUBLY_NESTED_DICT))
 
 
 class Dotcall(TestCase):

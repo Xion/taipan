@@ -3,7 +3,8 @@ Common functions and function "factories".
 """
 import operator
 
-from taipan.functional import ensure_argcount, ensure_callable
+from taipan.functional import (ensure_argcount, ensure_callable,
+                               ensure_keyword_args)
 from taipan.strings import ensure_string
 
 
@@ -62,7 +63,7 @@ def empty():
 
 # Unary functions
 
-def attr_func(*attrs):
+def attr_func(*attrs, **kwargs):
     """Creates an "attribute function" for given attribute name(s).
 
     Resulting function will retrieve attributes with given names, in order,
@@ -70,6 +71,9 @@ def attr_func(*attrs):
     For example, ``attr_func('a', 'b')(foo)`` yields the same as ``foo.a.b``
 
     :param attrs: Attribute names
+    :param default: Optional keyword argument specifying default value
+                    that will be returned when some attribute is not present
+
     :return: Unary attribute function
     """
     ensure_argcount(attrs, min_=1)
@@ -79,18 +83,33 @@ def attr_func(*attrs):
     # TODO(xion): support arguments containing dots, e.g.
     # attr_func('a.b') instead of attr_func('a', 'b')
 
-    if len(attrs) == 1:
-        return operator.attrgetter(attrs[0])
+    ensure_keyword_args(kwargs, optional=('default',))
 
-    def getattrs(obj):
-        for attr in attrs:
-            obj = getattr(obj, attr)
-        return obj
+    if 'default' in kwargs:
+        default = kwargs['default']
+        if len(attrs) == 1:
+            getattrs = lambda obj: getattr(obj, attrs[0], default)
+        else:
+            def getattrs(obj):
+                for attr in attrs:
+                    try:
+                        obj = getattr(obj, attr)
+                    except AttributeError:
+                        return default
+                return obj
+    else:
+        if len(attrs) == 1:
+            getattrs = operator.attrgetter(attrs[0])
+        else:
+            def getattrs(obj):
+                for attr in attrs:
+                    obj = getattr(obj, attr)
+                return obj
 
     return getattrs
 
 
-def key_func(*keys):
+def key_func(*keys, **kwargs):
     """Creates a "key function" based on given keys.
 
     Resulting function will perform lookup using specified keys, in order,
@@ -98,18 +117,33 @@ def key_func(*keys):
     For example, ``key_func('a', 'b')(foo)`` is equivalent to ``foo['a']['b']``.
 
     :param keys: Lookup keys
+    :param default: Optional keyword argument specifying default value
+                    that will be returned when some lookup key is not present
+
     :return: Unary key function
     """
     ensure_argcount(keys, min_=1)
     keys = list(map(ensure_string, keys))
 
-    if len(keys) == 1:
-        return operator.itemgetter(keys[0])
+    ensure_keyword_args(kwargs, optional=('default',))
 
-    def getitems(obj):
-        for item in keys:
-            obj = obj[item]
-        return obj
+    if 'default' in kwargs:
+        default = kwargs['default']
+        def getitems(obj):
+            for key in keys:
+                try:
+                    obj = obj[key]
+                except KeyError:
+                    return default
+            return obj
+    else:
+        if len(keys) == 1:
+            getitems = operator.itemgetter(keys[0])
+        else:
+            def getitems(obj):
+                for key in keys:
+                    obj = obj[key]
+                return obj
 
     return getitems
 

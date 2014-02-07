@@ -1,9 +1,10 @@
 """
 Tests for .functional.constructs module.
 """
+import collections
 from contextlib import contextmanager
 
-from taipan._compat import IS_PY3
+from taipan._compat import IS_PY26, IS_PY3
 from taipan.testing import TestCase, skipIf, skipUnless
 
 import taipan.functional.constructs as __unit__
@@ -99,8 +100,9 @@ class Raise(TestCase):
 
 
 class Try(TestCase):
-    EXCEPTION_CLASS = Exception
+    EXCEPTION_CLASS = ArithmeticError
     EXCEPTION = EXCEPTION_CLASS("foo")
+    DIFFERENT_EXCEPTION_CLASS = ReferenceError
 
     BLOCK_RETVAL = -7
     BLOCK = staticmethod(lambda: Try.BLOCK_RETVAL)
@@ -153,6 +155,47 @@ class Try(TestCase):
         with self.assertRaises(self.EXCEPTION_CLASS) as r:
             __unit__.try_(self.RAISE, except_=self.RERAISE)
         self.assertIs(self.EXCEPTION, r.exception)
+
+    def test_except__unordered_dict(self):
+        with self.assertRaises(TypeError):
+            __unit__.try_(self.BLOCK, except_={Exception: self.CATCH})
+
+    @skipIf(IS_PY26, "requires Python 2.7+")
+    def test_except__ordered_dict(self):
+        retval = __unit__.try_(self.RAISE, except_=collections.OrderedDict([
+            (self.EXCEPTION_CLASS, self.CATCH)
+        ]))
+        self.assertIs(self.EXCEPTION, retval)
+
+    def test_except__handler_list__empty(self):
+        with self.assertRaises(TypeError):
+            __unit__.try_(self.RAISE, except_=[])
+
+    def test_except__handler_list__singleton(self):
+        retval = __unit__.try_(self.RAISE,
+                               except_=[(self.EXCEPTION_CLASS, self.CATCH)])
+        self.assertIs(self.EXCEPTION, retval)
+
+    def test_except__handler_list__match_first__exact(self):
+        retval = __unit__.try_(self.RAISE, except_=[
+            (self.EXCEPTION_CLASS, self.CATCH),
+            (Exception, self.RAISE),
+        ])
+        self.assertIs(self.EXCEPTION, retval)
+
+    def test_except__handler_list__match_first__superclass(self):
+        retval = __unit__.try_(self.RAISE, except_=[
+            (Exception, self.CATCH),
+            (self.EXCEPTION_CLASS, self.RERAISE),
+        ])
+        self.assertIs(self.EXCEPTION, retval)
+
+    def test_except__handler_list__bypass_first(self):
+        with self.assertRaises(self.EXCEPTION_CLASS):
+            __unit__.try_(self.RAISE, except_=[
+                (self.DIFFERENT_EXCEPTION_CLASS, self.CATCH),
+                (self.EXCEPTION_CLASS, self.RERAISE),
+            ])
 
     def test_else__without_except(self):
         with self.assertRaises(TypeError) as r:

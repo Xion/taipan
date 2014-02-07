@@ -3,9 +3,12 @@ Functional constructs, emulating Python statements in expression form.
 """
 from __future__ import print_function
 
+import collections
 import inspect
 import sys
 
+from taipan.collections import (ensure_iterable, ensure_ordered_mapping,
+                                is_mapping)
 from taipan.functional import ensure_callable
 
 
@@ -52,8 +55,10 @@ def try_(block, except_=None, else_=None, finally_=None):
     """Emulate a ``try`` block.
 
     :param block: Function to be executed within the ``try`` statement
-    :param except_: Function to execute when an exception occurs.
-                    It receives a single argument: the exception object
+    :param except_: Function to execute when an :class:`Exception` occurs.
+                    It receives a single argument: the exception object.
+                    Alternatively, a list of key-value pairs can be passed,
+                    mapping exception types to their handler functions.
     :param else_: Function to execute when ``block`` completes successfully.
                   Note that it requires ``except_`` to be provided as well
     :param finally_: Function to execute at the end,
@@ -74,7 +79,22 @@ def try_(block, except_=None, else_=None, finally_=None):
         raise TypeError("`else_` can only be provided along with `except_`")
 
     if except_:
-        ensure_callable(except_)
+        if callable(except_):
+            except_ = [(Exception, except_)]
+        else:
+            ensure_iterable(except_)
+            if is_mapping(except_):
+                ensure_ordered_mapping(except_)
+                except_ = except_.items()
+
+        def handle_exception():
+            """Dispatch current exception to proper handler in ``except_``."""
+            exc_type, exc_object, _ = sys.exc_info()
+            for t, handler in except_:
+                if issubclass(exc_type, t):
+                    return handler(exc_object)
+            raise
+
         if else_:
             ensure_callable(else_)
             if finally_:
@@ -82,7 +102,7 @@ def try_(block, except_=None, else_=None, finally_=None):
                 try:
                     block()
                 except:
-                    return except_(sys.exc_info()[1])
+                    return handle_exception()
                 else:
                     return else_()
                 finally:
@@ -91,7 +111,7 @@ def try_(block, except_=None, else_=None, finally_=None):
                 try:
                     block()
                 except:
-                    return except_(sys.exc_info()[1])
+                    return handle_exception()
                 else:
                     return else_()
         else:
@@ -100,15 +120,14 @@ def try_(block, except_=None, else_=None, finally_=None):
                 try:
                     return block()
                 except:
-                    _, e, _ = sys.exc_info()
-                    return except_(e)
+                    return handle_exception()
                 finally:
                     finally_()
             else:
                 try:
                     return block()
                 except:
-                    return except_(sys.exc_info()[1])
+                    return handle_exception()
     elif finally_:
         ensure_callable(finally_)
         try:

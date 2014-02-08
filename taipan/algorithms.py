@@ -7,12 +7,14 @@ from collections import deque
 from itertools import chain, cycle as cycle_, islice, repeat
 
 from taipan._compat import imap, izip_longest, Numeric
-from taipan.collections import ensure_iterable
+from taipan.collections import ensure_iterable, is_iterable
 from taipan.functional import ensure_callable
+from taipan.functional.functions import attr_func, key_func
 
 
 __all__ = [
     'batch', 'cycle', 'intertwine', 'iterate', 'pad', 'unique',
+    'breadth_first', 'depth_first',
 ]
 
 
@@ -136,5 +138,49 @@ def unique(iterable, key=None):
             if k not in seen:
                 seen.add(k)
                 yield elem
+
+    return generator()
+
+
+# Traversal
+
+def breadth_first(start, expand):
+    """Performs a breadth-first search of a graph-like structure.
+
+    :param start: Node to start the search from
+    :param expand: Function taking a node as an argument and returning iterable
+                   of its child nodes
+
+    :return: Iterable of nodes in the BFS order
+    """
+    ensure_callable(expand)
+
+    def generator():
+        queue = deque([start])
+        while queue:
+            node = queue.popleft()
+            yield node
+            queue.extend(expand(node))
+
+    return generator()
+
+
+def depth_first(start, descend):
+    """Performs a depth-first search of a graph-like structure.
+
+    :param start: Node to start the search from
+    :param expand: Function taking a node as an argument and returning iterable
+                   of its child nodes
+
+    :return: Iterable of nodes in the DFS order
+    """
+    ensure_callable(descend)
+
+    def generator():
+        stack = [start]
+        while stack:
+            node = stack.pop()
+            yield node
+            stack.extend(descend(node))
 
     return generator()

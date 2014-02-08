@@ -97,40 +97,32 @@ class Const(_ConstantFunction):
 class PredefinedConstantFunctions(_ConstantFunction):
 
     def test_true(self):
-        true = __unit__.true()
-        self.assertTrue(true())
-        with self.assertRaises(TypeError):
-            true("extraneous argument")
+        self._assertConstantFunction(__unit__.true(), self.assertTrue)
 
     def test_false(self):
-        false = __unit__.false()
-        self.assertFalse(false())
-        with self.assertRaises(TypeError):
-            false("extraneous argument")
+        self._assertConstantFunction(__unit__.false(), self.assertFalse)
 
     def test_none(self):
-        none = __unit__.none()
-        self.assertIsNone(none())
-        with self.assertRaises(TypeError):
-            none("extraneous argument")
+        self._assertConstantFunction(__unit__.none(), self.assertIsNone)
 
     def test_zero(self):
-        zero = __unit__.zero()
-        self.assertZero(zero())
-        with self.assertRaises(TypeError):
-            zero("extraneous argument")
+        self._assertConstantFunction(__unit__.zero(), self.assertZero)
 
     def test_one(self):
-        one = __unit__.one()
-        self.assertEquals(1, one())
-        with self.assertRaises(TypeError):
-            one("extraneous argument")
+        self._assertConstantFunction(__unit__.one(),
+                                     lambda res: self.assertEquals(1, res))
 
     def test_empty(self):
-        empty = __unit__.empty()
-        self.assertEmpty(empty())
-        with self.assertRaises(TypeError):
-            empty("extraneous argument")
+        self._assertConstantFunction(__unit__.empty(), self.assertEmpty)
+
+    # Utility functions
+
+    def _assertConstantFunction(self, func, assertion):
+        assertion(func())
+        assertion(func("extraneous positional argument"))
+        assertion(func(foo="extraneous keyword argument"))
+        assertion(func("extraneous positional argument",
+                       foo="extraneous keyword argument"))
 
 
 # Unary functions

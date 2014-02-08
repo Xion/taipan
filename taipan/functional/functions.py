@@ -25,10 +25,13 @@ def identity():
 
 def const(k):
     """Creates a function that always returns the same value.
+
     :param k: Value that resulting function will always return
-    :return: Function that takes no arguments and always returns ``k``
+
+    :return: Function that always returns ``k``,
+             regardless of what arguments, if any, were passed to it
     """
-    return lambda: k
+    return lambda *args, **kwargs: k
 
 
 def true():

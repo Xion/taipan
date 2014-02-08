@@ -11,6 +11,11 @@ from taipan.collections import ensure_iterable
 from taipan.functional import ensure_callable
 
 
+__all__ = [
+    'batch', 'cycle', 'intertwine', 'iterate', 'pad', 'unique',
+]
+
+
 # Itertools recipes
 
 def batch(iterable, n, fillvalue=None):

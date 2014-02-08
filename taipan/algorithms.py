@@ -152,6 +152,12 @@ def breadth_first(start, expand):
                    of its child nodes
 
     :return: Iterable of nodes in the BFS order
+
+    Example::
+
+        tree = json.loads(some_data)
+        for item in breadth_first(tree, key_func('children', default=())):
+            do_something_with(item)
     """
     ensure_callable(expand)
 
@@ -173,6 +179,11 @@ def depth_first(start, descend):
                    of its child nodes
 
     :return: Iterable of nodes in the DFS order
+
+    Example::
+
+        for node in depth_first(graph, attr_func('adjacent')):
+            visit(node)
     """
     ensure_callable(descend)
 

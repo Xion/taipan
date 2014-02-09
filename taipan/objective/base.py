@@ -90,7 +90,7 @@ Object = ObjectMetaclass('Object', (object,), {
 })
 
 
-class ClassError(Exception):
+class ClassError(RuntimeError):
     """Exception raised when the class definition of :class:`Object` subclass
     is found to be incorrect.
     """

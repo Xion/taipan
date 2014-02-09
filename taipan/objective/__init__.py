@@ -3,7 +3,6 @@ Object-oriented programming utilities.
 """
 import inspect
 
-from taipan._compat import IS_PY26, IS_PY3
 from taipan.functional import ensure_callable
 from taipan.strings import is_string
 
@@ -35,6 +34,7 @@ def _get_member_name(member):
 
     # Python has no "field declaration" objects, so the only valid
     # class or instance member is actually a method
+    from taipan.objective.methods import ensure_method
     ensure_method(member)
     return member.__name__
 

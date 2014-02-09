@@ -5,6 +5,8 @@ from __future__ import absolute_import  # for importing built-in `collections`
 
 import collections
 
+from taipan._compat import IS_PYPY
+
 
 __all__ = [
     'is_countable', 'is_iterable', 'is_mapping', 'is_ordered_mapping',
@@ -42,7 +44,17 @@ def is_ordered_mapping(obj):
     e.g. a :class:`OrderedDict`.
     :return: ``True`` if argument is an ordered mapping, ``False`` otherwise
     """
-    return is_mapping(obj) and hasattr(obj, '__reversed__')
+    if not (is_mapping(obj) and hasattr(obj, '__reversed__')):
+        return False
+
+    # PyPy has a bug where the standard :class:`dict` has the ``__reversed__``
+    # method but it's unusable and throws an exception when called
+    try:
+        obj.__reversed__()
+    except TypeError:
+        return False
+    else:
+        return True
 
 
 def is_sequence(obj):

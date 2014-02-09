@@ -89,7 +89,7 @@ def try_(block, except_=None, else_=None, finally_=None):
 
         def handle_exception():
             """Dispatch current exception to proper handler in ``except_``."""
-            exc_type, exc_object, _ = sys.exc_info()
+            exc_type, exc_object = sys.exc_info()[:2]
             for t, handler in except_:
                 if issubclass(exc_type, t):
                     return handler(exc_object)

@@ -1,7 +1,14 @@
 """
-Tuple-related functions and classes.
+Tuple-related functions.
+
+The functions handle tuples up to the length of five, as this is approximately
+the point at which referring to elements by number ceases to be readable.
+
+(There are only few quintuples in the Python standard library, for example,
+with ``sys.version_info`` being perhaps the most well known one).
 """
 from taipan._compat import Numeric
+from taipan.collections import ensure_sequence
 
 
 __all__ = [
@@ -9,6 +16,8 @@ __all__ = [
     'is_single', 'is_triple', 'is_quadruple', 'is_quintuple',
     'ensure_tuple',
     'ensure_single', 'ensure_triple', 'ensure_quadruple', 'ensure_quintuple',
+
+    'first', 'second', 'third', 'fourth', 'fifth',
 ]
 
 
@@ -139,6 +148,38 @@ def ensure_quintuple(arg):
         raise TypeError(
             "expected a 5-element tuple, got %s" % _describe_type(arg))
     return arg
+
+
+# Tuple elements access functions
+
+def first(arg):
+    """Returns the first element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[0]
+
+
+def second(arg):
+    """Returns the second element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[1]
+
+
+def third(arg):
+    """Returns the third element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[2]
+
+
+def fourth(arg):
+    """Returns the fourth element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[3]
+
+
+def fifth(arg):
+    """Returns the fifth element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[4]
 
 
 # Utility functions

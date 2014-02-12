@@ -7,13 +7,19 @@ import collections
 import inspect
 import sys
 
+from taipan.api.fluency import fluent
 from taipan.collections import (ensure_iterable, ensure_ordered_mapping,
                                 is_mapping)
 from taipan.functional import ensure_callable
 
 
-__all__ = ['pass_', 'print_', 'raise_', 'try_', 'with_']
+__all__ = [
+    'pass_', 'print_', 'raise_', 'try_', 'with_',
+    'Var', 'ValueAbsentError',
+]
 
+
+# Statements
 
 __missing = object()
 
@@ -156,3 +162,115 @@ def with_(contextmanager, do):
 
     with contextmanager as value:
         return do(value)
+
+
+# Variable object
+
+@fluent
+class Var(object):
+    """Class representing a "variable" which can be assigned to
+    (or initialized with) a value, to be retrieved at later time.
+
+    The main application of :class:`Var` is including a mutable object
+    inside a closure, so that the inner function can modify it.
+
+    Here's rather superficial example::
+
+        def count_parity(numbers):
+            even_count = Var(0)
+            odd_count = Var(0)
+
+            def examine(number):
+                if number % 2 == 0:
+                    even_count.inc(1)
+                else:
+                    odd_count.inc(1)
+
+            list(map(examine, numbers))
+            return even_count.get(), odd_count.get()
+
+    In real code, you'd use :class:`Var` to return a "result" from a function
+    that is called in a special way, e.g. in a database transaction.
+
+    .. note::
+
+        As closures can be mutable in Python 3 (through ``nonlocal`` keyword),
+        :class:`Var` is less useful there. (It can still be used to simulate
+        assignments inside anonymous functions defined through ``lambda``).
+
+    For further convenience, :class:`Var` objects also do behave as:
+
+        * single-element iterables
+        * no-op context managers (think analogous to files opened by ``open``)
+    """
+    __slots__ = ['value', '__weakref__']
+
+    ABSENT = object()
+
+    def __init__(self, value=ABSENT):
+        self.value = value
+
+    def _ensure_has_value(self):
+        if not self.has_value():
+            raise ValueAbsentError()
+
+    def clear(self):
+        self.value = self.ABSENT
+
+    def dec(self, by=1):
+        self._ensure_has_value()
+        self.value -= by
+
+    @fluent.terminator
+    def get(self):
+        self._ensure_has_value()
+        return self.value
+
+    @fluent.terminator
+    def has_value(self):
+        return self.value is not self.ABSENT
+
+    def inc(self, by=1):
+        self._ensure_has_value()
+        self.value += by
+
+    def set(self, value):
+        self.value = value
+
+    # Note that :class:`Var` intentionally doesn't have any magic methods
+    # that would proxy to the underlying ``value``. For clarity,
+    # all interactions with that value must be through named methods.
+
+    def __contains__(self, value):
+        return self.value is value
+
+    def __enter__(self):
+        return self
+
+    __exit__ = pass_
+
+    def __iter__(self):
+        return iter((self.value,))
+
+    def __len__(self):
+        return 1
+
+    def __repr__(self):
+        addr = hex(id(self))
+        if self.has_value():
+            return "<Var %r at %s>" % (self.value, addr)
+        else:
+            return "<Var at %s (empty)>" % addr
+
+    __reversed__ = __iter__
+
+
+class ValueAbsentError(TypeError):
+    """Exception thrown when an operation on :class:`Var` is not possible
+    because it doesn't have any value.
+    """
+    def __init__(self, msg=None):
+        if msg is None:
+            super(ValueAbsentError, self).__init__()
+        else:
+            super(ValueAbsentError, self).__init__(msg)

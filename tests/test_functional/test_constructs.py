@@ -10,6 +10,8 @@ from taipan.testing import TestCase, skipIf, skipUnless
 import taipan.functional.constructs as __unit__
 
 
+# Statements
+
 class Pass(TestCase):
     CALLS_COUNT = 10
 
@@ -310,3 +312,138 @@ class With(TestCase):
     @contextmanager
     def _contextmanager(self, value=None):
         yield value
+
+
+# Variable wrapper
+
+class Var(TestCase):
+    INTEGER = 42
+    STRING = 'foo'
+
+    SIMPLE_VALUE = INTEGER
+    COMPOUND_VALUE = {STRING: 'bar', INTEGER: -1}
+
+    DELTA = 5
+
+    def test_ctor__argless(self):
+        var = __unit__.Var()
+        self.assertIs(__unit__.Var.ABSENT, var.value)
+
+    def test_ctor__none(self):
+        var = __unit__.Var(None)
+        self.assertIsNone(var.value)
+
+    def test_ctor__simple_value(self):
+        var = __unit__.Var(self.SIMPLE_VALUE)
+        self.assertEquals(self.SIMPLE_VALUE, var.value)
+
+    def test_ctor__compound_value(self):
+        var = __unit__.Var(self.COMPOUND_VALUE)
+        self.assertEquals(self.COMPOUND_VALUE, var.value)
+
+    def test_clear__absent(self):
+        var = __unit__.Var()
+        var.clear()
+        self._assertIsAbsent(var)
+
+    def test_clear__present(self):
+        var = __unit__.Var(self.SIMPLE_VALUE)
+        var.clear()
+        self._assertIsAbsent(var)
+
+    def test_dec__absent(self):
+        var = __unit__.Var()
+        with self._assertRaisesValueAbsent():
+            var.dec()
+
+    def test_dec__incompatible(self):
+        var = __unit__.Var(self.STRING)
+        with self.assertRaises(TypeError):
+            var.dec()
+
+    def test_dec__integer__argless(self):
+        var = __unit__.Var(self.INTEGER)
+        var.dec()
+        self.assertEquals(self.INTEGER - 1, var.value)
+
+    def test_dec__integer__delta(self):
+        var = __unit__.Var(self.INTEGER)
+        var.dec(self.DELTA)
+        self.assertEquals(self.INTEGER - self.DELTA, var.value)
+
+    def test_get__absent(self):
+        var = __unit__.Var()
+        with self._assertRaisesValueAbsent():
+            var.get()
+
+    def test_get__present(self):
+        self.assertIsNone(__unit__.Var(None).get())
+        self.assertEquals(
+            self.SIMPLE_VALUE, __unit__.Var(self.SIMPLE_VALUE).get())
+        self.assertEquals(
+            self.COMPOUND_VALUE, __unit__.Var(self.COMPOUND_VALUE).get())
+
+    def test_has_value__absent(self):
+        var = __unit__.Var()
+        self.assertFalse(var.has_value())
+
+    def test_has_value__present(self):
+        self.assertTrue(__unit__.Var(None).has_value())
+        self.assertTrue(__unit__.Var(self.SIMPLE_VALUE).has_value())
+        self.assertTrue(__unit__.Var(self.COMPOUND_VALUE).has_value())
+
+    def test_inc__absent(self):
+        var = __unit__.Var()
+        with self._assertRaisesValueAbsent():
+            var.inc()
+
+    def test_inc__incompatible(self):
+        var = __unit__.Var(self.STRING)
+        with self.assertRaises(TypeError):
+            var.inc()
+
+    def test_inc__integer__argless(self):
+        var = __unit__.Var(self.INTEGER)
+        var.inc()
+        self.assertEquals(self.INTEGER + 1, var.value)
+
+    def test_inc__integer__delta(self):
+        var = __unit__.Var(self.INTEGER)
+        var.inc(self.DELTA)
+        self.assertEquals(self.INTEGER + self.DELTA, var.value)
+
+    def test_set__from_absent__to_absent(self):
+        var = __unit__.Var()
+        var.set(__unit__.Var.ABSENT)
+        self._assertIsAbsent(var)
+
+    def test_set__from_absent__to_present(self):
+        var = __unit__.Var()
+        var.set(self.SIMPLE_VALUE)
+        self.assertEquals(self.SIMPLE_VALUE, var.value)
+
+    def test_set__from_present__to_present__noop(self):
+        var = __unit__.Var(self.SIMPLE_VALUE)
+        var.set(self.SIMPLE_VALUE)
+        self.assertEquals(self.SIMPLE_VALUE, var.value)
+
+    def test_set__from_present__to_present__different(self):
+        var = __unit__.Var(self.SIMPLE_VALUE)
+        var.set(self.COMPOUND_VALUE)
+        self.assertEquals(self.COMPOUND_VALUE, var.value)
+
+    def test_set__from_present__to_absent(self):
+        var = __unit__.Var(self.SIMPLE_VALUE)
+        var.set(__unit__.Var.ABSENT)
+        self._assertIsAbsent(var)
+
+    # Utility functions
+
+    def _assertIsAbsent(self, var):
+        # intentionally bypass Var.has_value(), as this tests it indirectly
+        self.assertIs(__unit__.Var.ABSENT, var.value)
+
+    @contextmanager
+    def _assertRaisesValueAbsent(self):
+        with self.assertRaises(__unit__.ValueAbsentError) as r:
+            yield r

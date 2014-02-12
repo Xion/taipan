@@ -59,6 +59,7 @@ class ObjectMetaclass(type):
                 if not shadows_base:
                     raise ClassError("unnecessary @override on %s.%s" % (
                         class_.__name__, name))
+                meta._remove_override_marker(method)
             else:
                 if shadows_base and name not in meta.OVERRIDE_EXEMPTIONS:
                     raise ClassError(
@@ -76,6 +77,16 @@ class ObjectMetaclass(type):
             if isinstance(method, NonInstanceMethod) \
             else method
         return getattr(func, '__override__', False)
+
+    @classmethod
+    def _remove_override_marker(meta, method):
+        """Remove the ``__override__`` marker from the method,
+        as it's irrelevant after the class is created.
+        """
+        func = method.__func__ \
+            if isinstance(method, NonInstanceMethod) \
+            else method
+        delattr(func, '__override__')
 
 
 # We can't use a regular ``class`` block to define :class:`Object`

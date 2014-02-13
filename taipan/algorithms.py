@@ -5,8 +5,9 @@ from __future__ import absolute_import
 
 from collections import deque
 from itertools import chain, cycle as cycle_, islice, repeat
+from numbers import Integral
 
-from taipan._compat import imap, izip_longest, Numeric
+from taipan._compat import imap, izip_longest
 from taipan.collections import ensure_iterable, is_iterable
 from taipan.functional import ensure_callable
 from taipan.functional.functions import attr_func, key_func
@@ -38,7 +39,7 @@ def batch(iterable, n, fillvalue=None):
         from the :module:`itertools` module documentation.
     """
     ensure_iterable(iterable)
-    if not isinstance(n, Numeric):
+    if not isinstance(n, Integral):
         raise TypeError("invalid number of elements in a batch")
     if not (n > 0):
         raise ValueError("number of elements in a batch must be positive")
@@ -70,7 +71,7 @@ def cycle(iterable, n=None):
     if n is None:
         return cycle_(iterable)
     else:
-        if not isinstance(n, Numeric):
+        if not isinstance(n, Integral):
             raise TypeError("invalid number of cycles")
         if n < 0:
             raise ValueError("number of cycles cannot be negative")

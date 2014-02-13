@@ -31,6 +31,3 @@ if IS_PY3:
     )
 else:
     from itertools import ifilter, ifilterfalse, imap, izip, izip_longest
-
-
-Numeric = (int,) if IS_PY3 else (int, long)

@@ -2,8 +2,9 @@
 Set-related functions and classes.
 """
 from itertools import chain, combinations
+from numbers import Integral
 
-from taipan._compat import imap, xrange, Numeric
+from taipan._compat import imap, xrange
 from taipan.collections import ensure_countable, is_set
 from taipan.collections.tuples import is_tuple
 
@@ -18,7 +19,7 @@ def k_subsets(set_, k):
     """
     ensure_countable(set_)
 
-    if not isinstance(k, Numeric):
+    if not isinstance(k, Integral):
         raise TypeError("subset cardinality must be a number")
     if not (k >= 0):
         raise ValueError("subset cardinality must be positive")

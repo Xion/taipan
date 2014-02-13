@@ -7,7 +7,8 @@ the point at which referring to elements by number ceases to be readable.
 (There are only few quintuples in the Python standard library, for example,
 with ``sys.version_info`` being perhaps the most well known one).
 """
-from taipan._compat import Numeric
+from numbers import Integral
+
 from taipan.collections import ensure_sequence
 
 
@@ -36,7 +37,7 @@ def is_tuple(obj, len_=None):
 
     if len_ is None:
         return True
-    if not isinstance(len_, Numeric):
+    if not isinstance(len_, Integral):
         raise TypeError(
             "length must be a number (got %s instead)" % type(len_).__name__)
     if len_ < 0:

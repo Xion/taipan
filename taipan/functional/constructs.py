@@ -208,6 +208,12 @@ class Var(object):
     ABSENT = object()
 
     def __init__(self, value=ABSENT):
+        """Constructor.
+
+        :param value: Initial value to store in the variable.
+                      Can be omitted; if so, the variable will be "empty"
+                      (uninitialized).
+        """
         self.value = value
 
     def _ensure_has_value(self):
@@ -215,26 +221,45 @@ class Var(object):
             raise ValueAbsentError()
 
     def clear(self):
+        """Clears the vaiable, making it uninitialized."""
         self.value = self.ABSENT
 
     def dec(self, by=1):
+        """Decrement the value stored in this variable.
+        :param by: Optional amount to decrement the value by (default 1)
+        :raise ValueAbsentError: When the variable has no value
+        """
         self._ensure_has_value()
         self.value -= by
 
     @fluent.terminator
     def get(self):
+        """Retrieves the value stored in this variable.
+        :return: Variable's value if present
+        :raise ValueAbsentError: When the variable has no value
+        """
         self._ensure_has_value()
         return self.value
 
     @fluent.terminator
     def has_value(self):
+        """Checks whether the variable has a value.
+        :return: True if variable has a value, False otherwise
+        """
         return self.value is not self.ABSENT
 
     def inc(self, by=1):
+        """Increment the value stored in this variable.
+        :param by: Optional amount to increment the value by (default 1)
+        :raise ValueAbsentError: When the variable has no value
+        """
         self._ensure_has_value()
         self.value += by
 
     def set(self, value):
+        """Sets a new value of this variable.
+        :param value: The value to set
+        """
         self.value = value
 
     # Note that :class:`Var` intentionally doesn't have any magic methods

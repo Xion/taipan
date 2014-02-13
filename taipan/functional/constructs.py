@@ -200,7 +200,8 @@ class Var(object):
 
     For further convenience, :class:`Var` objects also do behave as:
 
-        * single-element iterables
+        * single-element iterables ("containing" the variable's value)
+        * callables of arbitrary arity (returning the variable's value)
         * no-op context managers (think analogous to files opened by ``open``)
     """
     __slots__ = ['value', '__weakref__']
@@ -266,8 +267,11 @@ class Var(object):
     # that would proxy to the underlying ``value``. For clarity,
     # all interactions with that value must be through named methods.
 
+    def __call__(self, *args, **kwargs):
+        return self.get()
+
     def __contains__(self, value):
-        return self.value is value
+        return self.has_value() and self.value is value
 
     def __enter__(self):
         return self
@@ -275,10 +279,10 @@ class Var(object):
     __exit__ = pass_
 
     def __iter__(self):
-        return iter((self.value,))
+        return iter((self.value,) if self.has_value() else ())
 
     def __len__(self):
-        return 1
+        return int(self.has_value())
 
     def __repr__(self):
         addr = hex(id(self))

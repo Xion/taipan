@@ -322,6 +322,7 @@ class Var(TestCase):
 
     SIMPLE_VALUE = INTEGER
     COMPOUND_VALUE = {STRING: 'bar', INTEGER: -1}
+    VALUES = [None, SIMPLE_VALUE, COMPOUND_VALUE]
 
     DELTA = 5
 
@@ -340,6 +341,8 @@ class Var(TestCase):
     def test_ctor__compound_value(self):
         var = __unit__.Var(self.COMPOUND_VALUE)
         self.assertEquals(self.COMPOUND_VALUE, var.value)
+
+    # Tests for normal methods
 
     def test_clear__absent(self):
         var = __unit__.Var()
@@ -388,9 +391,8 @@ class Var(TestCase):
         self.assertFalse(var.has_value())
 
     def test_has_value__present(self):
-        self.assertTrue(__unit__.Var(None).has_value())
-        self.assertTrue(__unit__.Var(self.SIMPLE_VALUE).has_value())
-        self.assertTrue(__unit__.Var(self.COMPOUND_VALUE).has_value())
+        for value in self.VALUES:
+            self.assertTrue(__unit__.Var(value).has_value())
 
     def test_inc__absent(self):
         var = __unit__.Var()
@@ -436,6 +438,55 @@ class Var(TestCase):
         var = __unit__.Var(self.SIMPLE_VALUE)
         var.set(__unit__.Var.ABSENT)
         self._assertIsAbsent(var)
+
+    # Tests for magic methods
+
+    def test_call__absent(self):
+        var = __unit__.Var()
+        with self._assertRaisesValueAbsent():
+            var()
+
+    def test_call__present(self):
+        self.assertIsNone(__unit__.Var(None)())
+        self.assertEquals(
+            self.SIMPLE_VALUE, __unit__.Var(self.SIMPLE_VALUE)())
+        self.assertEquals(
+            self.COMPOUND_VALUE, __unit__.Var(self.COMPOUND_VALUE)())
+
+    def test_contains__absent(self):
+        var = __unit__.Var()
+        for value in self.VALUES:
+            self.assertNotIn(value, var)
+
+    def test_contains__present(self):
+        for i, value in enumerate(self.VALUES):
+            var = __unit__.Var(value)
+            self.assertIn(value, var)
+            for other_value in self.VALUES[0:i] + self.VALUES[(i + 1):]:
+                self.assertNotIn(other_value, var)
+
+    def test_enter_and_exit(self):
+        with __unit__.Var() as var:
+            self._assertIsAbsent(var)
+            var.set(None)
+            self.assertTrue(var.has_value())
+
+    def test_iter__absent(self):
+        var = __unit__.Var()
+        self.assertEmpty(var)
+
+    def test_iter__present(self):
+        for value in self.VALUES:
+            self.assertItemsEqual([value], __unit__.Var(value))
+
+    def test_len__absent(self):
+        var = __unit__.Var()
+        self.assertZero(len(var))
+
+    def test_len__present(self):
+        for value in self.VALUES:
+            var = __unit__.Var(value)
+            self.assertEquals(1, len(var))
 
     # Utility functions
 

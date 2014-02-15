@@ -2,6 +2,7 @@
 Universal base class for objects.
 """
 from taipan._compat import IS_PY3
+from taipan.objective.metaclasses import metaclass
 from taipan.objective.methods import is_method, NonInstanceMethod
 
 
@@ -75,16 +76,13 @@ class ObjectMetaclass(type):
         return isinstance(method, _OverriddenMethod)
 
 
-# We can't use a regular ``class`` block to define :class:`Object`
-# because syntax for metaclasses differ between Python 2.x and 3.x.
-Object = ObjectMetaclass('Object', (object,), {
-    '__doc__': """
-    Universal base class for objects.
+@metaclass(ObjectMetaclass)
+class Object(object):
+    """Universal base class for objects.
 
     Inheriting from this class rather than the standard :class:`object`
     will grant access to additional object-oriented features.
-    """,
-})
+    """
 
 
 class ClassError(RuntimeError):

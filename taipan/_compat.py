@@ -11,7 +11,6 @@ except ImportError:
 
 
 import sys
-IS_PY26 = sys.version_info[:2] == (2, 6)
 IS_PY3 = sys.version_info[0] == 3
 
 import platform

@@ -3,10 +3,8 @@ Modifiers ("annotation" decorators) for classes and class members.
 """
 import inspect
 
-from taipan._compat import IS_PY26
 from taipan.objective import _get_first_arg_name
-from taipan.objective.base import ObjectMetaclass
-from taipan.objective.methods import ensure_method, NonInstanceMethod
+from taipan.objective.methods import ensure_method
 
 
 __all__ = ['final', 'override']
@@ -16,6 +14,8 @@ def final(class_):
     """Mark a class as _final_, forbidding any more class from
     inheriting from it (subclassing it).
     """
+    from taipan.objective.base import ObjectMetaclass
+
     if not inspect.isclass(class_):
         raise TypeError("@final can only be applied to classes")
     if not isinstance(class_, ObjectMetaclass):
@@ -49,17 +49,30 @@ def override(method):
         else:
             raise
 
-    # non-instance methods do not allow setting attributes on them,
-    # so we mark the underlying raw functions instead
-    if isinstance(method, NonInstanceMethod):
-        # TODO(xion): support @override on non-instance methods in Python 2.6
-        # by returning a special wrapper object around them, which would be
-        # subsequently unwrapped by ObjectMetaclass.__new__
-        if IS_PY26:
-            raise NotImplementedError("@override on non-instance methods "
-                                      "is not supported in Python 2.6")
-        method.__func__.__override__ = True
-    else:
-        method.__override__ = True
+    return _OverriddenMethod(method)
 
-    return method
+
+class _OverriddenMethod(object):
+    """Wrapper for methods that have been marked with ``@override``.
+
+    Those methods will be unpacked by :class:`ObjectMetaclass` during creation
+    of the class which contains them.
+    """
+    def __init__(self, method):
+        self.method = method
+
+    # We proxy most operations to the underlying method to support the use case
+    # when it's called / referenced / etc. even before its class is created.
+    # An example would be a class attribute defined in terms of calling
+    # an overridden class or static method.
+
+    def __call__(self, *args, **kwargs):
+        """Proxy calls to underlying method."""
+        return self.method(*args, **kwargs)
+
+    def __getattribute__(self, attr):
+        """Proxy attribute access to underlying method."""
+        if attr == 'method':
+            return object.__getattribute__(self, attr)
+        else:
+            return getattr(self.method, attr)

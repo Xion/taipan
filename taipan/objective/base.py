@@ -1,7 +1,7 @@
 """
 Universal base class for objects.
 """
-from taipan._compat import IS_PY26, IS_PY3
+from taipan._compat import IS_PY3
 from taipan.objective.methods import is_method, NonInstanceMethod
 
 
@@ -52,14 +52,12 @@ class ObjectMetaclass(type):
         own_methods = ((name, member) for name, member in dict_.items()
                        if is_method(member))
         for name, method in own_methods:
-            if IS_PY26 and isinstance(method, NonInstanceMethod):
-                continue  # see TODO in :func:`override`
             shadows_base = any(hasattr(base, name) for base in super_mro)
             if meta._is_override(method):
                 if not shadows_base:
                     raise ClassError("unnecessary @override on %s.%s" % (
                         class_.__name__, name))
-                meta._remove_override_marker(method)
+                setattr(class_, name, method.method)
             else:
                 if shadows_base and name not in meta.OVERRIDE_EXEMPTIONS:
                     raise ClassError(
@@ -73,20 +71,8 @@ class ObjectMetaclass(type):
         """Checks whether given class or instance method has been marked
         with the ``@override`` decorator.
         """
-        func = method.__func__ \
-            if isinstance(method, NonInstanceMethod) \
-            else method
-        return getattr(func, '__override__', False)
-
-    @classmethod
-    def _remove_override_marker(meta, method):
-        """Remove the ``__override__`` marker from the method,
-        as it's irrelevant after the class is created.
-        """
-        func = method.__func__ \
-            if isinstance(method, NonInstanceMethod) \
-            else method
-        delattr(func, '__override__')
+        from taipan.objective.modifiers import _OverriddenMethod
+        return isinstance(method, _OverriddenMethod)
 
 
 # We can't use a regular ``class`` block to define :class:`Object`

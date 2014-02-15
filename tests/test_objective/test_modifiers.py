@@ -1,7 +1,6 @@
 """
 Tests for .objective.modifiers module.
 """
-from taipan._compat import IS_PY26
 from taipan.objective.base import Object
 from taipan.testing import skipIf
 
@@ -149,7 +148,6 @@ class Override_InstanceMethods(_Override):
                 pass
 
 
-@skipIf(IS_PY26, "requires Python 2.7+")
 class Override_ClassMethods(_Override):
 
     def test_class_method__unnecessary(self):
@@ -209,7 +207,6 @@ class Override_ClassMethods(_Override):
         self.assertIn("@classmethod", str(r.exception))
 
 
-@skipIf(IS_PY26, "requires Python 2.7+")
 class Override_StaticMethods(_Override):
 
     def test_static_method__unnecessary(self):

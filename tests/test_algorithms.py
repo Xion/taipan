@@ -6,7 +6,7 @@ from collections import namedtuple
 from taipan._compat import IS_PY3, izip, xrange
 from taipan.collections import is_iterable, is_sequence
 from taipan.collections.tuples import is_tuple
-from taipan.functional import attr_func, functions
+from taipan.functional import functions ; attr_func = functions.attr_func
 from taipan.testing import TestCase
 
 import taipan.algorithms as __unit__

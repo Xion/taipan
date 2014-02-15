@@ -82,8 +82,3 @@ def ensure_keyword_args(kwargs, mandatory=(), optional=()):
             raise TypeError("unexpected keyword arguments: %s" % tuple(excess))
 
     return kwargs
-
-
-from .combinators import *
-from .constructs import *
-from .functions import *

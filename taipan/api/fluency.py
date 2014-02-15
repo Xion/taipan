@@ -23,7 +23,8 @@ from taipan._compat import imap, IS_PY3
 from taipan.api.decorators import class_decorator
 from taipan.collections import is_iterable
 from taipan.functional import ensure_callable
-from taipan.objective import is_internal, is_magic, get_methods
+from taipan.objective import is_internal, is_magic
+from taipan.objective.methods import get_methods
 from taipan.strings import ensure_string, is_string
 
 

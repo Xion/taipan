@@ -13,7 +13,7 @@ except ImportError:
 
 from taipan._compat import IS_PY3, imap
 from taipan.collections import is_countable, is_iterable
-from taipan.functional import identity
+from taipan.functional.functions import identity
 from taipan.strings import BaseString
 
 

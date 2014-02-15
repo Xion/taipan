@@ -42,8 +42,3 @@ def _get_member_name(member):
 def _get_first_arg_name(function):
     argnames, _, _, _ = inspect.getargspec(function)
     return argnames[0] if argnames else None
-
-
-from .base import *
-from .methods import *
-from .modifiers import *

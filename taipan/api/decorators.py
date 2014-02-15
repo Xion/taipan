@@ -4,7 +4,8 @@ Decorator utilities.
 import functools
 import inspect
 
-from taipan.functional import ensure_callable, or_
+from taipan.functional import ensure_callable
+from taipan.functional.combinators import or_
 
 
 __all__ = ['decorator', 'function_decorator', 'class_decorator']

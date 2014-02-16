@@ -5,11 +5,40 @@ taipan
 
 General purpose toolkit for Python
 """
-from setuptools import find_packages, setup
+import ast
 import os
+from setuptools import find_packages, setup
 import sys
 
-import taipan
+
+PACKAGE = 'taipan'
+
+
+def read_tag(name):
+    """Reads the value of a "magic tag" defined in the main __init__.py file
+    of the package.
+
+    :param name: Tag name, without the leading and trailing underscores
+    :return: Tag's value or None
+    """
+    filename = os.path.join(PACKAGE, '__init__.py')
+    with open(filename) as f:
+        ast_tree = ast.parse(f.read(), filename)
+
+    for node in ast.walk(ast_tree):
+        if type(node) is not ast.Assign:
+            continue
+
+        target = node.targets[0]
+        if type(target) is not ast.Name:
+            continue
+
+        if not (target.id.startswith('__') and target.id.endswith('__')):
+            continue
+
+        target_name = target.id[2:-2]
+        if target_name == name:
+            return ast.literal_eval(node.value)
 
 
 def read_requirements(filename='requirements.txt'):
@@ -53,13 +82,13 @@ def get_test_requirements():
 
 
 setup(
-    name="taipan",
-    version=taipan.__version__,
+    name=PACKAGE,
+    version=read_tag('version'),
     description="General purpose toolkit for Python",
     long_description=__doc__,  # TODO(xion): add README.rst
-    author=taipan.__author__,
+    author=read_tag('author'),
     url="http://github.com/Xion/taipan",
-    license=taipan.__license__,
+    license=read_tag('license'),
 
     classifiers=[
         "Development Status :: 1 - Planning",

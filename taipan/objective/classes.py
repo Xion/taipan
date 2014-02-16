@@ -46,10 +46,12 @@ def iter_subclasses(class_):
 
     def descend(class_):
         subclasses = set(class_.__subclasses__()) - classes
-        classes.extend(subclasses)
+        classes.update(subclasses)
         return subclasses
 
-    return breadth_first(class_, descend)
+    result = breadth_first(class_, descend)
+    next(result)  # omit ``class_`` itself
+    return result
 
 
 def iter_superclasses(class_):
@@ -62,7 +64,7 @@ def iter_superclasses(class_):
     .. note::
 
         In most cases, the result of :func:`iter_superclasses` is the same as
-        ``class_.__mro__[1:]``, except when the method resolution order
+        ``class_.__mro__``, except when the method resolution order
         has been customized by the metaclass of ``class_``.
     """
     ensure_class(class_)
@@ -71,10 +73,12 @@ def iter_superclasses(class_):
 
     def ascend(class_):
         superclasses = set(class_.__bases__) - classes
-        classes.extend(superclasses)
+        classes.update(superclasses)
         return superclasses
 
-    return breadth_first(class_, ascend)
+    result = breadth_first(class_, ascend)
+    next(result)  # omit ``class_`` itself
+    return result
 
 
 # Metaclass utilities

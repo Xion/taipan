@@ -5,8 +5,6 @@ from __future__ import absolute_import  # for importing built-in `collections`
 
 import collections
 
-from taipan._compat import IS_PYPY
-
 
 __all__ = [
     'is_countable', 'is_iterable', 'is_mapping', 'is_ordered_mapping',

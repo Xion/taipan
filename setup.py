@@ -3,7 +3,7 @@
 taipan
 ======
 
-General purpose toolkit for Python
+{description}
 """
 import ast
 import os
@@ -11,20 +11,16 @@ from setuptools import find_packages, setup
 import sys
 
 
-PACKAGE = 'taipan'
+def read_tags(filename):
+    """Reads values of "magic tags" defined in the given Python file.
 
-
-def read_tag(name):
-    """Reads the value of a "magic tag" defined in the main __init__.py file
-    of the package.
-
-    :param name: Tag name, without the leading and trailing underscores
-    :return: Tag's value or None
+    :param filename: Python filename to read the tags from
+    :return: Dictionary of tags
     """
-    filename = os.path.join(PACKAGE, '__init__.py')
     with open(filename) as f:
         ast_tree = ast.parse(f.read(), filename)
 
+    res = {}
     for node in ast.walk(ast_tree):
         if type(node) is not ast.Assign:
             continue
@@ -36,9 +32,10 @@ def read_tag(name):
         if not (target.id.startswith('__') and target.id.endswith('__')):
             continue
 
-        target_name = target.id[2:-2]
-        if target_name == name:
-            return ast.literal_eval(node.value)
+        name = target.id[2:-2]
+        res[name] = ast.literal_eval(node.value)
+
+    return res
 
 
 def read_requirements(filename='requirements.txt'):
@@ -71,8 +68,8 @@ def read_requirements(filename='requirements.txt'):
         return list(map(extract_requirement, filter(valid_line, lines)))
 
 
-def get_test_requirements():
-    """Get the list of test requirements
+def read_test_requirements():
+    """Reads the list of test requirements
     for ``tests_require`` parameter of ``setup()``.
     """
     requirements = read_requirements('test')
@@ -81,14 +78,18 @@ def get_test_requirements():
     return requirements
 
 
+tags = read_tags(os.path.join('taipan', '__init__.py'))
+__doc__ = __doc__.format(**tags)
+
+
 setup(
-    name=PACKAGE,
-    version=read_tag('version'),
-    description="General purpose toolkit for Python",
-    long_description=__doc__,  # TODO(xion): add README.rst
-    author=read_tag('author'),
+    name='taipan',
+    version=tags['version'],
+    description=tags['description'],
+    long_description=__doc__,
+    author=tags['author'],
     url="http://github.com/Xion/taipan",
-    license=read_tag('license'),
+    license=tags['license'],
 
     classifiers=[
         "Development Status :: 1 - Planning",
@@ -107,5 +108,5 @@ setup(
     platforms='any',
     packages=find_packages(exclude=['tests']),
 
-    tests_require=get_test_requirements(),
+    tests_require=read_test_requirements(),
 )

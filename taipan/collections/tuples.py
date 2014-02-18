@@ -9,7 +9,7 @@ with ``sys.version_info`` being perhaps the most well known one).
 """
 from numbers import Integral
 
-from taipan.collections import ensure_sequence
+from taipan.collections import ensure_iterable, ensure_sequence
 
 
 __all__ = [
@@ -19,6 +19,7 @@ __all__ = [
     'ensure_single', 'ensure_triple', 'ensure_quadruple', 'ensure_quintuple',
 
     'first', 'second', 'third', 'fourth', 'fifth',
+    'select',
 ]
 
 
@@ -151,7 +152,7 @@ def ensure_quintuple(arg):
     return arg
 
 
-# Tuple elements access functions
+# Tuple access functions
 
 def first(arg):
     """Returns the first element of a tuple (or other sequence)."""
@@ -181,6 +182,29 @@ def fifth(arg):
     """Returns the fifth element of a tuple (or other sequence)."""
     ensure_sequence(arg)
     return arg[4]
+
+
+def select(indices, from_, strict=False):
+    """Selects a subsequence of given tuple, including only specified indices.
+
+    :param indices: Iterable of indices to include
+    :param strict: Whether ``indices`` are required to exist in the tuple.
+
+    :return: Tuple with selected elements, in the order corresponding
+             to the order of ``indices``.
+
+    :raise IndexError: If ``strict`` is True and one of ``indices``
+                       is out of range.
+    """
+    ensure_iterable(indices)
+    ensure_sequence(from_)
+
+    if strict:
+        return from_.__class__(from_[index] for index in indices)
+    else:
+        len_ = len(from_)
+        return from_.__class__(from_[index] for index in indices
+                               if 0 <= index < len_)
 
 
 # Utility functions

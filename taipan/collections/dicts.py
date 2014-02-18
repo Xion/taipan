@@ -156,8 +156,8 @@ def select(keys, from_, strict=False):
 
     :return: Dictionary whose keys are a subset of given ``keys``
 
-    :raises KeyError: If ``strict`` is True and one of ``keys`` is not found
-                      in the dictionary.
+    :raise KeyError: If ``strict`` is True and one of ``keys`` is not found
+                     in the dictionary.
     """
     ensure_iterable(keys)
     ensure_mapping(from_)

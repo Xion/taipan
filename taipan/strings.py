@@ -2,9 +2,12 @@
 """
 String-related functions and classes.
 """
+from numbers import Integral
+from random import choice, randint
 import re
+import string
 
-from taipan._compat import IS_PY3, imap
+from taipan._compat import IS_PY3, imap, xrange
 from taipan.collections import ensure_iterable, is_iterable, is_mapping
 from taipan.collections.tuples import is_pair
 
@@ -15,6 +18,7 @@ __all__ = [
     'split', 'join',
     'camel_case',
     'replace', 'ReplacementError',
+    'random',
 ]
 
 
@@ -283,3 +287,32 @@ class Replacer(object):
         # do the substituion, looking up the replacement for every match
         do_replace = lambda match: self._replacements[match.group()]
         return re.sub(regex, do_replace, haystack)
+
+
+# Other
+
+def random(length, chars=None):
+    """Generates a random string.
+
+    :param length: Length of the string to generate.
+                   This can be a numbe or a pair: ``(min_length, max_length)``
+    :param chars: String of characters to choose from
+    """
+    if chars is None:
+        chars = string.ascii_letters + string.digits
+    else:
+        ensure_string(chars)
+        if not chars:
+            raise ValueError("character set must not be empty")
+
+    if is_pair(length):
+        length = randint(*length)
+    elif isinstance(length, Integral):
+        if not length > 0:
+            raise ValueError(
+                "random string length must be positive (got %r)" % (length,))
+    else:
+        raise TypeError("random string length must be an integer; "
+                        "got '%s'" % type(length).__name__)
+
+    return join(chars.__class__(), (choice(chars) for _ in xrange(length)))

@@ -443,3 +443,57 @@ class Replace(TestCase):
     def test_replace__mapping(self):
         result = __unit__.replace(self.MAP_REPLACEMENTS).in_(self.HAYSTACK)
         self.assertEquals(self.MAP_RESULT, result)
+
+
+class Random(TestCase):
+    LENGTH = 16
+    MIN_LENGTH = 4
+    MAX_LENGTH = 12
+    LENGTH_RANGE = (MIN_LENGTH, MAX_LENGTH)
+    NEGATIVE_LENGTH = -42
+
+    CHARSET = 'foxjumps'
+
+    def test_length__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.random(None)
+
+    def test_length__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.random(object())
+
+    def test_length__negative(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.random(self.NEGATIVE_LENGTH)
+        self.assertIn(str(self.NEGATIVE_LENGTH), str(r.exception))
+
+    def test_length__invalid_tuple(self):
+        with self.assertRaises(TypeError):
+            __unit__.random((1, 2, 3))
+
+    def test_length__constant(self):
+        result = __unit__.random(self.LENGTH)
+        self.assertEquals(self.LENGTH, len(result))
+
+    def test_length__range(self):
+        result = __unit__.random(self.LENGTH_RANGE)
+        self.assertGreaterEqual(len(result), self.MIN_LENGTH)
+        self.assertLessEqual(len(result), self.MAX_LENGTH)
+
+    def test_chars__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.random(self.LENGTH, object())
+
+    def test_chars__non_string_iterable(self):
+        with self.assertRaises(TypeError):
+            __unit__.random(self.LENGTH, ('a', 'b'))
+
+    def test_chars__empty_string(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.random(self.LENGTH, '')
+        self.assertIn("empty", str(r.exception))
+
+    def test_chars__string(self):
+        result = __unit__.random(self.LENGTH, self.CHARSET)
+        for char in result:
+            self.assertIn(char, self.CHARSET)

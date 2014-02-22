@@ -17,7 +17,7 @@ __all__ = [
     'Regex', 'is_regex', 'ensure_regex',
     'split', 'join',
     'camel_case',
-    'replace', 'ReplacementError',
+    'replace', 'Replacer', 'ReplacementError',
     'random',
 ]
 
@@ -170,7 +170,7 @@ def camel_case(arg, capitalize=None):
 
 # String replacement
 
-def replace(needle, with_=None):
+def replace(needle, with_=None, in_=None):
     """Replace occurrences of string(s) with other string(s) in (a) string(s).
 
     Unlike the built in :meth:`str.replace` method, this function provides
@@ -184,15 +184,21 @@ def replace(needle, with_=None):
 
     Examples::
 
-       replace('foo', 'bar').in_(text)
-       replace('foo', with_='bar').in_(long_text)
-       replace('foo').with_('bar').in_(long_text)
-       replace(['foo', 'bar']).with_('baz').in_(long_text)
-       replace({'foo': 'bar', 'baz': 'qud'}).in_(even_longer_text)
+        replace('foo', with_='bar', in_=some_text)
+        replace('foo', with_='bar').in_(other_text)
+        replace('foo').with_('bar').in_(another_text)
+        replace(['foo', 'bar']).with_('baz').in_(perhaps_a_long_text)
+        replace({'foo': 'bar', 'baz': 'qud'}).in_(even_longer_text)
 
     :param needle: String to replace, iterable thereof,
                    or a mapping from needles to corresponding replacements
     :param with_: Replacement string, if ``needle`` was not a mapping
+    :param in_: Optional string to perform replacement in
+
+    :return: If all parameters were provided, result is the final string
+             after performing a specified replacement.
+             Otherwise, a :class:`Replacer` object is returned, allowing
+             e.g. to perform the same replacements in many haystacks.
     """
     if needle is None:
         raise TypeError("replacement needle cannot be None")
@@ -215,7 +221,10 @@ def replace(needle, with_=None):
         ensure_string(with_)
         replacer = replacer.with_(with_)
 
-    # TODO(xion): add ``in_`` parameter for performing replacement immediately
+    if in_ is not None:
+        ensure_string(in_)
+        return replacer.in_(in_)
+
     return replacer
 
 
@@ -229,6 +238,11 @@ class Replacer(object):
 
     This class handles both simple, single-pass replacements,
     as well as multiple replacement pair mappings.
+
+    .. note::
+
+        This class is not intended for direct use by client code.
+        Use the provided :func:`replace` function instead.
     """
     def __init__(self, replacements):
         """Constructor.

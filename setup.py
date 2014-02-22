@@ -44,7 +44,7 @@ def read_requirements(filename='requirements.txt'):
     :param filename: Filename to read the requirements from.
                      Uses ``'requirements.txt'`` by default.
 
-    :return: Requirments as list of strings.
+    :return: Requirements as list of strings
     """
     # allow for some leeway with the argument
     if not filename.startswith('requirements'):

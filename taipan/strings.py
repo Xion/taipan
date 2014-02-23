@@ -141,6 +141,10 @@ def join(delimiter, iterable):
 
 # Case conversion
 
+# TODO(xion): expand into a full-featured API for converting between different
+# type of case formats, comparable to Guava's CaseFormat:
+# http://code.google.com/p/guava-libraries/wiki/StringsExplained#CaseFormat
+
 def camel_case(arg, capitalize=None):
     """Converts given text with whitespaces between words
     into equivalent camel-cased one.

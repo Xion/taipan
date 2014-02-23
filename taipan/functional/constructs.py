@@ -156,6 +156,8 @@ def with_(contextmanager, do):
         all_lines = sum((with_(open(filename), do=dotcall('readlines'))
                          for filename in files), [])
     """
+    # TODO(xion): extract an ``ensure_contextmanager`` function
+    # once we figure out (or come up with) a correct place for it
     if not hasattr(contextmanager, '__exit__'):
         raise TypeError("%r is not a context manager" % (contextmanager,))
     ensure_callable(do)

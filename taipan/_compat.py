@@ -2,6 +2,11 @@
 Compatibility shims for different Python versions and platforms.
 """
 try:
+    import builtins
+except ImportError:
+    import __builtin__ as builtins
+
+try:
     import json
 except ImportError:
     try:

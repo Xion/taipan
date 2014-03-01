@@ -1,12 +1,11 @@
 """
 Functional constructs, emulating Python statements in expression form.
 """
-from __future__ import print_function
-
 import collections
 import inspect
 import sys
 
+from taipan._compat import builtins
 from taipan.api.fluency import fluent
 from taipan.collections import (ensure_iterable, ensure_ordered_mapping,
                                 is_mapping)
@@ -34,7 +33,7 @@ def pass_(*args, **kwargs):
 
 
 #: Alias for :func:`print`.
-print_ = print
+print_ = getattr(builtins, 'print')
 
 
 def raise_(exception=__missing, *args, **kwargs):

@@ -6,13 +6,15 @@ from itertools import chain
 from taipan._compat import IS_PY3
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
 from taipan.functional import ensure_callable
+from taipan.functional.combinators import compose
 
 
 __all__ = [
     'AbsentDict', 'ABSENT',
+    'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
+    'get', 'select',
     'filteritems', 'filterkeys', 'filtervalues',
-    'get',
-    'merge', 'select',
+    'merge', 'reverse',
 ]
 
 
@@ -36,10 +38,10 @@ class AbsentDict(dict):
     """
     def __init__(self, iterable=(), **kwargs):
         if is_mapping(iterable):
-            iterable = _items(iterable)
+            iterable = iteritems(iterable)
         super(AbsentDict, self).__init__(chain(
             ((k, v) for k, v in iterable if v is not ABSENT),
-            ((k, v) for k, v in _items(kwargs) if v is not ABSENT)
+            ((k, v) for k, v in iteritems(kwargs) if v is not ABSENT)
         ))
 
     def __setitem__(self, key, obj):
@@ -53,45 +55,28 @@ class AbsentDict(dict):
 ABSENT = object()
 
 
-# Dictionary operations
+# Compatibility shims
 
-def filteritems(function, dict_):
-    """Return a new dictionary comprising of items
-    for which ``function`` returns True.
+#: Return an iterator over key-value pairs stored within the dictionary.
+iteritems = dict.items if IS_PY3 else dict.iteritems
 
-    :param function: Function taking key and value, or None
-    """
-    ensure_mapping(dict_)
+#: Return an iterator over keys stored within the dictionary.
+iterkeys = dict.keys if IS_PY3 else dict.iterkeys
 
-    if function is None:
-        function = lambda k, v: all((k, v))
-    else:
-        ensure_callable(function)
+#: Return an iterator over values stored within the dictionary
+itervalues = dict.values if IS_PY3 else dict.itervalues
 
-    return dict_.__class__((k, v) for k, v in _items(dict_) if function(k, v))
+#: Return a list of key-value pairs stored within the dictionary.
+items = compose(list, dict.items) if IS_PY3 else dict.items
 
+#: Return a list of keys stored within the dictionary.
+keys = compose(list, dict.keys) if IS_PY3 else dict.keys
 
-def filterkeys(function, dict_):
-    """Return a new dictionary comprising of keys
-    for which ``function`` returns True, and their corresponding values.
-
-    :param function: Function taking a dictionary key, or None
-    """
-    function = bool if function is None else ensure_callable(function)
-    ensure_mapping(dict_)
-    return dict_.__class__((k, v) for k, v in _items(dict_) if function(k))
+#: Return a list of values stored within the dictionary.
+values = compose(list, dict.values) if IS_PY3 else dict.values
 
 
-def filtervalues(function, dict_):
-    """Returns a new dictionary comprising of values
-    for which ``function`` return True, and keys that corresponded to them.
-
-    :param function: Function taking a dictionary value, or None
-    """
-    function = bool if function is None else ensure_callable(function)
-    ensure_mapping(dict_)
-    return dict_.__class__((k, v) for k, v in _items(dict_) if function(v))
-
+# Access functions
 
 # TODO(xion): this may need a better name
 def get(dict_, keys=(), default=None):
@@ -117,6 +102,69 @@ def get(dict_, keys=(), default=None):
 
     return dict_.get(keys[-1], default)
 
+
+def select(keys, from_, strict=False):
+    """Selects a subset of given dictionary, including only the specified keys.
+
+    :param keys: Iterable of keys to include
+    :param strict: Whether ``keys`` are required to exist in the dictionary.
+
+    :return: Dictionary whose keys are a subset of given ``keys``
+
+    :raise KeyError: If ``strict`` is True and one of ``keys`` is not found
+                     in the dictionary.
+    """
+    ensure_iterable(keys)
+    ensure_mapping(from_)
+
+    if strict:
+        return from_.__class__((k, from_[k]) for k in keys)
+    else:
+        return from_.__class__((k, from_[k]) for k in keys if k in from_)
+
+
+# Filter functions
+
+def filteritems(function, dict_):
+    """Return a new dictionary comprising of items
+    for which ``function`` returns True.
+
+    :param function: Function taking key and value, or None
+    """
+    ensure_mapping(dict_)
+
+    if function is None:
+        function = lambda k, v: all((k, v))
+    else:
+        ensure_callable(function)
+
+    return dict_.__class__((k, v) for k, v in iteritems(dict_)
+                           if function(k, v))
+
+
+def filterkeys(function, dict_):
+    """Return a new dictionary comprising of keys
+    for which ``function`` returns True, and their corresponding values.
+
+    :param function: Function taking a dictionary key, or None
+    """
+    function = bool if function is None else ensure_callable(function)
+    ensure_mapping(dict_)
+    return dict_.__class__((k, v) for k, v in iteritems(dict_) if function(k))
+
+
+def filtervalues(function, dict_):
+    """Returns a new dictionary comprising of values
+    for which ``function`` return True, and keys that corresponded to them.
+
+    :param function: Function taking a dictionary value, or None
+    """
+    function = bool if function is None else ensure_callable(function)
+    ensure_mapping(dict_)
+    return dict_.__class__((k, v) for k, v in iteritems(dict_) if function(v))
+
+
+# Mutation functions
 
 def merge(*dicts):
     """Merges two or more dictionaries into a single one.
@@ -145,31 +193,4 @@ def reverse(dict_):
     :return: Reversed dictionary
     """
     ensure_mapping(dict_)
-    return dict_.__class__((v, k) for k, v in _items(dict_))
-
-
-def select(keys, from_, strict=False):
-    """Selects a subset of given dictionary, including only the specified keys.
-
-    :param keys: Iterable of keys to include
-    :param strict: Whether ``keys`` are required to exist in the dictionary.
-
-    :return: Dictionary whose keys are a subset of given ``keys``
-
-    :raise KeyError: If ``strict`` is True and one of ``keys`` is not found
-                     in the dictionary.
-    """
-    ensure_iterable(keys)
-    ensure_mapping(from_)
-
-    if strict:
-        return from_.__class__((k, from_[k]) for k in keys)
-    else:
-        return from_.__class__((k, from_[k]) for k in keys if k in from_)
-
-
-# Utility functions
-
-_items = dict.items if IS_PY3 else dict.iteritems
-_keys = dict.keys if IS_PY3 else dict.iterkeys
-_values = dict.values if IS_PY3 else dict.itervalues
+    return dict_.__class__((v, k) for k, v in iteritems(dict_))

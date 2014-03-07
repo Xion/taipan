@@ -4,6 +4,7 @@ Modifiers ("annotation" decorators) for classes and class members.
 import inspect
 
 from taipan.objective import _get_first_arg_name
+from taipan.objective.base import ObjectMetaclass
 from taipan.objective.methods import ensure_method
 
 
@@ -11,11 +12,9 @@ __all__ = ['final', 'override']
 
 
 def final(class_):
-    """Mark a class as _final_, forbidding any more class from
+    """Mark a class as _final_, forbidding any more classes from
     inheriting from it (subclassing it).
     """
-    from taipan.objective.base import ObjectMetaclass
-
     if not inspect.isclass(class_):
         raise TypeError("@final can only be applied to classes")
     if not isinstance(class_, ObjectMetaclass):

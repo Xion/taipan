@@ -7,6 +7,9 @@ from taipan.testing import TestCase
 import taipan.collections.dicts as __unit__
 
 
+ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
+
+
 class AbsentDict(TestCase):
     EXISTING_KEY = 'foo'
     EXISTING_VALUE = 0
@@ -94,10 +97,109 @@ class AbsentDict(TestCase):
             self.fail(msg or "%r is not a mapping" % (obj,))
 
 
-# Dictionary operations
+# Access functions
 
-ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
+class Get(TestCase):
+    DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
 
+    ABSENT_KEYS = ('not_present', 'also_absent')
+    PRESENT_KEYS = tuple('hax')
+    KEYS = ABSENT_KEYS + PRESENT_KEYS  # assumed typical situation
+
+    DEFAULT = 0
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(None, self.KEYS, self.DEFAULT)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(object(), self.KEYS, self.DEFAULT)
+
+    def test_dict__empty(self):
+        self.assertEquals(self.DEFAULT,
+                          __unit__.get({}, self.KEYS, self.DEFAULT))
+
+    def test_keys__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(self.DICT, None, self.DEFAULT)
+
+    def test_keys__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.get(self.DICT, object(), self.DEFAULT)
+
+    def test_keys__empty(self):
+        self.assertEquals(self.DEFAULT,
+                          __unit__.get(self.DICT, (), self.DEFAULT))
+
+    def test_keys__typical(self):
+        self.assertEquals(
+            self.DICT[self.PRESENT_KEYS[0]],
+            __unit__.get(self.DICT, self.KEYS, self.DEFAULT))
+
+    def test_default__omitted(self):
+        self.assertIsNone(__unit__.get(self.DICT, self.ABSENT_KEYS))
+
+    def test_default__provided(self):
+        self.assertEquals(
+            self.DEFAULT,
+            __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
+
+
+class Select(TestCase):
+    DICT = dict(zip(('foo', 'bar', 'baz', 'thud', 'qux'), range(5)))
+
+    STRICT_KEYS = ('foo', 'bar')
+    EXTRANEOUS_KEY = 'blah'
+    NONSTRICT_KEYS = ('bar', 'qux', EXTRANEOUS_KEY)
+
+    SELECTED_BY_STRICT_KEYS = {'foo': 0, 'bar': 1}
+    SELECTED_BY_NONSTRICT_KEYS = {'bar': 1, 'qux': 4}
+
+    def test_keys__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.select(None, self.DICT)
+
+    def test_keys__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.select(object(), self.DICT)
+
+    def test_keys__empty(self):
+        self.assertEquals({}, __unit__.select((), self.DICT))
+
+    def test_from__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.select(self.STRICT_KEYS, None)
+
+    def test_from__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.select(self.STRICT_KEYS, object())
+
+    def test_from__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.select(self.STRICT_KEYS, {}, strict=True)
+        self.assertEquals(
+            {}, __unit__.select(self.NONSTRICT_KEYS, {}, strict=False))
+
+    def test_strict__true(self):
+        self.assertEquals(
+            self.SELECTED_BY_STRICT_KEYS,
+            __unit__.select(self.STRICT_KEYS, self.DICT, strict=True))
+
+        with self.assertRaises(KeyError) as r:
+            __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=True)
+        self.assertIn(repr(self.EXTRANEOUS_KEY), str(r.exception))
+
+    def test_strict__false(self):
+        self.assertEquals(
+            self.SELECTED_BY_STRICT_KEYS,
+            __unit__.select(self.STRICT_KEYS, self.DICT, strict=False))
+        self.assertEquals(
+            self.SELECTED_BY_NONSTRICT_KEYS,
+            __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=False))
+
+
+# Filter functions
 
 class _Filter(TestCase):
     TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
@@ -219,52 +321,7 @@ class FilterValues(_Filter):
             __unit__.filtervalues(FilterValues.FILTER, self.FALSY_DICT))
 
 
-class Get(TestCase):
-    DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
-
-    ABSENT_KEYS = ('not_present', 'also_absent')
-    PRESENT_KEYS = tuple('hax')
-    KEYS = ABSENT_KEYS + PRESENT_KEYS  # assumed typical situation
-
-    DEFAULT = 0
-
-    def test_dict__none(self):
-        with self.assertRaises(TypeError):
-            __unit__.get(None, self.KEYS, self.DEFAULT)
-
-    def test_dict__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.get(object(), self.KEYS, self.DEFAULT)
-
-    def test_dict__empty(self):
-        self.assertEquals(self.DEFAULT,
-                          __unit__.get({}, self.KEYS, self.DEFAULT))
-
-    def test_keys__none(self):
-        with self.assertRaises(TypeError):
-            __unit__.get(self.DICT, None, self.DEFAULT)
-
-    def test_keys__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.get(self.DICT, object(), self.DEFAULT)
-
-    def test_keys__empty(self):
-        self.assertEquals(self.DEFAULT,
-                          __unit__.get(self.DICT, (), self.DEFAULT))
-
-    def test_keys__typical(self):
-        self.assertEquals(
-            self.DICT[self.PRESENT_KEYS[0]],
-            __unit__.get(self.DICT, self.KEYS, self.DEFAULT))
-
-    def test_default__omitted(self):
-        self.assertIsNone(__unit__.get(self.DICT, self.ABSENT_KEYS))
-
-    def test_default__provided(self):
-        self.assertEquals(
-            self.DEFAULT,
-            __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
-
+# Mutation functions
 
 class Merge(TestCase):
     KEYS = ('foo', 'bar', 'baz', 'qux', 'thud')
@@ -328,56 +385,3 @@ class Reverse(TestCase):
         reversed_dict = __unit__.reverse(self.IRREVERSIBLE_DICT)
         self.assertGreater(
             set(self.IRREVERSIBLE_DICT.keys()), set(reversed_dict.values()))
-
-
-class Select(TestCase):
-    DICT = dict(zip(('foo', 'bar', 'baz', 'thud', 'qux'), range(5)))
-
-    STRICT_KEYS = ('foo', 'bar')
-    EXTRANEOUS_KEY = 'blah'
-    NONSTRICT_KEYS = ('bar', 'qux', EXTRANEOUS_KEY)
-
-    SELECTED_BY_STRICT_KEYS = {'foo': 0, 'bar': 1}
-    SELECTED_BY_NONSTRICT_KEYS = {'bar': 1, 'qux': 4}
-
-    def test_keys__none(self):
-        with self.assertRaises(TypeError):
-            __unit__.select(None, self.DICT)
-
-    def test_keys__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.select(object(), self.DICT)
-
-    def test_keys__empty(self):
-        self.assertEquals({}, __unit__.select((), self.DICT))
-
-    def test_from__none(self):
-        with self.assertRaises(TypeError):
-            __unit__.select(self.STRICT_KEYS, None)
-
-    def test_from__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.select(self.STRICT_KEYS, object())
-
-    def test_from__empty(self):
-        with self.assertRaises(KeyError):
-            __unit__.select(self.STRICT_KEYS, {}, strict=True)
-        self.assertEquals(
-            {}, __unit__.select(self.NONSTRICT_KEYS, {}, strict=False))
-
-    def test_strict__true(self):
-        self.assertEquals(
-            self.SELECTED_BY_STRICT_KEYS,
-            __unit__.select(self.STRICT_KEYS, self.DICT, strict=True))
-
-        with self.assertRaises(KeyError) as r:
-            __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=True)
-        self.assertIn(repr(self.EXTRANEOUS_KEY), str(r.exception))
-
-    def test_strict__false(self):
-        self.assertEquals(
-            self.SELECTED_BY_STRICT_KEYS,
-            __unit__.select(self.STRICT_KEYS, self.DICT, strict=False))
-        self.assertEquals(
-            self.SELECTED_BY_NONSTRICT_KEYS,
-            __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=False))

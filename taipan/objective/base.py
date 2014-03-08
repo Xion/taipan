@@ -3,7 +3,7 @@ Universal base class for objects.
 """
 from taipan._compat import IS_PY3
 from taipan.objective.classes import metaclass
-from taipan.objective.methods import is_method, NonInstanceMethod
+from taipan.objective.methods import is_method
 
 
 __all__ = [

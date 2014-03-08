@@ -8,9 +8,8 @@ from itertools import chain, cycle as cycle_, islice, repeat
 from numbers import Integral
 
 from taipan._compat import imap, izip_longest
-from taipan.collections import ensure_iterable, is_iterable
+from taipan.collections import ensure_iterable
 from taipan.functional import ensure_callable
-from taipan.functional.functions import attr_func, key_func
 
 
 __all__ = [
@@ -44,8 +43,8 @@ def batch(iterable, n, fillvalue=None):
     if not (n > 0):
         raise ValueError("number of elements in a batch must be positive")
 
-    # since we must use izip_longest
-    # (izip fails if n is greater than length of iterable),
+    # since we must use ``izip_longest``
+    # (``izip`` fails if ``n`` is greater than length of ``iterable``),
     # we will apply some 'trimming' to resulting tuples if necessary
     if fillvalue is None:
         fillvalue = object()
@@ -83,8 +82,8 @@ def intertwine(*iterables):
     """Constructs an iterable which intertwines given iterables.
 
     The resulting iterable will return an item from first sequence,
-    then second, etc. until the last one - and then another item from
-    first, then second, etc. - up until all iterables are exhausted.
+    then from second, etc. until the last one - and then another item from
+    first, then from second, etc. - up until all iterables are exhausted.
     """
     iterables = tuple(map(ensure_iterable, iterables))
 

@@ -17,9 +17,8 @@ With the aid of this module, implementing such a mechanism is typically
 as simple as adding a @\ :class:`fluent` decorator to the class.
 """
 import functools
-import inspect
 
-from taipan._compat import imap, IS_PY3
+from taipan._compat import imap
 from taipan.api.decorators import class_decorator
 from taipan.collections import is_iterable
 from taipan.functional import ensure_callable

@@ -3,7 +3,6 @@ Object-oriented programming utilities.
 """
 import inspect
 
-from taipan.functional import ensure_callable
 from taipan.strings import is_string
 
 

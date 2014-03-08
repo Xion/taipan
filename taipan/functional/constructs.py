@@ -1,7 +1,6 @@
 """
 Functional constructs, emulating Python statements in expression form.
 """
-import collections
 import inspect
 import sys
 
@@ -10,6 +9,7 @@ from taipan.api.fluency import fluent
 from taipan.collections import (ensure_iterable, ensure_ordered_mapping,
                                 is_mapping)
 from taipan.functional import ensure_callable
+from taipan.functional.functions import none
 
 
 __all__ = [
@@ -277,7 +277,7 @@ class Var(object):
     def __enter__(self):
         return self
 
-    __exit__ = pass_
+    __exit__ = none()
 
     def __iter__(self):
         return iter((self.value,) if self.has_value() else ())

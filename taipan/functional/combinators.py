@@ -2,7 +2,6 @@
 Combinators for constructing new functions from existing functions.
 """
 import functools
-import sys
 
 from taipan._compat import imap
 from taipan.functional import ensure_argcount, ensure_callable

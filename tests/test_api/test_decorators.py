@@ -1,9 +1,6 @@
 """
 Tests for the .api.decorators module.
 """
-import functools
-import inspect
-
 from taipan.testing import TestCase
 
 import taipan.api.decorators as __unit__

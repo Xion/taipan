@@ -3,7 +3,7 @@ Dictionary-related functions and classes.
 """
 from itertools import chain
 
-from taipan._compat import IS_PY3
+from taipan._compat import IS_PY3, izip
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
 from taipan.functional import ensure_callable
 from taipan.functional.combinators import compose
@@ -179,7 +179,7 @@ def invert(dict_):
     :return: Inverted dictionary
     """
     ensure_mapping(dict_)
-    return dict_.__class__((v, k) for k, v in iteritems(dict_))
+    return dict_.__class__(izip(itervalues(dict_), iterkeys(dict_)))
 
 
 def merge(*dicts):

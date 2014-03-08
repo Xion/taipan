@@ -61,7 +61,7 @@ class AbsentDict(TestCase):
         self.assertEquals(len(self.DICT_WITH_ONE_ABSENT) - 1, len(dict_))
         self.assertNotIn(self.ABSENT_KEY, dict_)
 
-    def test_ctor__dict__all_absent(self):
+    def test_ctor__pairlist__all_absent(self):
         dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_ABSENT.items())
         self.assertEquals({}, dict_)
 
@@ -323,6 +323,36 @@ class FilterValues(_Filter):
 
 # Mutation functions
 
+class Invert(TestCase):
+    INVERTIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
+    UNINVERTIBLE_DICT = dict(zip(range(1, 2 * len(ALPHABET) + 1),
+                                 ALPHABET * 2))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.invert(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.invert(object())
+
+    def test_empty(self):
+        self.assertEquals({}, __unit__.invert({}))
+
+    def test_invertible(self):
+        inverted_dict = __unit__.invert(self.INVERTIBLE_DICT)
+        self.assertItemsEqual(
+            self.INVERTIBLE_DICT.values(), inverted_dict.keys())
+        self.assertItemsEqual(
+            self.INVERTIBLE_DICT.keys(), inverted_dict.values())
+
+    def test_uninvertible(self):
+        # a bit of misnomer, but it means dictionary has duplicate values
+        inverted_dict = __unit__.invert(self.UNINVERTIBLE_DICT)
+        self.assertGreater(
+            set(self.UNINVERTIBLE_DICT.keys()), set(inverted_dict.values()))
+
+
 class Merge(TestCase):
     KEYS = ('foo', 'bar', 'baz', 'qux', 'thud')
 
@@ -355,33 +385,3 @@ class Merge(TestCase):
     def test_many_args(self):
         self.assertEquals(
             self.MERGED, __unit__.merge(*self.MANY_DICTS))
-
-
-class Reverse(TestCase):
-    REVERSIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
-    IRREVERSIBLE_DICT = dict(zip(range(1, 2 * len(ALPHABET) + 1),
-                                 ALPHABET * 2))
-
-    def test_none(self):
-        with self.assertRaises(TypeError):
-            __unit__.reverse(None)
-
-    def test_some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.reverse(object())
-
-    def test_empty(self):
-        self.assertEquals({}, __unit__.reverse({}))
-
-    def test_reversible(self):
-        reversed_dict = __unit__.reverse(self.REVERSIBLE_DICT)
-        self.assertItemsEqual(
-            self.REVERSIBLE_DICT.values(), reversed_dict.keys())
-        self.assertItemsEqual(
-            self.REVERSIBLE_DICT.keys(), reversed_dict.values())
-
-    def test_irreversible(self):
-        # a bit of misnomer, but it means dictionary has duplicate values
-        reversed_dict = __unit__.reverse(self.IRREVERSIBLE_DICT)
-        self.assertGreater(
-            set(self.IRREVERSIBLE_DICT.keys()), set(reversed_dict.values()))

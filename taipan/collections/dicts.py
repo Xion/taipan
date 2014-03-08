@@ -14,7 +14,7 @@ __all__ = [
     'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
     'get', 'select',
     'filteritems', 'filterkeys', 'filtervalues',
-    'merge', 'reverse',
+    'invert', 'merge',
 ]
 
 
@@ -166,6 +166,22 @@ def filtervalues(function, dict_):
 
 # Mutation functions
 
+def invert(dict_):
+    """Return an inverted dictionary, where former values are keys
+    and former keys are values.
+
+    .. warning::
+
+        If more than one key maps to any given value in input dictionary,
+        it is undefined which one will be chosen for the result.
+
+    :param dict_: Dictionary to swap keys and values in
+    :return: Inverted dictionary
+    """
+    ensure_mapping(dict_)
+    return dict_.__class__((v, k) for k, v in iteritems(dict_))
+
+
 def merge(*dicts):
     """Merges two or more dictionaries into a single one.
 
@@ -178,19 +194,3 @@ def merge(*dicts):
     for d in dicts:
         res.update(d)
     return res
-
-
-def reverse(dict_):
-    """Return a reversed dictionary, where former values are keys
-    and former keys are values.
-
-    .. warning::
-
-        If more than one key maps to any given value in input dictionary,
-        it is undefined which one will be chosen for the result.
-
-    :param dict_: Dictionary to swap keys and values in
-    :return: Reversed dictionary
-    """
-    ensure_mapping(dict_)
-    return dict_.__class__((v, k) for k, v in iteritems(dict_))

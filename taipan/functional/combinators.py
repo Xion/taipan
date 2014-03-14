@@ -157,7 +157,13 @@ def nand(*fs):
         return lambda *args, **kwargs: not (
             f1(*args, **kwargs) and f2(*args, **kwargs))
 
-    return not_(and_(*fs))
+    def g(*args, **kwargs):
+        for f in fs:
+            if not f(*args, **kwargs):
+                return True
+        return False
+
+    return g
 
 
 def nor(*fs):
@@ -179,4 +185,10 @@ def nor(*fs):
         return lambda *args, **kwargs: not (
             f1(*args, **kwargs) or f2(*args, **kwargs))
 
-    return not_(or_(*fs))
+    def g(*args, **kwargs):
+        for f in fs:
+            if f(*args, **kwargs):
+                return False
+        return True
+
+    return g

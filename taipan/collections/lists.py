@@ -2,7 +2,7 @@
 List-related functions and classes.
 """
 from taipan._compat import imap, xrange
-from taipan.collections import ensure_sequence
+from taipan.collections import ensure_iterable, ensure_sequence
 
 
 __all__ = [
@@ -74,7 +74,7 @@ def intercalate(elems, list_):
 
 def concat(list_):
     """Concatenates a list of lists into a single resulting list."""
-    ensure_sequence(list_)
+    ensure_iterable(list_)
 
     # we don't use ``itertools.chain.from_iterable``, because that would
     # inadvertenly allow strings, treating them as lists of characters

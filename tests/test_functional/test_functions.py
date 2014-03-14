@@ -161,6 +161,11 @@ class AttrFunc(TestCase):
         with self.assertRaises(AttributeError):
             func(self.DOUBLY_NESTED_OBJECT)
 
+    def test_single_attr__with_dot(self):
+        func = __unit__.attr_func('foo.bar')
+        self.assertEquals(
+            self.DOUBLY_NESTED_OBJECT.foo.bar, func(self.DOUBLY_NESTED_OBJECT))
+
     def test_two_attrs__good(self):
         func = __unit__.attr_func('foo', 'bar')
         self.assertEquals(
@@ -183,7 +188,7 @@ class AttrFunc(TestCase):
         self.assertEquals(self.DEFAULT, func(self.SINGLE_NESTED_OBJECT))
         self.assertEquals(self.DEFAULT, func(self.DOUBLY_NESTED_OBJECT))
 
-    def test_two_atttrs__good__with_default(self):
+    def test_two_attrs__good__with_default(self):
         func = __unit__.attr_func('foo', 'bar', default=self.DEFAULT)
         self.assertEquals(
             self.DOUBLY_NESTED_OBJECT.foo.bar, func(self.DOUBLY_NESTED_OBJECT))

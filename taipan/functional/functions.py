@@ -3,6 +3,7 @@ Common functions and function "factories".
 """
 import operator
 
+from taipan.collections.lists import flatten
 from taipan.functional import (ensure_argcount, ensure_callable,
                                ensure_keyword_args)
 from taipan.strings import ensure_string
@@ -80,11 +81,13 @@ def attr_func(*attrs, **kwargs):
     :return: Unary attribute function
     """
     ensure_argcount(attrs, min_=1)
-    attrs = list(map(ensure_string, attrs))
+    attrs = map(ensure_string, attrs)
     # TODO(xion): verify attribute names correctness
 
-    # TODO(xion): support arguments containing dots, e.g.
-    # attr_func('a.b') instead of attr_func('a', 'b')
+    # allow arguments with dots, interpreting them as multiple attributes,
+    # e.g. ``attr_func('a.b')`` as ``attr_func('a', 'b')``
+    attrs = flatten(attr.split('.') if '.' in attr else [attr]
+                    for attr in attrs)
 
     ensure_keyword_args(kwargs, optional=('default',))
 

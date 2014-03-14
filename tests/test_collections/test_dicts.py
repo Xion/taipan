@@ -1,7 +1,7 @@
 """
 Tests for the .collections.dicts module.
 """
-from taipan.collections import is_mapping
+from taipan.collections import is_mapping, is_sequence
 from taipan.testing import TestCase
 
 import taipan.collections.dicts as __unit__
@@ -95,6 +95,91 @@ class AbsentDict(TestCase):
     def _assertIsMapping(self, obj, msg=None):
         if not is_mapping(obj):
             self.fail(msg or "%r is not a mapping" % (obj,))
+
+
+# Compatibility shims
+
+class _Shim(TestCase):
+    KEYS = ['foo', 'bar']
+    VALUES = list(range(len(KEYS)))
+    ITEMS = list(zip(KEYS, VALUES))
+    DICT = dict(ITEMS)
+
+    def _assertSequence(self, obj):
+        self.assertTrue(is_sequence(obj), msg="%r is not a sequence" % (obj,))
+
+    def _assertNotSequence(self, obj):
+        self.assertFalse(is_sequence(obj), msg="%r is a sequence" % (obj,))
+
+    def _assertEmptySequence(self, obj):
+        self._assertSequence(obj)
+        self.assertEmpty(obj)
+
+    def _assertEmptyNonSequence(self, obj):
+        self._assertNotSequence(obj)
+        self.assertEmpty(obj)
+
+    def _assertSequenceItems(self, items, obj):
+        self._assertSequence(obj)
+        self.assertItemsEqual(items, obj)
+
+    def _assertNonSequenceItems(self, items, obj):
+        self._assertNotSequence(obj)
+        self.assertItemsEqual(items, obj)
+
+
+class IterItems(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.iteritems(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.iteritems(object())
+
+    def test_dict__empty(self):
+        self._assertEmptyNonSequence(__unit__.iteritems({}))
+
+    def test_dict__normal(self):
+        iteritems = __unit__.iteritems(self.DICT)
+        self._assertNonSequenceItems(self.ITEMS, iteritems)
+
+
+class IterKeys(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.iterkeys(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.iterkeys(object())
+
+    def test_dict__empty(self):
+        self._assertEmptyNonSequence(__unit__.iterkeys({}))
+
+    def test_dict__normal(self):
+        iterkeys = __unit__.iterkeys(self.DICT)
+        self._assertNonSequenceItems(self.KEYS, iterkeys)
+
+
+class IterValues(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.itervalues(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.itervalues(object())
+
+    def test_dict__empty(self):
+        self._assertEmptyNonSequence(__unit__.itervalues({}))
+
+    def test_dict__normal(self):
+        itervalues = __unit__.itervalues(self.DICT)
+        self._assertNonSequenceItems(self.VALUES, itervalues)
 
 
 # Access functions

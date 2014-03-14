@@ -182,6 +182,60 @@ class IterValues(_Shim):
         self._assertNonSequenceItems(self.VALUES, itervalues)
 
 
+class Items(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.items(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.items(object())
+
+    def test_dict__empty(self):
+        self._assertEmptySequence(__unit__.items({}))
+
+    def test_dict__normal(self):
+        items = __unit__.items(self.DICT)
+        self._assertSequenceItems(self.ITEMS, items)
+
+
+class Keys(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.keys(None)
+
+    def test_some_objects(self):
+        with self.assertRaises(TypeError):
+            __unit__.keys(object())
+
+    def test_dict__empty(self):
+        self._assertEmptySequence(__unit__.keys({}))
+
+    def test_dict__normal(self):
+        keys = __unit__.keys(self.DICT)
+        self._assertSequenceItems(self.KEYS, keys)
+
+
+class Values(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.values(None)
+
+    def test_some_objects(self):
+        with self.assertRaises(TypeError):
+            __unit__.values(object())
+
+    def test_dict__empty(self):
+        self._assertEmptySequence(__unit__.values({}))
+
+    def test_dict__normal(self):
+        values = __unit__.values(self.DICT)
+        self._assertSequenceItems(self.VALUES, values)
+
+
 # Access functions
 
 class Get(TestCase):

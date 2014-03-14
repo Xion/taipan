@@ -463,3 +463,78 @@ class Nand(_BinaryLogicalCombinator):
             Nand.TRUE,
             __unit__.nand(Nand.GREATER_THAN(10), Nand.LESS_THAN(10),
                           Nand.DIVISIBLE_BY(2)))
+
+
+class Nor(_BinaryLogicalCombinator):
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.nor()
+
+    def test_one_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.nor(None)
+
+    def test_one_arg__true(self):
+        self._assertBooleanFunctionsEqual(Nor.FALSE, __unit__.nor(Nor.TRUE))
+
+    def test_one_arg__false(self):
+        self._assertBooleanFunctionsEqual(Nor.TRUE, __unit__.nor(Nor.FALSE))
+
+    def test_two_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.TRUE, __unit__.nor(Nor.FALSE, Nor.FALSE))
+
+    def test_two_args__integer_ranges__half_open(self):
+        self._assertIntegerFunctionsEqual(
+            Nor.LESS_THAN(6),  # lower minimum "wins" and is negated
+            __unit__.nor(Nor.GREATER_THAN(5), Nor.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nor.GREATER_THAN(9),  # higher maximum "wins" and is negated
+            __unit__.nor(Nor.LESS_THAN(5), Nor.LESS_THAN(10)))
+
+    def test_two_args__integer_ranges__closed(self):
+        self._assertIntegerFunctionsEqual(
+            Nor.FALSE,
+            __unit__.nor(Nor.GREATER_THAN(5), Nor.LESS_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nor.BETWEEN(4, 11),
+            __unit__.nor(Nor.GREATER_THAN(10), Nor.LESS_THAN(5)))
+
+    def test_three_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.TRUE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.TRUE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.FALSE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.FALSE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.TRUE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.TRUE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.FALSE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.TRUE, __unit__.nor(Nor.FALSE, Nor.FALSE, Nor.FALSE))
+
+    def test_three_args__even_integer_intervals(self):
+        self._assertIntegerFunctionsEqual(
+            Nor.FALSE,
+            __unit__.nor(Nor.GREATER_THAN(5), Nor.LESS_THAN(10),
+                         Nor.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nor.FALSE,
+            __unit__.nor(Nor.GREATER_THAN(6), Nor.LESS_THAN(7),
+                         Nor.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nor.ODD_BETWEEN(4, 11),
+            __unit__.nor(Nor.GREATER_THAN(10), Nor.LESS_THAN(5),
+                         Nor.DIVISIBLE_BY(2)))

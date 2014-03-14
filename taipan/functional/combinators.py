@@ -84,7 +84,7 @@ def not_(f):
 
 def and_(*fs):
     """Creates a function that returns true for given arguments
-    if every given function evalutes to true for those arguments.
+    iff every given function evalutes to true for those arguments.
 
     :param fs: Functions to combine
 
@@ -112,7 +112,7 @@ def and_(*fs):
 
 def or_(*fs):
     """Creates a function that returns false for given arugments
-    if every given function evaluates to false for those arguments.
+    iff every given function evaluates to false for those arguments.
 
     :param fs: Functions to combine
 
@@ -136,3 +136,47 @@ def or_(*fs):
         return False
 
     return g
+
+
+def nand(*fs):
+    """Creates a function that returns false for given arguments
+    iff every given function evalutes to true for those arguments.
+
+    :param fs: Functions to combine
+
+    :return: Short-circuiting function performing logical NAND operation
+             on results of ``fs`` applied to its arguments
+    """
+    ensure_argcount(fs, min_=1)
+    fs = list(imap(ensure_callable, fs))
+
+    if len(fs) == 1:
+        return not_(fs[0])
+    if len(fs) == 2:
+        f1, f2 = fs
+        return lambda *args, **kwargs: not (
+            f1(*args, **kwargs) and f2(*args, **kwargs))
+
+    return not_(and_(fs))
+
+
+def nor(*fs):
+    """Creates a function that returns true for given arguments
+    iff every given function evalutes to false for those arguments.
+
+    :param fs: Functions to combine
+
+    :return: Short-circuiting function performing logical NOR operation
+             on results of ``fs`` applied to its arguments
+    """
+    ensure_argcount(fs, min_=1)
+    fs = list(imap(ensure_callable, fs))
+
+    if len(fs) == 1:
+        return not_(fs[0])
+    if len(fs) == 2:
+        f1, f2 = fs
+        return lambda *args, **kwargs: not (
+            f1(*args, **kwargs) or f2(*args, **kwargs))
+
+    return not_(or_(fs))

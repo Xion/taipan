@@ -9,7 +9,7 @@ from taipan.functional import ensure_argcount, ensure_callable
 
 __all__ = [
     'curry', 'uncurry', 'flip', 'compose',
-    'not_', 'and_', 'or_',
+    'not_', 'and_', 'or_', 'nand', 'nor',
 ]
 
 
@@ -157,7 +157,7 @@ def nand(*fs):
         return lambda *args, **kwargs: not (
             f1(*args, **kwargs) and f2(*args, **kwargs))
 
-    return not_(and_(fs))
+    return not_(and_(*fs))
 
 
 def nor(*fs):
@@ -179,4 +179,4 @@ def nor(*fs):
         return lambda *args, **kwargs: not (
             f1(*args, **kwargs) or f2(*args, **kwargs))
 
-    return not_(or_(fs))
+    return not_(or_(*fs))

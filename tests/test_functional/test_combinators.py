@@ -22,7 +22,8 @@ class _Combinator(TestCase):
             domain = xrange(-limit, limit + 1)
 
         for args in product(domain, repeat=argcount):
-            self.assertEquals(f(*args), g(*args))
+            self.assertEquals(f(*args), g(*args),
+                              msg="result mismatch for args: %r" % (args,))
 
 
 class _UnaryCombinator(_Combinator):
@@ -221,13 +222,25 @@ class Not_(_LogicalCombinator):
 class _BinaryLogicalCombinator(_LogicalCombinator):
     GREATER_THAN = staticmethod(lambda min_: lambda x: x > min_)
     LESS_THAN = staticmethod(lambda max_: lambda x: x < max_)
+
     DIVISIBLE_BY = staticmethod(lambda d: lambda x: x % d == 0)
+    EVEN = staticmethod(lambda x: x % 2 == 0)
+    ODD = staticmethod(lambda x: x % 2 == 1)
 
-
-class And_(_BinaryLogicalCombinator):
     BETWEEN = staticmethod(lambda min_, max_: lambda x: min_ < x < max_)
     EVEN_BETWEEN = staticmethod(
         lambda min_, max_: lambda x: min_ < x < max_ and x % 2 == 0)
+    ODD_BETWEEN = staticmethod(
+        lambda min_, max_: lambda x: min_ < x < max_ and x % 2 == 1)
+
+    OUTSIDE = staticmethod(lambda min_, max_: lambda x: x < min_ or x > max_)
+    EVEN_OR_OUTSIDE = staticmethod(
+        lambda min_, max_: lambda x: x % 2 == 0 or x < min_ or x > max_)
+    ODD_OR_OUTSIDE = staticmethod(
+        lambda min_, max_: lambda x: x % 2 == 0 or x < min_ or x > max_)
+
+
+class And_(_BinaryLogicalCombinator):
 
     def test_no_args(self):
         with self.assertRaises(TypeError):
@@ -303,9 +316,6 @@ class And_(_BinaryLogicalCombinator):
 
 
 class Or_(_BinaryLogicalCombinator):
-    OUTSIDE = staticmethod(lambda min_, max_: lambda x: x < min_ or x > max_)
-    EVEN_OR_OUTSIDE = staticmethod(
-        lambda min_, max_: lambda x: x % 2 == 0 or x < min_ or x > max_)
 
     def test_no_args(self):
         with self.assertRaises(TypeError):
@@ -378,3 +388,78 @@ class Or_(_BinaryLogicalCombinator):
             Or_.TRUE,  # because an even number closes the gap between ranges
             __unit__.or_(Or_.GREATER_THAN(10), Or_.LESS_THAN(10),
                           Or_.DIVISIBLE_BY(2)))
+
+
+class Nand(_BinaryLogicalCombinator):
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.nand()
+
+    def test_one_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.nand(None)
+
+    def test_one_arg__true(self):
+        self._assertBooleanFunctionsEqual(Nand.FALSE, __unit__.nand(Nand.TRUE))
+
+    def test_one_arg__false(self):
+        self._assertBooleanFunctionsEqual(Nand.TRUE, __unit__.nand(Nand.FALSE))
+
+    def test_two_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nand.FALSE, __unit__.nand(Nand.TRUE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.FALSE))
+
+    def test_two_args__integer_ranges__half_open(self):
+        self._assertIntegerFunctionsEqual(
+            Nand.LESS_THAN(11),  # higher minimum "wins" and is negated
+            __unit__.nand(Nand.GREATER_THAN(5), Nand.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nand.GREATER_THAN(4),  # lower maximum "wins" ans is negated
+            __unit__.nand(Nand.LESS_THAN(5), Nand.LESS_THAN(10)))
+
+    def test_two_args__integer_ranges__open(self):
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.LESS_THAN(5), Nand.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nand.OUTSIDE(6, 9),
+            __unit__.nand(Nand.GREATER_THAN(5), Nand.LESS_THAN(10)))
+
+    def test_three_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nand.FALSE, __unit__.nand(Nand.TRUE, Nand.TRUE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.TRUE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.FALSE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.FALSE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.TRUE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.TRUE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.FALSE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.FALSE, Nand.FALSE))
+
+    def test_three_args__even_integer_intervals(self):
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.LESS_THAN(5), Nand.GREATER_THAN(10),
+                          Nand.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.GREATER_THAN(6), Nand.LESS_THAN(7),
+                          Nand.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.GREATER_THAN(10), Nand.LESS_THAN(10),
+                          Nand.DIVISIBLE_BY(2)))

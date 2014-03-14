@@ -56,6 +56,9 @@ def compose(*fs):
     if len(fs) == 2:
         f1, f2 = fs
         return lambda *args, **kwargs: f1(f2(*args, **kwargs))
+    if len(fs) == 3:
+        f1, f2, f3 = fs
+        return lambda *args, **kwargs: f1(f2(f3(*args, **kwargs)))
 
     fs.reverse()
 
@@ -100,6 +103,10 @@ def and_(*fs):
         f1, f2 = fs
         return lambda *args, **kwargs: (
             f1(*args, **kwargs) and f2(*args, **kwargs))
+    if len(fs) == 3:
+        f1, f2, f3 = fs
+        return lambda *args, **kwargs: (
+            f1(*args, **kwargs) and f2(*args, **kwargs) and f3(*args, **kwargs))
 
     def g(*args, **kwargs):
         for f in fs:
@@ -128,6 +135,10 @@ def or_(*fs):
         f1, f2 = fs
         return lambda *args, **kwargs: (
             f1(*args, **kwargs) or f2(*args, **kwargs))
+    if len(fs) == 3:
+        f1, f2, f3 = fs
+        return lambda *args, **kwargs: (
+            f1(*args, **kwargs) or f2(*args, **kwargs) or f3(*args, **kwargs))
 
     def g(*args, **kwargs):
         for f in fs:
@@ -156,6 +167,10 @@ def nand(*fs):
         f1, f2 = fs
         return lambda *args, **kwargs: not (
             f1(*args, **kwargs) and f2(*args, **kwargs))
+    if len(fs) == 3:
+        f1, f2, f3 = fs
+        return lambda *args, **kwargs: not (
+            f1(*args, **kwargs) and f2(*args, **kwargs) and f3(*args, **kwargs))
 
     def g(*args, **kwargs):
         for f in fs:
@@ -184,6 +199,10 @@ def nor(*fs):
         f1, f2 = fs
         return lambda *args, **kwargs: not (
             f1(*args, **kwargs) or f2(*args, **kwargs))
+    if len(fs) == 3:
+        f1, f2, f3 = fs
+        return lambda *args, **kwargs: not (
+            f1(*args, **kwargs) or f2(*args, **kwargs) or f3(*args, **kwargs))
 
     def g(*args, **kwargs):
         for f in fs:

@@ -3,9 +3,10 @@ Dictionary-related functions and classes.
 """
 from itertools import chain
 
-from taipan._compat import IS_PY3, izip
+from taipan._compat import IS_PY3, imap, izip
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
-from taipan.functional import ensure_callable
+from taipan.functional import (ensure_argcount, ensure_callable,
+                               ensure_keyword_args)
 from taipan.functional.combinators import compose
 
 
@@ -182,15 +183,65 @@ def invert(dict_):
     return dict_.__class__(izip(itervalues(dict_), iterkeys(dict_)))
 
 
-def merge(*dicts):
+def merge(*dicts, **kwargs):
     """Merges two or more dictionaries into a single one.
 
     Repeated keys will retain their last values,
     as per given order of dictionaries.
 
+    :param deep:
+
+        Whether merging should proceed recursively, and cause
+        corresponding subdictionaries to be merged into each other.
+
+        Example::
+
+            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=False)
+            {'a': {'c': 2}}
+            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=True)
+            {'a': {'b': 1, 'c': 2}}
+
     :return: Merged dictionary
     """
-    res = {}
-    for d in dicts:
-        res.update(d)
+    ensure_argcount(dicts, min_=1)
+    dicts = list(imap(ensure_mapping, dicts))
+
+    ensure_keyword_args(kwargs, optional=('deep',))
+
+    res = dicts[0].copy()
+    if len(dicts) == 1:
+        return res
+
+    deep = kwargs.get('deep', False)
+    dict_update = _recursive_dict_update if deep else dict.update
+
+    for d in dicts[1:]:
+        dict_update(res, d)
     return res
+
+
+def _recursive_dict_update(one_dict, other_dict):
+    """Deep/recursive version of ``dict.update``.
+
+    If a key is present in both dictionaries, and points to
+    "child" dictionaries, those will be appropriately merged.
+
+    :return: First of the two dictionaries
+    """
+    result = one_dict  # first arg works like ``self`` in dict.update()
+
+    for key, other_value in iteritems(other_dict):
+        if key not in result:
+            result[key] = other_value
+            continue
+
+        # only merge if both values are subdictionaries
+        value = result[key]
+        both_dicts = is_mapping(value) and is_mapping(other_value)
+        if not both_dicts:
+            result[key] = other_value
+            continue
+
+        _recursive_dict_update(value, other_value)
+
+    return result

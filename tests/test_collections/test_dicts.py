@@ -501,8 +501,15 @@ class Merge(TestCase):
 
     MERGED = dict(zip(KEYS, range(5)))
 
+    DEEP_DICT1 = {'foo': {'bar': 1}, 'baz': 'A'}
+    DEEP_DICT2 = {'foo': {'qux': 2}, 'thud': 'B'}
+    NOT_DEEP_DICT = {'foo': 'a'}
+    MERGED_DEEP_1_2 = {'foo': {'bar': 1, 'qux': 2}, 'baz': 'A', 'thud': 'B'}
+    MERGED_DEEP1_AND_NOT_DEEP = {'foo': 'a', 'baz': 'A'}
+
     def test_no_args(self):
-        self.assertEquals({}, __unit__.merge())
+        with self.assertRaises(TypeError):
+            __unit__.merge()
 
     def test_single_arg__none(self):
         with self.assertRaises(TypeError):
@@ -524,3 +531,32 @@ class Merge(TestCase):
     def test_many_args(self):
         self.assertEquals(
             self.MERGED, __unit__.merge(*self.MANY_DICTS))
+
+    def test_deep__no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(deep=True)
+
+    def test_deep__single_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(None, deep=True)
+
+    def test_deep__single_arg__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(object(), deep=True)
+
+    def test_deep__single_arg__dict(self):
+        result = __unit__.merge(self.DICT, deep=True)
+        self.assertEquals(self.DICT, result)
+        self.assertIsNot(self.DICT, result)
+
+    def test_deep__two_args__shallow(self):
+        result = __unit__.merge(self.DICT, self.OTHER_DICT, deep=True)
+        self.assertEquals(self.MERGED, result)
+
+    def test_deep__two_args__both_deep(self):
+        result = __unit__.merge(self.DEEP_DICT1, self.DEEP_DICT2, deep=True)
+        self.assertEquals(self.MERGED_DEEP_1_2, result)
+
+    def test_deep__two_args__deep_and_shallow(self):
+        result = __unit__.merge(self.DEEP_DICT1, self.NOT_DEEP_DICT, deep=True)
+        self.assertEquals(self.MERGED_DEEP1_AND_NOT_DEEP, result)

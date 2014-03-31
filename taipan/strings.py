@@ -299,8 +299,6 @@ class Replacer(object):
         or_ = haystack.__class__('|')
         regex = join(or_, imap(
             re.escape, sorted(self._replacements, key=len, reverse=True)))
-        # TODO(xion): cache the regex & ``do_replace`` to speed up
-        # multiple invocations of ``in_`` on the same replacer
 
         # do the substituion, looking up the replacement for every match
         do_replace = lambda match: self._replacements[match.group()]

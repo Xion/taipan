@@ -14,7 +14,7 @@ except ImportError:
 from taipan._compat import IS_PY3, imap
 from taipan.collections import is_countable, is_iterable
 from taipan.functional.functions import identity
-from taipan.strings import BaseString
+from taipan.strings import BaseString, is_string
 
 
 __all__ = [
@@ -66,14 +66,14 @@ class TestCase(_BaseTestCase):
 
     def assertStartsWith(self, prefix, string, msg=None):
         """Assert that ``string`` starts with given ``prefix``."""
-        self.assertIsInstance(prefix, BaseString)
+        self.__fail_unless_strings(prefix)
         self.assertIsInstance(string, BaseString)
         if not string.startswith(prefix):
             self.__fail(msg, "%r does not start with %r" % (string, prefix))
 
     def assertEndsWith(self, suffix, string, msg=None):
         """Assert that ``string`` ends with given ``suffix``."""
-        self.assertIsInstance(suffix, BaseString)
+        self.__fail_unless_strings(suffix)
         self.assertIsInstance(string, BaseString)
         if not string.endswith(suffix):
             self.__fail(msg, "%r does not end with %r" % (string, suffix))
@@ -209,6 +209,12 @@ class TestCase(_BaseTestCase):
     def __fail_unless_callable(self, arg):
         if not callable(arg):
             self.fail("%r is not a callable" % (arg,))
+
+    def __fail_unless_strings(self, arg):
+        """Fail the test unless argument is a string or iterable thereof."""
+        if not is_string(arg):
+            if not (is_iterable(arg) and all(imap(is_string, arg))):
+                self.fail("%r is not a string or iterable of strings" % (arg,))
 
 
 # Skip decorators

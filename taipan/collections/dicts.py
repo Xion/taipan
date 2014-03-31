@@ -93,15 +93,13 @@ def get(dict_, keys=(), default=None):
     ensure_mapping(dict_)
     ensure_iterable(keys)
 
-    keys = list(keys)
-    if not keys:
-        return default
-
-    for key in keys[:-1]:
-        if key in dict_:
+    for key in keys:
+        try:
             return dict_[key]
+        except KeyError:
+            pass
 
-    return dict_.get(keys[-1], default)
+    return default
 
 
 def select(keys, from_, strict=False):
@@ -121,7 +119,8 @@ def select(keys, from_, strict=False):
     if strict:
         return from_.__class__((k, from_[k]) for k in keys)
     else:
-        return from_.__class__((k, from_[k]) for k in keys if k in from_)
+        existing_keys = set(keys) & set(iterkeys(from_))
+        return from_.__class__((k, from_[k]) for k in existing_keys)
 
 
 # Filter functions
@@ -213,7 +212,7 @@ def merge(*dicts, **kwargs):
         return res
 
     deep = kwargs.get('deep', False)
-    dict_update = _recursive_dict_update if deep else dict.update
+    dict_update = _recursive_dict_update if deep else res.__class__.update
 
     for d in dicts[1:]:
         dict_update(res, d)

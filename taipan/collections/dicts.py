@@ -1,13 +1,14 @@
 """
 Dictionary-related functions and classes.
 """
-from itertools import chain
+from itertools import chain, starmap
 
 from taipan._compat import IS_PY3, imap, izip
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
 from taipan.functional import (ensure_argcount, ensure_callable,
                                ensure_keyword_args)
 from taipan.functional.combinators import compose
+from taipan.functional.functions import identity
 
 
 __all__ = [
@@ -86,7 +87,7 @@ def get(dict_, keys=(), default=None):
 
     :param dict_: Dictionary to perform the lookup(s) in
     :param keys: Iterable of keys
-    :param default: Default value to return if not key is found
+    :param default: Default value to return if no key is found
 
     :return: Value for one of given ``keys``, or ``default``
     """
@@ -164,7 +165,68 @@ def filtervalues(function, dict_):
     return dict_.__class__((k, v) for k, v in iteritems(dict_) if function(v))
 
 
-# Mutation functions
+# Mapping functions
+
+def mapitems(function, dict_):
+    """Return a new dictionary where the keys and values come from applying
+    ``function`` to the keys and values of given dictionary.
+
+    .. warning::
+
+        If ``function`` returns a key-value pair with the same key
+        more than once, it is undefined which value will be chosen
+        for that key in the resulting dictionary.
+
+    :param function: Function taking key and value as two arguments
+                     and returning a new key-value pair, or None
+                     (corresponding to identity function)
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_mapping(dict_)
+
+    if function is None:
+        function = lambda k, v: (k, v)
+    else:
+        ensure_callable(function)
+
+    return dict_.__class__(starmap(function, iteritems(dict_)))
+
+
+def mapkeys(function, dict_):
+    """Return a new dictionary where the keys come from applying ``function``
+    to the keys of given dictionary.
+
+    .. warning::
+
+        If ``function`` returns the same value for more than one key,
+        it is undefined which key will be chosen for the resulting dictionary.
+
+    :param function: Function taking a dictionary key,
+                     or None (corresponding to identity function)
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_mapping(dict_)
+    function = identity() if function is None else ensure_callable(function)
+    return dict_.__class__((function(k), v) for k, v in iteritems(dict_))
+
+
+def mapvalues(function, dict_):
+    """Return a new dictionary where the values come from applying ``function``
+    to the values of given dictionary.
+
+    :param function: Function taking a dictionary value,
+                     or None (corresponding to identity function)
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_mapping(dict_)
+    function = identity() if function is None else ensure_callable(function)
+    return dict_.__class__((k, function(v)) for k, v in iteritems(dict_))
+
+
+# Other transformation functions
 
 def invert(dict_):
     """Return an inverted dictionary, where former values are keys

@@ -369,7 +369,7 @@ class FilterItems(_Filter):
 
     def test_dict__some_object(self):
         with self.assertRaises(TypeError):
-            __unit__.filteritems(FilterItems.FILTER, None)
+            __unit__.filteritems(FilterItems.FILTER, object())
 
     def test_dict__empty(self):
         self.assertEquals({}, __unit__.filteritems(None, {}))
@@ -407,7 +407,7 @@ class FilterKeys(_Filter):
 
     def test_dict__some_object(self):
         with self.assertRaises(TypeError):
-            __unit__.filterkeys(FilterKeys.FILTER, None)
+            __unit__.filterkeys(FilterKeys.FILTER, object())
 
     def test_dict__empty(self):
         self.assertEquals({}, __unit__.filterkeys(None, {}))
@@ -445,7 +445,7 @@ class FilterValues(_Filter):
 
     def test_dict__some_object(self):
         with self.assertRaises(TypeError):
-            __unit__.filtervalues(FilterValues.FILTER, None)
+            __unit__.filtervalues(FilterValues.FILTER, object())
 
     def test_dict__empty(self):
         self.assertEquals({}, __unit__.filtervalues(None, {}))
@@ -460,7 +460,104 @@ class FilterValues(_Filter):
             __unit__.filtervalues(FilterValues.FILTER, self.FALSY_DICT))
 
 
-# Mutation functions
+# Mapping functions
+
+class _Map(TestCase):
+    DICT = dict(enumerate(ALPHABET, 1))
+
+
+class MapItems(_Map):
+    FUNCTION = staticmethod(lambda k, v: (-k, v.upper()))
+
+    #: Negative numbers to upper-case alphabet letters.
+    MAPPED_DICT = dict(zip(range(-1, -(len(ALPHABET) + 1), -1),
+                           ALPHABET.upper()))
+
+    def test_function__none(self):
+        self.assertEquals(self.DICT, __unit__.mapitems(None, self.DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapitems(object(), self.DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapitems(MapItems.FUNCTION, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapitems(MapItems.FUNCTION, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.mapitems(None, {}))
+        self.assertEquals({}, __unit__.mapitems(MapItems.FUNCTION, {}))
+
+    def test_map(self):
+        self.assertEquals(self.MAPPED_DICT,
+                          __unit__.mapitems(MapItems.FUNCTION, self.DICT))
+
+
+class MapKeys(_Map):
+    FUNCTION = staticmethod(lambda k: -k)
+
+    #: Negative numbers to alphabet letters.
+    MAPPED_DICT = dict(zip(range(-1, -(len(ALPHABET) + 1), -1), ALPHABET))
+
+    def test_function__none(self):
+        self.assertEquals(self.DICT, __unit__.mapkeys(None, self.DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapkeys(object(), self.DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapkeys(MapKeys.FUNCTION, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapkeys(MapKeys.FUNCTION, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.mapkeys(None, {}))
+        self.assertEquals({}, __unit__.mapkeys(MapKeys.FUNCTION, {}))
+
+    def test_map(self):
+        self.assertEquals(self.MAPPED_DICT,
+                          __unit__.mapkeys(MapKeys.FUNCTION, self.DICT))
+
+
+class MapValues(_Map):
+    FUNCTION = staticmethod(lambda v: v.upper())
+
+    #: Numbers to upper-case alphabet letters.
+    MAPPED_DICT = dict(enumerate(ALPHABET.upper(), 1))
+
+    def test_function__none(self):
+        self.assertEquals(self.DICT, __unit__.mapvalues(None, self.DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapvalues(object(), self.DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapvalues(MapValues.FUNCTION, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapvalues(MapValues.FUNCTION, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.mapvalues(None, {}))
+        self.assertEquals({}, __unit__.mapvalues(MapValues.FUNCTION, {}))
+
+    def test_map(self):
+        self.assertEquals(self.MAPPED_DICT,
+                          __unit__.mapvalues(MapValues.FUNCTION, self.DICT))
+
+
+# Other transformation functions
 
 class Invert(TestCase):
     INVERTIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))

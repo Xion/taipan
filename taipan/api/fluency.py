@@ -17,12 +17,13 @@ With the aid of this module, implementing such a mechanism is typically
 as simple as adding a @\ :class:`fluent` decorator to the class.
 """
 import functools
-import inspect
 
-from taipan._compat import imap, IS_PY3
+from taipan._compat import imap
 from taipan.api.decorators import class_decorator
 from taipan.collections import is_iterable
 from taipan.functional import ensure_callable
+from taipan.objective import is_internal, is_magic
+from taipan.objective.methods import get_methods
 from taipan.strings import ensure_string, is_string
 
 
@@ -83,8 +84,8 @@ class fluent(object):
         self._terminators = self._get_terminators(kwargs)
 
     def __call__(self, class_):
-        for name, method in self._get_methods(class_):
-            if self._is_private_method(name):
+        for name, method in get_methods(class_):
+            if is_internal(name) or is_magic(name):
                 continue
 
             # TODO(xion): warn about terminator method names
@@ -94,13 +95,6 @@ class fluent(object):
                 setattr(class_, name, fluent_method)
 
         return class_
-
-    def _get_methods(self, class_):
-        """Retrieve all methods of a class."""
-        # in Python 3, methods in class are ordinary functions,
-        # but in Python 2 they are special "bound method" objects
-        predicate = inspect.isfunction if IS_PY3 else inspect.ismethod
-        return inspect.getmembers(class_, predicate)
 
     def _get_terminators(self, ctor_kwargs):
         """Retrieve fluent terminators from decorator's arguments."""
@@ -120,9 +114,6 @@ class fluent(object):
                     "got %r instead" % type(terminator_arg_value))
 
         return frozenset(terminators)
-
-    def _is_private_method(self, name):
-        return name.startswith('_')
 
     def _is_terminator(self, name, method):
         return getattr(method, '__fluent_terminator', False) \

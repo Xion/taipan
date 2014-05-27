@@ -1,18 +1,22 @@
 """
 Dictionary-related functions and classes.
 """
-from itertools import chain
+from itertools import chain, starmap
 
-from taipan._compat import IS_PY3
+from taipan._compat import IS_PY3, imap, izip
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
-from taipan.functional import ensure_callable
+from taipan.functional import (ensure_argcount, ensure_callable,
+                               ensure_keyword_args)
+from taipan.functional.combinators import compose
+from taipan.functional.functions import identity
 
 
 __all__ = [
     'AbsentDict', 'ABSENT',
+    'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
+    'get', 'select',
     'filteritems', 'filterkeys', 'filtervalues',
-    'get',
-    'merge', 'select',
+    'invert', 'merge',
 ]
 
 
@@ -36,10 +40,10 @@ class AbsentDict(dict):
     """
     def __init__(self, iterable=(), **kwargs):
         if is_mapping(iterable):
-            iterable = _items(iterable)
+            iterable = iteritems(iterable)
         super(AbsentDict, self).__init__(chain(
             ((k, v) for k, v in iterable if v is not ABSENT),
-            ((k, v) for k, v in _items(kwargs) if v is not ABSENT)
+            ((k, v) for k, v in iteritems(kwargs) if v is not ABSENT)
         ))
 
     def __setitem__(self, key, obj):
@@ -53,7 +57,74 @@ class AbsentDict(dict):
 ABSENT = object()
 
 
-# Dictionary operations
+# Compatibility shims
+
+#: Return an iterator over key-value pairs stored within the dictionary.
+iteritems = dict.items if IS_PY3 else dict.iteritems
+
+#: Return an iterator over keys stored within the dictionary.
+iterkeys = dict.keys if IS_PY3 else dict.iterkeys
+
+#: Return an iterator over values stored within the dictionary
+itervalues = dict.values if IS_PY3 else dict.itervalues
+
+#: Return a list of key-value pairs stored within the dictionary.
+items = compose(list, dict.items) if IS_PY3 else dict.items
+
+#: Return a list of keys stored within the dictionary.
+keys = compose(list, dict.keys) if IS_PY3 else dict.keys
+
+#: Return a list of values stored within the dictionary.
+values = compose(list, dict.values) if IS_PY3 else dict.values
+
+
+# Access functions
+
+# TODO(xion): this may need a better name
+def get(dict_, keys=(), default=None):
+    """Extensions of standard :meth:`dict.get`.
+    Retrieves an item from given dictionary, trying given keys in order.
+
+    :param dict_: Dictionary to perform the lookup(s) in
+    :param keys: Iterable of keys
+    :param default: Default value to return if no key is found
+
+    :return: Value for one of given ``keys``, or ``default``
+    """
+    ensure_mapping(dict_)
+    ensure_iterable(keys)
+
+    for key in keys:
+        try:
+            return dict_[key]
+        except KeyError:
+            pass
+
+    return default
+
+
+def select(keys, from_, strict=False):
+    """Selects a subset of given dictionary, including only the specified keys.
+
+    :param keys: Iterable of keys to include
+    :param strict: Whether ``keys`` are required to exist in the dictionary.
+
+    :return: Dictionary whose keys are a subset of given ``keys``
+
+    :raise KeyError: If ``strict`` is True and one of ``keys`` is not found
+                     in the dictionary.
+    """
+    ensure_iterable(keys)
+    ensure_mapping(from_)
+
+    if strict:
+        return from_.__class__((k, from_[k]) for k in keys)
+    else:
+        existing_keys = set(keys) & set(iterkeys(from_))
+        return from_.__class__((k, from_[k]) for k in existing_keys)
+
+
+# Filter functions
 
 def filteritems(function, dict_):
     """Return a new dictionary comprising of items
@@ -68,7 +139,8 @@ def filteritems(function, dict_):
     else:
         ensure_callable(function)
 
-    return dict_.__class__((k, v) for k, v in _items(dict_) if function(k, v))
+    return dict_.__class__((k, v) for k, v in iteritems(dict_)
+                           if function(k, v))
 
 
 def filterkeys(function, dict_):
@@ -79,7 +151,7 @@ def filterkeys(function, dict_):
     """
     function = bool if function is None else ensure_callable(function)
     ensure_mapping(dict_)
-    return dict_.__class__((k, v) for k, v in _items(dict_) if function(k))
+    return dict_.__class__((k, v) for k, v in iteritems(dict_) if function(k))
 
 
 def filtervalues(function, dict_):
@@ -90,50 +162,74 @@ def filtervalues(function, dict_):
     """
     function = bool if function is None else ensure_callable(function)
     ensure_mapping(dict_)
-    return dict_.__class__((k, v) for k, v in _items(dict_) if function(v))
+    return dict_.__class__((k, v) for k, v in iteritems(dict_) if function(v))
 
 
-# TODO(xion): this may need a better name
-def get(dict_, keys=(), default=None):
-    """Extensions of standard :meth:`dict.get`.
-    Retrieves an item from given dictionary, trying given keys in order.
+# Mapping functions
 
-    :param dict_: Dictionary to perform the lookup(s) in
-    :param keys: Iterable of keys
-    :param default: Default value to return if not key is found
+def mapitems(function, dict_):
+    """Return a new dictionary where the keys and values come from applying
+    ``function`` to the keys and values of given dictionary.
 
-    :return: Value for one of given ``keys``, or ``default``
+    .. warning::
+
+        If ``function`` returns a key-value pair with the same key
+        more than once, it is undefined which value will be chosen
+        for that key in the resulting dictionary.
+
+    :param function: Function taking key and value as two arguments
+                     and returning a new key-value pair, or None
+                     (corresponding to identity function)
+
+    .. versionadded:: 0.0.2
     """
     ensure_mapping(dict_)
-    ensure_iterable(keys)
 
-    keys = list(keys)
-    if not keys:
-        return default
+    if function is None:
+        function = lambda k, v: (k, v)
+    else:
+        ensure_callable(function)
 
-    for key in keys[:-1]:
-        if key in dict_:
-            return dict_[key]
-
-    return dict_.get(keys[-1], default)
+    return dict_.__class__(starmap(function, iteritems(dict_)))
 
 
-def merge(*dicts):
-    """Merges two or more dictionaries into a single one.
+def mapkeys(function, dict_):
+    """Return a new dictionary where the keys come from applying ``function``
+    to the keys of given dictionary.
 
-    Repeated keys will retain their last values,
-    as per given order of dictionaries.
+    .. warning::
 
-    :return: Merged dictionary
+        If ``function`` returns the same value for more than one key,
+        it is undefined which key will be chosen for the resulting dictionary.
+
+    :param function: Function taking a dictionary key,
+                     or None (corresponding to identity function)
+
+    .. versionadded:: 0.0.2
     """
-    res = {}
-    for d in dicts:
-        res.update(d)
-    return res
+    ensure_mapping(dict_)
+    function = identity() if function is None else ensure_callable(function)
+    return dict_.__class__((function(k), v) for k, v in iteritems(dict_))
 
 
-def reverse(dict_):
-    """Return a reversed dictionary, where former values are keys
+def mapvalues(function, dict_):
+    """Return a new dictionary where the values come from applying ``function``
+    to the values of given dictionary.
+
+    :param function: Function taking a dictionary value,
+                     or None (corresponding to identity function)
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_mapping(dict_)
+    function = identity() if function is None else ensure_callable(function)
+    return dict_.__class__((k, function(v)) for k, v in iteritems(dict_))
+
+
+# Other transformation functions
+
+def invert(dict_):
+    """Return an inverted dictionary, where former values are keys
     and former keys are values.
 
     .. warning::
@@ -142,34 +238,71 @@ def reverse(dict_):
         it is undefined which one will be chosen for the result.
 
     :param dict_: Dictionary to swap keys and values in
-    :return: Reversed dictionary
+    :return: Inverted dictionary
     """
     ensure_mapping(dict_)
-    return dict_.__class__((v, k) for k, v in _items(dict_))
+    return dict_.__class__(izip(itervalues(dict_), iterkeys(dict_)))
 
 
-def select(keys, from_, strict=False):
-    """Selects a subset of given dictionary, including only the specified keys.
+def merge(*dicts, **kwargs):
+    """Merges two or more dictionaries into a single one.
 
-    :param keys: Iterable of keys to include
-    :param strict: Whether ``keys`` are required to exist in the dictionary.
+    Repeated keys will retain their last values,
+    as per given order of dictionaries.
 
-    :return: Dictionary whose keys are a subset of given ``keys``
+    :param deep:
 
-    :raises KeyError: If ``strict`` is True and one of ``keys`` is not found
-                      in the dictionary.
+        Whether merging should proceed recursively, and cause
+        corresponding subdictionaries to be merged into each other.
+
+        Example::
+
+            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=False)
+            {'a': {'c': 2}}
+            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=True)
+            {'a': {'b': 1, 'c': 2}}
+
+    :return: Merged dictionary
     """
-    ensure_iterable(keys)
-    ensure_mapping(from_)
+    ensure_argcount(dicts, min_=1)
+    dicts = list(imap(ensure_mapping, dicts))
 
-    if strict:
-        return from_.__class__((k, from_[k]) for k in keys)
-    else:
-        return from_.__class__((k, from_[k]) for k in keys if k in from_)
+    ensure_keyword_args(kwargs, optional=('deep',))
+
+    res = dicts[0].copy()
+    if len(dicts) == 1:
+        return res
+
+    deep = kwargs.get('deep', False)
+    dict_update = _recursive_dict_update if deep else res.__class__.update
+
+    for d in dicts[1:]:
+        dict_update(res, d)
+    return res
 
 
-# Utility functions
+def _recursive_dict_update(one_dict, other_dict):
+    """Deep/recursive version of ``dict.update``.
 
-_items = dict.items if IS_PY3 else dict.iteritems
-_keys = dict.keys if IS_PY3 else dict.iterkeys
-_values = dict.values if IS_PY3 else dict.itervalues
+    If a key is present in both dictionaries, and points to
+    "child" dictionaries, those will be appropriately merged.
+
+    :return: First of the two dictionaries
+    """
+    result = one_dict  # first arg works like ``self`` in dict.update()
+
+    for key, other_value in iteritems(other_dict):
+        if key not in result:
+            result[key] = other_value
+            continue
+
+        # only merge if both values are subdictionaries
+        value = result[key]
+        both_dicts = is_mapping(value) and is_mapping(other_value)
+        if not both_dicts:
+            result[key] = other_value
+            continue
+
+        _recursive_dict_update(value, other_value)
+
+    return result

@@ -1,15 +1,18 @@
 """
-Tests for .generators module.
+Tests for .algorithms module.
 """
+from collections import namedtuple
+
 from taipan._compat import IS_PY3, izip, xrange
 from taipan.collections import is_iterable, is_sequence
 from taipan.collections.tuples import is_tuple
+from taipan.functional import functions ; attr_func = functions.attr_func
 from taipan.testing import TestCase
 
-import taipan.generators as __unit__
+import taipan.algorithms as __unit__
 
 
-class _GeneratorsTestCase(TestCase):
+class _Algorithm(TestCase):
 
     def _assertGenerator(self, obj):
         # objects returned by itertools functions are not "generators"
@@ -19,13 +22,8 @@ class _GeneratorsTestCase(TestCase):
         self.assertTrue(is_iterable(obj) and not is_sequence(obj),
                         msg="%r is not a generator" % (obj,))
 
-    def _assertEmptyIterable(self, obj, msg=None):
-        self.assertTrue(is_iterable(obj), msg="%r is not an iterable" % (obj,))
-        for _ in obj:
-            self.fail(msg or "expected empty iterable was found not to be so")
 
-
-class Batch(_GeneratorsTestCase):
+class Batch(_Algorithm):
     N = 3
 
     WITHOUT_LEFTOVERS = [1, 2, 3, 4, 5, 6]
@@ -114,7 +112,7 @@ class Batch(_GeneratorsTestCase):
         self.assertTrue(is_tuple(obj), msg="%r is not a tuple" % (obj,))
 
 
-class Cycle(_GeneratorsTestCase):
+class Cycle(_Algorithm):
     LENGTH = 10
     ITERABLE = list(xrange(LENGTH))
     CYCLES_COUNT = 64
@@ -129,7 +127,7 @@ class Cycle(_GeneratorsTestCase):
 
     def test_iterable__empty(self):
         cycled = __unit__.cycle(())
-        self._assertEmptyIterable(
+        self.assertEmpty(
             cycled, msg="cycled empty iterable expected to be also empty")
 
     def test_n__none(self):
@@ -145,7 +143,7 @@ class Cycle(_GeneratorsTestCase):
 
     def test_n__zero(self):
         cycled = __unit__.cycle(self.ITERABLE, 0)
-        self._assertEmptyIterable(
+        self.assertEmpty(
             cycled, msg="iterable cycled 0 times expected to be empty")
 
     def test_n__negative(self):
@@ -164,7 +162,7 @@ class Cycle(_GeneratorsTestCase):
             next(cycled)
 
 
-class Intertwine(_GeneratorsTestCase):
+class Intertwine(_Algorithm):
     FIRST = [1, 2, 3]
     SECOND = ['a', 'b', 'c']
     FIRST_AND_SECOND = [1, 'a', 2, 'b', 3, 'c']
@@ -175,7 +173,7 @@ class Intertwine(_GeneratorsTestCase):
 
     def test_no_args(self):
         intertwined = __unit__.intertwine()
-        self._assertEmptyIterable(intertwined)
+        self.assertEmpty(intertwined)
 
     def test_none(self):
         with self.assertRaises(TypeError):
@@ -209,7 +207,7 @@ class Intertwine(_GeneratorsTestCase):
             __unit__.intertwine(self.LONGER, self.SHORTER))
 
 
-class Iterate(_GeneratorsTestCase):
+class Iterate(_Algorithm):
     MAX = 10
     FEW = int(MAX / 2)
 
@@ -274,7 +272,7 @@ class Iterate(_GeneratorsTestCase):
             self.assertEquals(i * self.FEW, counter.current_count)
 
 
-class Pad(_GeneratorsTestCase):
+class Pad(_Algorithm):
     LENGTH = 10
     ITERABLE = list(xrange(LENGTH))
 
@@ -317,7 +315,7 @@ class Pad(_GeneratorsTestCase):
                 self.assertIs(self.PADDING, elem)
 
 
-class Unique(_GeneratorsTestCase):
+class Unique(_Algorithm):
     NORMAL_WITHOUT_DUPLICATES = [1, 2, 3, 4, 5]
     NORMAL_WITH_DUPLICATES = [1, 2, 2, 3, 4, 5, 1]
 
@@ -375,3 +373,100 @@ class Unique(_GeneratorsTestCase):
         uniqued = list(uniqued)
 
         self.assertItemsEqual(self.STRLEN_WITHOUT_DUPLICATES, uniqued)
+
+
+# Traversal
+
+class _Traversal(_Algorithm):
+    Node = namedtuple('Node', ['value', 'children'])
+    CHILDREN_FUNC = attr_func('children')
+
+    def _create_node(self, value=None, children=None):
+        return self.Node(value=value, children=list(children or []))
+
+    def _create_path(self, length, start=0):
+        if length > 0:
+            node = self._create_node(start + length - 1)
+            for i in range(start + length - 2, start - 1, -1):
+                node = self._create_node(i, [node])
+            return node
+
+
+class BreadthFirst(_Traversal):
+
+    def test_start__none(self):
+        bfs = __unit__.breadth_first(None, expand=functions.empty())
+        self.assertItemsEqual([None], bfs)
+
+    def test_start__some_object(self):
+        obj = object()
+        bfs = __unit__.breadth_first(obj, expand=functions.empty())
+        self.assertItemsEqual([obj], bfs)
+
+    def test_start__single_node(self):
+        bfs = __unit__.breadth_first(self._create_node(), self.CHILDREN_FUNC)
+        next(bfs)
+        self.assertEmpty(bfs)
+
+    def test_start__path(self):
+        graph = self._create_path(10)
+        bfs = __unit__.breadth_first(graph, self.CHILDREN_FUNC)
+        for i, node in enumerate(bfs, 0):
+            self.assertEquals(i, node.value)
+
+    def test_start__flat_graph(self):
+        nodes = list(map(self._create_node, range(1, 5 + 1)))
+        graph = self._create_node(0, nodes)
+
+        bfs = __unit__.breadth_first(graph, self.CHILDREN_FUNC)
+        for i, node in enumerate(bfs, 0):
+            self.assertEquals(i, node.value)
+
+    def test_expand__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.breadth_first(self._create_node(), expand=None)
+
+    def test_expand__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.breadth_first(self._create_node(), expand=object())
+
+
+class DepthFirst(_Traversal):
+
+    def test_start__none(self):
+        dfs = __unit__.depth_first(None, descend=functions.empty())
+        self.assertItemsEqual([None], dfs)
+
+    def test_start__some_object(self):
+        obj = object()
+        dfs = __unit__.depth_first(obj, descend=functions.empty())
+        self.assertItemsEqual([obj], dfs)
+
+    def test_start__single_node(self):
+        dfs = __unit__.depth_first(self._create_node(), self.CHILDREN_FUNC)
+        next(dfs)
+        self.assertEmpty(dfs)
+
+    def test_start__path(self):
+        graph = self._create_path(10)
+        dfs = __unit__.depth_first(graph, self.CHILDREN_FUNC)
+        for i, node in enumerate(dfs, 0):
+            self.assertEquals(i, node.value)
+
+    def test_start__flat_graph(self):
+        child_values = range(1, 5 + 1)
+        nodes = list(map(self._create_node, child_values))
+        graph = self._create_node(0, nodes)
+
+        dfs = __unit__.depth_first(graph, self.CHILDREN_FUNC)
+        expected_values_order = [0] + list(reversed(child_values))
+        for i, node in zip(expected_values_order, dfs):
+            self.assertEquals(i, node.value)
+
+    def test_descend__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.depth_first(self._create_node(), descend=None)
+
+    def test_descend__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.depth_first(self._create_node(), descend=object())

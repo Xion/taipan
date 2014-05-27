@@ -1,7 +1,15 @@
 """
-Tuple-related functions and classes.
+Tuple-related functions.
+
+The functions handle tuples up to the length of five, as this is approximately
+the point at which referring to elements by number ceases to be readable.
+
+(There are only few quintuples in the Python standard library, for example,
+with ``sys.version_info`` being perhaps the most well known one).
 """
-from taipan._compat import Numeric
+from numbers import Integral
+
+from taipan.collections import ensure_iterable, ensure_sequence
 
 
 __all__ = [
@@ -9,6 +17,9 @@ __all__ = [
     'is_single', 'is_triple', 'is_quadruple', 'is_quintuple',
     'ensure_tuple',
     'ensure_single', 'ensure_triple', 'ensure_quadruple', 'ensure_quintuple',
+
+    'first', 'second', 'third', 'fourth', 'fifth',
+    'select',
 ]
 
 
@@ -27,7 +38,7 @@ def is_tuple(obj, len_=None):
 
     if len_ is None:
         return True
-    if not isinstance(len_, Numeric):
+    if not isinstance(len_, Integral):
         raise TypeError(
             "length must be a number (got %s instead)" % type(len_).__name__)
     if len_ < 0:
@@ -139,6 +150,61 @@ def ensure_quintuple(arg):
         raise TypeError(
             "expected a 5-element tuple, got %s" % _describe_type(arg))
     return arg
+
+
+# Tuple access functions
+
+def first(arg):
+    """Returns the first element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[0]
+
+
+def second(arg):
+    """Returns the second element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[1]
+
+
+def third(arg):
+    """Returns the third element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[2]
+
+
+def fourth(arg):
+    """Returns the fourth element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[3]
+
+
+def fifth(arg):
+    """Returns the fifth element of a tuple (or other sequence)."""
+    ensure_sequence(arg)
+    return arg[4]
+
+
+def select(indices, from_, strict=False):
+    """Selects a subsequence of given tuple, including only specified indices.
+
+    :param indices: Iterable of indices to include
+    :param strict: Whether ``indices`` are required to exist in the tuple.
+
+    :return: Tuple with selected elements, in the order corresponding
+             to the order of ``indices``.
+
+    :raise IndexError: If ``strict`` is True and one of ``indices``
+                       is out of range.
+    """
+    ensure_iterable(indices)
+    ensure_sequence(from_)
+
+    if strict:
+        return from_.__class__(from_[index] for index in indices)
+    else:
+        len_ = len(from_)
+        return from_.__class__(from_[index] for index in indices
+                               if 0 <= index < len_)
 
 
 # Utility functions

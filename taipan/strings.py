@@ -2,9 +2,12 @@
 """
 String-related functions and classes.
 """
+from numbers import Integral
+from random import choice, randint
 import re
+import string
 
-from taipan._compat import IS_PY3, imap
+from taipan._compat import IS_PY3, imap, xrange
 from taipan.collections import ensure_iterable, is_iterable, is_mapping
 from taipan.collections.tuples import is_pair
 
@@ -14,7 +17,8 @@ __all__ = [
     'Regex', 'is_regex', 'ensure_regex',
     'split', 'join',
     'camel_case',
-    'replace', 'ReplacementError',
+    'replace', 'Replacer', 'ReplacementError',
+    'random',
 ]
 
 
@@ -137,6 +141,10 @@ def join(delimiter, iterable):
 
 # Case conversion
 
+# TODO(xion): expand into a full-featured API for converting between different
+# type of case formats, comparable to Guava's CaseFormat:
+# http://code.google.com/p/guava-libraries/wiki/StringsExplained#CaseFormat
+
 def camel_case(arg, capitalize=None):
     """Converts given text with whitespaces between words
     into equivalent camel-cased one.
@@ -166,7 +174,7 @@ def camel_case(arg, capitalize=None):
 
 # String replacement
 
-def replace(needle, with_=None):
+def replace(needle, with_=None, in_=None):
     """Replace occurrences of string(s) with other string(s) in (a) string(s).
 
     Unlike the built in :meth:`str.replace` method, this function provides
@@ -180,15 +188,21 @@ def replace(needle, with_=None):
 
     Examples::
 
-       replace('foo', 'bar').in_(text)
-       replace('foo', with_='bar').in_(long_text)
-       replace('foo').with_('bar').in_(long_text)
-       replace(['foo', 'bar']).with_('baz').in_(long_text)
-       replace({'foo': 'bar', 'baz': 'qud'}).in_(even_longer_text)
+        replace('foo', with_='bar', in_=some_text)
+        replace('foo', with_='bar').in_(other_text)
+        replace('foo').with_('bar').in_(another_text)
+        replace(['foo', 'bar']).with_('baz').in_(perhaps_a_long_text)
+        replace({'foo': 'bar', 'baz': 'qud'}).in_(even_longer_text)
 
     :param needle: String to replace, iterable thereof,
                    or a mapping from needles to corresponding replacements
     :param with_: Replacement string, if ``needle`` was not a mapping
+    :param in_: Optional string to perform replacement in
+
+    :return: If all parameters were provided, result is the final string
+             after performing a specified replacement.
+             Otherwise, a :class:`Replacer` object is returned, allowing
+             e.g. to perform the same replacements in many haystacks.
     """
     if needle is None:
         raise TypeError("replacement needle cannot be None")
@@ -211,7 +225,10 @@ def replace(needle, with_=None):
         ensure_string(with_)
         replacer = replacer.with_(with_)
 
-    # TODO(xion): add ``in_`` parameter for performing replacement immediately
+    if in_ is not None:
+        ensure_string(in_)
+        return replacer.in_(in_)
+
     return replacer
 
 
@@ -225,6 +242,11 @@ class Replacer(object):
 
     This class handles both simple, single-pass replacements,
     as well as multiple replacement pair mappings.
+
+    .. note::
+
+        This class is not intended for direct use by client code.
+        Use the provided :func:`replace` function instead.
     """
     def __init__(self, replacements):
         """Constructor.
@@ -277,9 +299,36 @@ class Replacer(object):
         or_ = haystack.__class__('|')
         regex = join(or_, imap(
             re.escape, sorted(self._replacements, key=len, reverse=True)))
-        # TODO(xion): cache the regex & ``do_replace`` to speed up
-        # multiple invocations of ``in_`` on the same replacer
 
         # do the substituion, looking up the replacement for every match
         do_replace = lambda match: self._replacements[match.group()]
         return re.sub(regex, do_replace, haystack)
+
+
+# Other
+
+def random(length, chars=None):
+    """Generates a random string.
+
+    :param length: Length of the string to generate.
+                   This can be a numbe or a pair: ``(min_length, max_length)``
+    :param chars: String of characters to choose from
+    """
+    if chars is None:
+        chars = string.ascii_letters + string.digits
+    else:
+        ensure_string(chars)
+        if not chars:
+            raise ValueError("character set must not be empty")
+
+    if is_pair(length):
+        length = randint(*length)
+    elif isinstance(length, Integral):
+        if not length > 0:
+            raise ValueError(
+                "random string length must be positive (got %r)" % (length,))
+    else:
+        raise TypeError("random string length must be an integer; "
+                        "got '%s'" % type(length).__name__)
+
+    return join(chars.__class__(), (choice(chars) for _ in xrange(length)))

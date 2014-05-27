@@ -7,10 +7,10 @@ import collections
 
 
 __all__ = [
-    'is_countable', 'is_iterable', 'is_mapping', 'is_sequence', 'is_set',
-    'is_sized',
-    'ensure_countable', 'ensure_iterable', 'ensure_mapping', 'ensure_sequence',
-    'ensure_set', 'ensure_sized',
+    'is_countable', 'is_iterable', 'is_mapping', 'is_ordered_mapping',
+    'is_sequence', 'is_set', 'is_sized',
+    'ensure_countable', 'ensure_iterable', 'ensure_mapping',
+    'ensure_ordered_mapping', 'ensure_sequence', 'ensure_set', 'ensure_sized',
 ]
 
 
@@ -35,6 +35,24 @@ def is_mapping(obj):
     :return: ``True`` if argument is a mapping, ``False`` otherwise
     """
     return isinstance(obj, collections.Mapping)
+
+
+def is_ordered_mapping(obj):
+    """Checks whether given object is an ordered mapping,
+    e.g. a :class:`OrderedDict`.
+    :return: ``True`` if argument is an ordered mapping, ``False`` otherwise
+    """
+    if not (is_mapping(obj) and hasattr(obj, '__reversed__')):
+        return False
+
+    # PyPy has a bug where the standard :class:`dict` has the ``__reversed__``
+    # method but it's unusable and throws an exception when called
+    try:
+        obj.__reversed__()
+    except TypeError:
+        return False
+    else:
+        return True
 
 
 def is_sequence(obj):
@@ -85,6 +103,17 @@ def ensure_mapping(arg):
     """
     if not is_mapping(arg):
         raise TypeError("expected a mapping, got %s" % type(arg).__name__)
+    return arg
+
+
+def ensure_ordered_mapping(arg):
+    """Checks whether argument is an ordered mapping.
+    :return: Argument, if it's an ordered mapping
+    :raise TypeError: When argument is not an ordered mapping
+    """
+    if not is_ordered_mapping(arg):
+        raise TypeError(
+            "expected an ordered mapping, got %s" % type(arg).__name__)
     return arg
 
 

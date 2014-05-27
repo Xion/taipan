@@ -1,326 +1,12 @@
 """
-Tests for the .functional module.
+Tests for .functional.combinators module.
 """
-from collections import namedtuple
 from itertools import product
 
+from taipan._compat import xrange
 from taipan.testing import TestCase
 
-from taipan._compat import xrange
-import taipan.functional as __unit__
-
-
-class EnsureCallable(TestCase):
-
-    def test_none(self):
-        with self.assertRaises(TypeError):
-            __unit__.ensure_callable(None)
-
-    def test_some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.ensure_callable(object())
-
-    def test_number(self):
-        with self.assertRaises(TypeError):
-            __unit__.ensure_callable(42)
-
-    def test_string(self):
-        with self.assertRaises(TypeError):
-            __unit__.ensure_callable("foo")
-
-    def test_few_builtins(self):
-        __unit__.ensure_callable(open)
-        __unit__.ensure_callable(min)
-        __unit__.ensure_callable(sum)
-        __unit__.ensure_callable(str.__add__)
-
-    def test_lambda(self):
-        func = lambda : self.fail("lambda must not be acually called")
-        __unit__.ensure_callable(func)
-
-    def test_function(self):
-        def func():
-            self.fail("function must not be actually called")
-        __unit__.ensure_callable(func)
-
-    def test_class(self):
-        class Foo(object):
-            def __init__(self_):
-                self.fail("class must not be actually instantiated")
-        __unit__.ensure_callable(Foo)
-
-    def test_callable_object(self):
-        class Foo(object):
-            def __call__(self_):
-                self.fail("object must not be actually called")
-        __unit__.ensure_callable(Foo())
-
-
-class EnsureArgcount(TestCase):
-    FEW_ARGS = ["foo", 'bar']
-    MANY_ARGS = ["foo", 'bar', 1.41, False, None, (1,)]
-
-    FEW = len(FEW_ARGS)
-    MANY = len(MANY_ARGS)
-    MORE_THAN_FEW = FEW + 1
-    LESS_THAN_MANY = MANY - 1
-
-    def test_no_limits(self):
-        with self.assertRaises(ValueError):
-            __unit__.ensure_argcount(self.FEW_ARGS)
-
-    def test_invalid_limits(self):
-        with self.assertRaises(ValueError) as r:
-            __unit__.ensure_argcount(self.FEW_ARGS, min_=2, max_=1)
-        self.assertIn("greater", str(r.exception))
-
-    def test_args__none(self):
-        with self.assertRaises(TypeError):
-            __unit__.ensure_argcount(None, min_=1, max_=1)
-
-    def test_args__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.ensure_argcount(object(), min_=1, max_=1)
-
-    def test_args__empty(self):
-        __unit__.ensure_argcount([], min_=0, max_=0)
-        __unit__.ensure_argcount([], min_=0, max_=self.MANY)
-        with self.assertRaises(TypeError):
-            __unit__.ensure_argcount([], min_=self.FEW)
-
-    def test_args__less_than_min(self):
-        with self.assertRaises(TypeError) as r:
-            __unit__.ensure_argcount(self.FEW_ARGS, min_=self.MORE_THAN_FEW)
-        self.assertIn("expected at least", str(r.exception))
-
-    def test_args__more_than_max(self):
-        with self.assertRaises(TypeError) as r:
-            __unit__.ensure_argcount(self.MANY_ARGS, max_=self.LESS_THAN_MANY)
-        self.assertIn("expected at most", str(r.exception))
-
-    def test_args__exactly_min(self):
-        __unit__.ensure_argcount(self.FEW_ARGS,
-                                 min_=self.FEW, max_=self.MORE_THAN_FEW)
-
-    def test_args__exactly_max(self):
-        __unit__.ensure_argcount(self.MANY_ARGS,
-                                 min_=self.LESS_THAN_MANY, max_=self.MANY)
-
-    def test_args__exact(self):
-        __unit__.ensure_argcount(self.FEW_ARGS, min_=self.FEW, max_=self.FEW)
-        __unit__.ensure_argcount(self.MANY_ARGS, min_=self.MANY, max_=self.MANY)
-
-
-# Constant functions
-
-class _ConstantFunction(TestCase):
-    EMPTY_TUPLE = ()
-
-    EMPTY_LIST = []
-    DIFFERENT_EMPTY_LIST = []
-    LIST = list(range(5))
-    LIST_COPY = list(LIST)
-
-    EMPTY_DICT = {}
-    DIFFERENT_EMPTY_DICT = {}
-    DICT = dict(zip('abcde', range(5)))
-    DICT_COPY = dict(DICT)
-
-    OBJECT = object()
-    DIFFERENT_OBJECT = object()
-
-
-class Identity(_ConstantFunction):
-
-    def test_values(self):
-        identity = __unit__.identity()
-        self.assertIsNone(identity(None))
-        self.assertIs(0, identity(0))
-        self.assertIs(self.EMPTY_TUPLE, identity(self.EMPTY_TUPLE))
-
-    def test_empty_lists(self):
-        identity = __unit__.identity()
-        self.assertIs(self.EMPTY_LIST, identity(self.EMPTY_LIST))
-        self.assertIsNot(self.DIFFERENT_EMPTY_LIST, identity(self.EMPTY_LIST))
-
-    def test_lists(self):
-        identity = __unit__.identity()
-        self.assertIs(self.LIST, identity(self.LIST))
-        self.assertIsNot(self.LIST_COPY, identity(self.LIST))
-
-    def test_empty_dicts(self):
-        identity = __unit__.identity()
-        self.assertIs(self.EMPTY_DICT, identity(self.EMPTY_DICT))
-        self.assertIsNot(self.DIFFERENT_EMPTY_DICT, identity(self.EMPTY_DICT))
-
-    def test_dicts(self):
-        identity = __unit__.identity()
-        self.assertIs(self.DICT, identity(self.DICT))
-        self.assertIsNot(self.DICT_COPY, identity(self.DICT))
-
-    def test_object(self):
-        identity = __unit__.identity()
-        self.assertIs(self.OBJECT, identity(self.OBJECT))
-        self.assertIsNot(self.DIFFERENT_OBJECT, identity(self.OBJECT))
-
-
-class Const(_ConstantFunction):
-
-    def test_values(self):
-        self.assertIsNone(__unit__.const(None)())
-        self.assertIs(0, __unit__.const(0)())
-        self.assertIs(self.EMPTY_TUPLE, __unit__.const(self.EMPTY_TUPLE)())
-
-    def test_empty_lists(self):
-        empty_list = __unit__.const(self.EMPTY_LIST)
-        self.assertIs(self.EMPTY_LIST, empty_list())
-        self.assertIsNot(self.DIFFERENT_EMPTY_LIST, empty_list())
-
-    def test_lists(self):
-        list_ = __unit__.const(self.LIST)
-        self.assertIs(self.LIST, list_())
-        self.assertIsNot(self.DIFFERENT_EMPTY_LIST, list_())
-
-    def test_empty_dicts(self):
-        empty_dict = __unit__.const(self.EMPTY_DICT)
-        self.assertIs(self.EMPTY_DICT, empty_dict())
-        self.assertIsNot(self.DIFFERENT_EMPTY_DICT, empty_dict())
-
-    def test_dicts(self):
-        dict_ = __unit__.const(self.DICT)
-        self.assertIs(self.DICT, dict_())
-        self.assertIsNot(self.DICT_COPY, dict_())
-
-    def test_object(self):
-        object_ = __unit__.const(self.OBJECT)
-        self.assertIs(self.OBJECT, object_())
-        self.assertIsNot(self.DIFFERENT_OBJECT, object_())
-
-
-class PredefinedConstantFunctions(_ConstantFunction):
-
-    def test_true(self):
-        true = __unit__.true()
-        self.assertTrue(true())
-        with self.assertRaises(TypeError):
-            true("extraneous argument")
-
-    def test_false(self):
-        false = __unit__.false()
-        self.assertFalse(false())
-        with self.assertRaises(TypeError):
-            false("extraneous argument")
-
-    def test_none(self):
-        none = __unit__.none()
-        self.assertIsNone(none())
-        with self.assertRaises(TypeError):
-            none("extraneous argument")
-
-    def test_zero(self):
-        zero = __unit__.zero()
-        self.assertZero(zero())
-        with self.assertRaises(TypeError):
-            zero("extraneous argument")
-
-    def test_one(self):
-        one = __unit__.one()
-        self.assertEquals(1, one())
-        with self.assertRaises(TypeError):
-            one("extraneous argument")
-
-    def test_empty(self):
-        empty = __unit__.empty()
-        self.assertEmpty(empty())
-        with self.assertRaises(TypeError):
-            empty("extraneous argument")
-
-
-# Unary functions
-
-class AttrFunc(TestCase):
-    CLASS = namedtuple('Foo', ['foo', 'bar'])
-
-    SINGLE_NESTED_OBJECT = CLASS(foo=1, bar='baz')
-    DOUBLY_NESTED_OBJECT = CLASS(foo=CLASS(foo=1, bar=2), bar='a')
-
-    def test_no_args(self):
-        with self.assertRaises(TypeError):
-            __unit__.attr_func()
-
-    def test_none(self):
-        with self.assertRaises(TypeError):
-            __unit__.attr_func(None)
-
-    def test_some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.attr_func(object())
-
-    def test_single_attr__good(self):
-        func = __unit__.attr_func('foo')
-        self.assertEquals(
-            self.SINGLE_NESTED_OBJECT.foo, func(self.SINGLE_NESTED_OBJECT))
-        self.assertEquals(
-            self.DOUBLY_NESTED_OBJECT.foo, func(self.DOUBLY_NESTED_OBJECT))
-
-    def test_single_attr__bad(self):
-        func = __unit__.attr_func('doesnt_exist')
-        with self.assertRaises(AttributeError):
-            func(self.SINGLE_NESTED_OBJECT)
-        with self.assertRaises(AttributeError):
-            func(self.DOUBLY_NESTED_OBJECT)
-
-    def test_two_attrs__good(self):
-        func = __unit__.attr_func('foo', 'bar')
-        self.assertEquals(
-            self.DOUBLY_NESTED_OBJECT.foo.bar, func(self.DOUBLY_NESTED_OBJECT))
-
-    def test_two_attrs__bad(self):
-        func = __unit__.attr_func('doesnt_exist', 'foo')
-        with self.assertRaises(AttributeError):
-            func(self.DOUBLY_NESTED_OBJECT)
-
-
-class KeyFunc(TestCase):
-    SINGLY_NESTED_DICT = dict(foo=1, bar='baz')
-    DOUBLY_NESTED_DICT = dict(foo=dict(foo=1, bar=2), bar='a')
-
-    def test_no_args(self):
-        with self.assertRaises(TypeError):
-            __unit__.key_func()
-
-    def test_none(self):
-        with self.assertRaises(TypeError):
-            __unit__.key_func(None)
-
-    def test_some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.key_func(object())
-
-    def test_single_key__good(self):
-        func = __unit__.key_func('foo')
-        self.assertEquals(
-            self.SINGLY_NESTED_DICT['foo'], func(self.SINGLY_NESTED_DICT))
-        self.assertEquals(
-            self.DOUBLY_NESTED_DICT['foo'], func(self.DOUBLY_NESTED_DICT))
-
-    def test_single_key__bad(self):
-        func = __unit__.key_func('doesnt_exist')
-        with self.assertRaises(LookupError):
-            func(self.SINGLY_NESTED_DICT)
-        with self.assertRaises(LookupError):
-            func(self.DOUBLY_NESTED_DICT)
-
-    def test_two_keys__good(self):
-        func = __unit__.key_func('foo', 'bar')
-        self.assertEquals(
-            self.DOUBLY_NESTED_DICT['foo']['bar'],
-            func(self.DOUBLY_NESTED_DICT))
-
-    def test_two_keys__bad(self):
-        func = __unit__.key_func('doesnt_exist', 'foo')
-        with self.assertRaises(LookupError):
-            func(self.DOUBLY_NESTED_DICT)
+import taipan.functional.combinators as __unit__
 
 
 # General combinators
@@ -336,7 +22,8 @@ class _Combinator(TestCase):
             domain = xrange(-limit, limit + 1)
 
         for args in product(domain, repeat=argcount):
-            self.assertEquals(f(*args), g(*args))
+            self.assertEquals(f(*args), g(*args),
+                              msg="result mismatch for args: %r" % (args,))
 
 
 class _UnaryCombinator(_Combinator):
@@ -535,13 +222,25 @@ class Not_(_LogicalCombinator):
 class _BinaryLogicalCombinator(_LogicalCombinator):
     GREATER_THAN = staticmethod(lambda min_: lambda x: x > min_)
     LESS_THAN = staticmethod(lambda max_: lambda x: x < max_)
+
     DIVISIBLE_BY = staticmethod(lambda d: lambda x: x % d == 0)
+    EVEN = staticmethod(lambda x: x % 2 == 0)
+    ODD = staticmethod(lambda x: x % 2 == 1)
 
-
-class And_(_BinaryLogicalCombinator):
     BETWEEN = staticmethod(lambda min_, max_: lambda x: min_ < x < max_)
     EVEN_BETWEEN = staticmethod(
         lambda min_, max_: lambda x: min_ < x < max_ and x % 2 == 0)
+    ODD_BETWEEN = staticmethod(
+        lambda min_, max_: lambda x: min_ < x < max_ and x % 2 == 1)
+
+    OUTSIDE = staticmethod(lambda min_, max_: lambda x: x < min_ or x > max_)
+    EVEN_OR_OUTSIDE = staticmethod(
+        lambda min_, max_: lambda x: x % 2 == 0 or x < min_ or x > max_)
+    ODD_OR_OUTSIDE = staticmethod(
+        lambda min_, max_: lambda x: x % 2 == 0 or x < min_ or x > max_)
+
+
+class And_(_BinaryLogicalCombinator):
 
     def test_no_args(self):
         with self.assertRaises(TypeError):
@@ -617,9 +316,6 @@ class And_(_BinaryLogicalCombinator):
 
 
 class Or_(_BinaryLogicalCombinator):
-    OUTSIDE = staticmethod(lambda min_, max_: lambda x: x < min_ or x > max_)
-    EVEN_OR_OUTSIDE = staticmethod(
-        lambda min_, max_: lambda x: x % 2 == 0 or x < min_ or x > max_)
 
     def test_no_args(self):
         with self.assertRaises(TypeError):
@@ -692,3 +388,153 @@ class Or_(_BinaryLogicalCombinator):
             Or_.TRUE,  # because an even number closes the gap between ranges
             __unit__.or_(Or_.GREATER_THAN(10), Or_.LESS_THAN(10),
                           Or_.DIVISIBLE_BY(2)))
+
+
+class Nand(_BinaryLogicalCombinator):
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.nand()
+
+    def test_one_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.nand(None)
+
+    def test_one_arg__true(self):
+        self._assertBooleanFunctionsEqual(Nand.FALSE, __unit__.nand(Nand.TRUE))
+
+    def test_one_arg__false(self):
+        self._assertBooleanFunctionsEqual(Nand.TRUE, __unit__.nand(Nand.FALSE))
+
+    def test_two_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nand.FALSE, __unit__.nand(Nand.TRUE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.FALSE))
+
+    def test_two_args__integer_ranges__half_open(self):
+        self._assertIntegerFunctionsEqual(
+            Nand.LESS_THAN(11),  # higher minimum "wins" and is negated
+            __unit__.nand(Nand.GREATER_THAN(5), Nand.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nand.GREATER_THAN(4),  # lower maximum "wins" ans is negated
+            __unit__.nand(Nand.LESS_THAN(5), Nand.LESS_THAN(10)))
+
+    def test_two_args__integer_ranges__open(self):
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.LESS_THAN(5), Nand.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nand.OUTSIDE(6, 9),
+            __unit__.nand(Nand.GREATER_THAN(5), Nand.LESS_THAN(10)))
+
+    def test_three_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nand.FALSE, __unit__.nand(Nand.TRUE, Nand.TRUE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.TRUE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.FALSE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.TRUE, Nand.FALSE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.TRUE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.TRUE, Nand.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.FALSE, Nand.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nand.TRUE, __unit__.nand(Nand.FALSE, Nand.FALSE, Nand.FALSE))
+
+    def test_three_args__even_integer_intervals(self):
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.LESS_THAN(5), Nand.GREATER_THAN(10),
+                          Nand.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.GREATER_THAN(6), Nand.LESS_THAN(7),
+                          Nand.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nand.TRUE,
+            __unit__.nand(Nand.GREATER_THAN(10), Nand.LESS_THAN(10),
+                          Nand.DIVISIBLE_BY(2)))
+
+
+class Nor(_BinaryLogicalCombinator):
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.nor()
+
+    def test_one_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.nor(None)
+
+    def test_one_arg__true(self):
+        self._assertBooleanFunctionsEqual(Nor.FALSE, __unit__.nor(Nor.TRUE))
+
+    def test_one_arg__false(self):
+        self._assertBooleanFunctionsEqual(Nor.TRUE, __unit__.nor(Nor.FALSE))
+
+    def test_two_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.TRUE, __unit__.nor(Nor.FALSE, Nor.FALSE))
+
+    def test_two_args__integer_ranges__half_open(self):
+        self._assertIntegerFunctionsEqual(
+            Nor.LESS_THAN(6),  # lower minimum "wins" and is negated
+            __unit__.nor(Nor.GREATER_THAN(5), Nor.GREATER_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nor.GREATER_THAN(9),  # higher maximum "wins" and is negated
+            __unit__.nor(Nor.LESS_THAN(5), Nor.LESS_THAN(10)))
+
+    def test_two_args__integer_ranges__closed(self):
+        self._assertIntegerFunctionsEqual(
+            Nor.FALSE,
+            __unit__.nor(Nor.GREATER_THAN(5), Nor.LESS_THAN(10)))
+        self._assertIntegerFunctionsEqual(
+            Nor.BETWEEN(4, 11),
+            __unit__.nor(Nor.GREATER_THAN(10), Nor.LESS_THAN(5)))
+
+    def test_three_args__boolean_functions(self):
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.TRUE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.TRUE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.FALSE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.TRUE, Nor.FALSE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.TRUE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.TRUE, Nor.FALSE))
+        self._assertBooleanFunctionsEqual(
+            Nor.FALSE, __unit__.nor(Nor.FALSE, Nor.FALSE, Nor.TRUE))
+        self._assertBooleanFunctionsEqual(
+            Nor.TRUE, __unit__.nor(Nor.FALSE, Nor.FALSE, Nor.FALSE))
+
+    def test_three_args__even_integer_intervals(self):
+        self._assertIntegerFunctionsEqual(
+            Nor.FALSE,
+            __unit__.nor(Nor.GREATER_THAN(5), Nor.LESS_THAN(10),
+                         Nor.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nor.FALSE,
+            __unit__.nor(Nor.GREATER_THAN(6), Nor.LESS_THAN(7),
+                         Nor.DIVISIBLE_BY(2)))
+        self._assertIntegerFunctionsEqual(
+            Nor.ODD_BETWEEN(4, 11),
+            __unit__.nor(Nor.GREATER_THAN(10), Nor.LESS_THAN(5),
+                         Nor.DIVISIBLE_BY(2)))

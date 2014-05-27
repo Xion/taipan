@@ -1,10 +1,13 @@
 """
 Tests for the .collections.dicts module.
 """
-from taipan.collections import is_mapping
+from taipan.collections import is_mapping, is_sequence
 from taipan.testing import TestCase
 
 import taipan.collections.dicts as __unit__
+
+
+ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 
 class AbsentDict(TestCase):
@@ -58,7 +61,7 @@ class AbsentDict(TestCase):
         self.assertEquals(len(self.DICT_WITH_ONE_ABSENT) - 1, len(dict_))
         self.assertNotIn(self.ABSENT_KEY, dict_)
 
-    def test_ctor__dict__all_absent(self):
+    def test_ctor__pairlist__all_absent(self):
         dict_ = __unit__.AbsentDict(self.DICT_WITH_ALL_ABSENT.items())
         self.assertEquals({}, dict_)
 
@@ -94,130 +97,146 @@ class AbsentDict(TestCase):
             self.fail(msg or "%r is not a mapping" % (obj,))
 
 
-# Dictionary operations
+# Compatibility shims
 
-ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
+class _Shim(TestCase):
+    KEYS = ['foo', 'bar']
+    VALUES = list(range(len(KEYS)))
+    ITEMS = list(zip(KEYS, VALUES))
+    DICT = dict(ITEMS)
+
+    def _assertSequence(self, obj):
+        self.assertTrue(is_sequence(obj), msg="%r is not a sequence" % (obj,))
+
+    def _assertNotSequence(self, obj):
+        self.assertFalse(is_sequence(obj), msg="%r is a sequence" % (obj,))
+
+    def _assertEmptySequence(self, obj):
+        self._assertSequence(obj)
+        self.assertEmpty(obj)
+
+    def _assertEmptyNonSequence(self, obj):
+        self._assertNotSequence(obj)
+        self.assertEmpty(obj)
+
+    def _assertSequenceItems(self, items, obj):
+        self._assertSequence(obj)
+        self.assertItemsEqual(items, obj)
+
+    def _assertNonSequenceItems(self, items, obj):
+        self._assertNotSequence(obj)
+        self.assertItemsEqual(items, obj)
 
 
-class _Filter(TestCase):
-    TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
-    FALSY_DICT = {'foo': 0, '': 1, False: 2, 'bar': 3, (): 4, 'baz': ()}
+class IterItems(_Shim):
 
-
-class FilterItems(_Filter):
-    COALESCED_FALSY_DICT = {'bar': 3}
-
-    FILTER = staticmethod(
-        lambda k, v: (k and k[0] == 'b') or (v and v % 2 == 1))
-    FILTERED_TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
-    FILTERED_FALSY_DICT = {'': 1, 'bar': 3, 'baz': ()}
-
-    def test_function__none(self):
-        self.assertEquals(self.TRUTHY_DICT,
-                          __unit__.filteritems(None, self.TRUTHY_DICT))
-        self.assertEquals(self.COALESCED_FALSY_DICT,
-                          __unit__.filteritems(None, self.FALSY_DICT))
-
-    def test_function__non_function(self):
+    def test_none(self):
         with self.assertRaises(TypeError):
-            __unit__.filteritems(object(), self.TRUTHY_DICT)
+            __unit__.iteritems(None)
 
-    def test_dict__none(self):
+    def test_some_object(self):
         with self.assertRaises(TypeError):
-            __unit__.filteritems(FilterItems.FILTER, None)
-
-    def test_dict__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.filteritems(FilterItems.FILTER, None)
+            __unit__.iteritems(object())
 
     def test_dict__empty(self):
-        self.assertEquals({}, __unit__.filteritems(None, {}))
-        self.assertEquals({}, __unit__.filteritems(self.FILTER, {}))
+        self._assertEmptyNonSequence(__unit__.iteritems({}))
 
-    def test_filter(self):
-        self.assertEquals(
-            self.FILTERED_TRUTHY_DICT,
-            __unit__.filteritems(FilterItems.FILTER, self.TRUTHY_DICT))
-        self.assertEquals(
-            self.FILTERED_FALSY_DICT,
-            __unit__.filteritems(FilterItems.FILTER, self.FALSY_DICT))
+    def test_dict__normal(self):
+        iteritems = __unit__.iteritems(self.DICT)
+        self._assertNonSequenceItems(self.ITEMS, iteritems)
 
 
-class FilterKeys(_Filter):
-    COALESCED_FALSY_DICT = {'foo': 0, 'bar': 3, 'baz': ()}
+class IterKeys(_Shim):
 
-    FILTER = staticmethod(lambda k: k and k[0] == 'b')
-    FILTERED_TRUTHY_DICT = {'bar': 2, 'baz': 3}
-    FILTERED_FALSY_DICT = {'bar': 3, 'baz': ()}
-
-    def test_function__none(self):
-        self.assertEquals(self.TRUTHY_DICT,
-                          __unit__.filterkeys(None, self.TRUTHY_DICT))
-        self.assertEquals(self.COALESCED_FALSY_DICT,
-                          __unit__.filterkeys(None, self.FALSY_DICT))
-
-    def test_function__non_function(self):
+    def test_none(self):
         with self.assertRaises(TypeError):
-            __unit__.filterkeys(object(), self.TRUTHY_DICT)
+            __unit__.iterkeys(None)
 
-    def test_dict__none(self):
+    def test_some_object(self):
         with self.assertRaises(TypeError):
-            __unit__.filterkeys(FilterKeys.FILTER, None)
-
-    def test_dict__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.filterkeys(FilterKeys.FILTER, None)
+            __unit__.iterkeys(object())
 
     def test_dict__empty(self):
-        self.assertEquals({}, __unit__.filterkeys(None, {}))
-        self.assertEquals({}, __unit__.filterkeys(self.FILTER, {}))
+        self._assertEmptyNonSequence(__unit__.iterkeys({}))
 
-    def test_filter(self):
-        self.assertEquals(
-            self.FILTERED_TRUTHY_DICT,
-            __unit__.filterkeys(FilterKeys.FILTER, self.TRUTHY_DICT))
-        self.assertEquals(
-            self.FILTERED_FALSY_DICT,
-            __unit__.filterkeys(FilterKeys.FILTER, self.FALSY_DICT))
+    def test_dict__normal(self):
+        iterkeys = __unit__.iterkeys(self.DICT)
+        self._assertNonSequenceItems(self.KEYS, iterkeys)
 
 
-class FilterValues(_Filter):
-    COALESCED_FALSY_DICT = {'': 1, False: 2, 'bar': 3, (): 4}
+class IterValues(_Shim):
 
-    FILTER = staticmethod(lambda v: v and v % 2 == 1)
-    FILTERED_TRUTHY_DICT = {'foo': 1, 'baz': 3}
-    FILTERED_FALSY_DICT = {'': 1, 'bar': 3}
-
-    def test_function__none(self):
-        self.assertEquals(self.TRUTHY_DICT,
-                          __unit__.filtervalues(None, self.TRUTHY_DICT))
-        self.assertEquals(self.COALESCED_FALSY_DICT,
-                          __unit__.filtervalues(None, self.FALSY_DICT))
-
-    def test_function__non_function(self):
+    def test_none(self):
         with self.assertRaises(TypeError):
-            __unit__.filtervalues(object(), self.TRUTHY_DICT)
+            __unit__.itervalues(None)
 
-    def test_dict__none(self):
+    def test_some_object(self):
         with self.assertRaises(TypeError):
-            __unit__.filtervalues(FilterValues.FILTER, None)
-
-    def test_dict__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.filtervalues(FilterValues.FILTER, None)
+            __unit__.itervalues(object())
 
     def test_dict__empty(self):
-        self.assertEquals({}, __unit__.filtervalues(None, {}))
-        self.assertEquals({}, __unit__.filtervalues(self.FILTER, {}))
+        self._assertEmptyNonSequence(__unit__.itervalues({}))
 
-    def test_filter(self):
-        self.assertEquals(
-            self.FILTERED_TRUTHY_DICT,
-            __unit__.filtervalues(FilterValues.FILTER, self.TRUTHY_DICT))
-        self.assertEquals(
-            self.FILTERED_FALSY_DICT,
-            __unit__.filtervalues(FilterValues.FILTER, self.FALSY_DICT))
+    def test_dict__normal(self):
+        itervalues = __unit__.itervalues(self.DICT)
+        self._assertNonSequenceItems(self.VALUES, itervalues)
 
+
+class Items(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.items(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.items(object())
+
+    def test_dict__empty(self):
+        self._assertEmptySequence(__unit__.items({}))
+
+    def test_dict__normal(self):
+        items = __unit__.items(self.DICT)
+        self._assertSequenceItems(self.ITEMS, items)
+
+
+class Keys(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.keys(None)
+
+    def test_some_objects(self):
+        with self.assertRaises(TypeError):
+            __unit__.keys(object())
+
+    def test_dict__empty(self):
+        self._assertEmptySequence(__unit__.keys({}))
+
+    def test_dict__normal(self):
+        keys = __unit__.keys(self.DICT)
+        self._assertSequenceItems(self.KEYS, keys)
+
+
+class Values(_Shim):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.values(None)
+
+    def test_some_objects(self):
+        with self.assertRaises(TypeError):
+            __unit__.values(object())
+
+    def test_dict__empty(self):
+        self._assertEmptySequence(__unit__.values({}))
+
+    def test_dict__normal(self):
+        values = __unit__.values(self.DICT)
+        self._assertSequenceItems(self.VALUES, values)
+
+
+# Access functions
 
 class Get(TestCase):
     DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
@@ -264,70 +283,6 @@ class Get(TestCase):
         self.assertEquals(
             self.DEFAULT,
             __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
-
-
-class Merge(TestCase):
-    KEYS = ('foo', 'bar', 'baz', 'qux', 'thud')
-
-    DICT = dict(zip(KEYS[:3], range(3)))
-    OTHER_DICT = dict(zip(KEYS[3:], range(3, len(KEYS))))
-    MANY_DICTS = [{k: v} for k, v in zip(KEYS, range(len(KEYS)))]
-
-    MERGED = dict(zip(KEYS, range(5)))
-
-    def test_no_args(self):
-        self.assertEquals({}, __unit__.merge())
-
-    def test_single_arg__none(self):
-        with self.assertRaises(TypeError):
-            __unit__.merge(None)
-
-    def test_single_arg__some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.merge(object())
-
-    def test_single_arg__dict(self):
-        result =  __unit__.merge(self.DICT)
-        self.assertEquals(self.DICT, result)
-        self.assertIsNot(self.DICT, result)
-
-    def test_two_args(self):
-        self.assertEquals(
-            self.MERGED, __unit__.merge(self.DICT, self.OTHER_DICT))
-
-    def test_many_args(self):
-        self.assertEquals(
-            self.MERGED, __unit__.merge(*self.MANY_DICTS))
-
-
-class Reverse(TestCase):
-    REVERSIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
-    IRREVERSIBLE_DICT = dict(zip(range(1, 2 * len(ALPHABET) + 1),
-                                 ALPHABET * 2))
-
-    def test_none(self):
-        with self.assertRaises(TypeError):
-            __unit__.reverse(None)
-
-    def test_some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.reverse(object())
-
-    def test_empty(self):
-        self.assertEquals({}, __unit__.reverse({}))
-
-    def test_reversible(self):
-        reversed_dict = __unit__.reverse(self.REVERSIBLE_DICT)
-        self.assertItemsEqual(
-            self.REVERSIBLE_DICT.values(), reversed_dict.keys())
-        self.assertItemsEqual(
-            self.REVERSIBLE_DICT.keys(), reversed_dict.values())
-
-    def test_irreversible(self):
-        # a bit of misnomer, but it means dictionary has duplicate values
-        reversed_dict = __unit__.reverse(self.IRREVERSIBLE_DICT)
-        self.assertGreater(
-            set(self.IRREVERSIBLE_DICT.keys()), set(reversed_dict.values()))
 
 
 class Select(TestCase):
@@ -381,3 +336,324 @@ class Select(TestCase):
         self.assertEquals(
             self.SELECTED_BY_NONSTRICT_KEYS,
             __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=False))
+
+
+# Filter functions
+
+class _Filter(TestCase):
+    TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
+    FALSY_DICT = {'foo': 0, '': 1, False: 2, 'bar': 3, (): 4, 'baz': ()}
+
+
+class FilterItems(_Filter):
+    COALESCED_FALSY_DICT = {'bar': 3}
+
+    FILTER = staticmethod(
+        lambda k, v: (k and k[0] == 'b') or (v and v % 2 == 1))
+    FILTERED_TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
+    FILTERED_FALSY_DICT = {'': 1, 'bar': 3, 'baz': ()}
+
+    def test_function__none(self):
+        self.assertEquals(self.TRUTHY_DICT,
+                          __unit__.filteritems(None, self.TRUTHY_DICT))
+        self.assertEquals(self.COALESCED_FALSY_DICT,
+                          __unit__.filteritems(None, self.FALSY_DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.filteritems(object(), self.TRUTHY_DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.filteritems(FilterItems.FILTER, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.filteritems(FilterItems.FILTER, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.filteritems(None, {}))
+        self.assertEquals({}, __unit__.filteritems(self.FILTER, {}))
+
+    def test_filter(self):
+        self.assertEquals(
+            self.FILTERED_TRUTHY_DICT,
+            __unit__.filteritems(FilterItems.FILTER, self.TRUTHY_DICT))
+        self.assertEquals(
+            self.FILTERED_FALSY_DICT,
+            __unit__.filteritems(FilterItems.FILTER, self.FALSY_DICT))
+
+
+class FilterKeys(_Filter):
+    COALESCED_FALSY_DICT = {'foo': 0, 'bar': 3, 'baz': ()}
+
+    FILTER = staticmethod(lambda k: k and k[0] == 'b')
+    FILTERED_TRUTHY_DICT = {'bar': 2, 'baz': 3}
+    FILTERED_FALSY_DICT = {'bar': 3, 'baz': ()}
+
+    def test_function__none(self):
+        self.assertEquals(self.TRUTHY_DICT,
+                          __unit__.filterkeys(None, self.TRUTHY_DICT))
+        self.assertEquals(self.COALESCED_FALSY_DICT,
+                          __unit__.filterkeys(None, self.FALSY_DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.filterkeys(object(), self.TRUTHY_DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.filterkeys(FilterKeys.FILTER, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.filterkeys(FilterKeys.FILTER, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.filterkeys(None, {}))
+        self.assertEquals({}, __unit__.filterkeys(self.FILTER, {}))
+
+    def test_filter(self):
+        self.assertEquals(
+            self.FILTERED_TRUTHY_DICT,
+            __unit__.filterkeys(FilterKeys.FILTER, self.TRUTHY_DICT))
+        self.assertEquals(
+            self.FILTERED_FALSY_DICT,
+            __unit__.filterkeys(FilterKeys.FILTER, self.FALSY_DICT))
+
+
+class FilterValues(_Filter):
+    COALESCED_FALSY_DICT = {'': 1, False: 2, 'bar': 3, (): 4}
+
+    FILTER = staticmethod(lambda v: v and v % 2 == 1)
+    FILTERED_TRUTHY_DICT = {'foo': 1, 'baz': 3}
+    FILTERED_FALSY_DICT = {'': 1, 'bar': 3}
+
+    def test_function__none(self):
+        self.assertEquals(self.TRUTHY_DICT,
+                          __unit__.filtervalues(None, self.TRUTHY_DICT))
+        self.assertEquals(self.COALESCED_FALSY_DICT,
+                          __unit__.filtervalues(None, self.FALSY_DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.filtervalues(object(), self.TRUTHY_DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.filtervalues(FilterValues.FILTER, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.filtervalues(FilterValues.FILTER, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.filtervalues(None, {}))
+        self.assertEquals({}, __unit__.filtervalues(self.FILTER, {}))
+
+    def test_filter(self):
+        self.assertEquals(
+            self.FILTERED_TRUTHY_DICT,
+            __unit__.filtervalues(FilterValues.FILTER, self.TRUTHY_DICT))
+        self.assertEquals(
+            self.FILTERED_FALSY_DICT,
+            __unit__.filtervalues(FilterValues.FILTER, self.FALSY_DICT))
+
+
+# Mapping functions
+
+class _Map(TestCase):
+    DICT = dict(enumerate(ALPHABET, 1))
+
+
+class MapItems(_Map):
+    FUNCTION = staticmethod(lambda k, v: (-k, v.upper()))
+
+    #: Negative numbers to upper-case alphabet letters.
+    MAPPED_DICT = dict(zip(range(-1, -(len(ALPHABET) + 1), -1),
+                           ALPHABET.upper()))
+
+    def test_function__none(self):
+        self.assertEquals(self.DICT, __unit__.mapitems(None, self.DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapitems(object(), self.DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapitems(MapItems.FUNCTION, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapitems(MapItems.FUNCTION, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.mapitems(None, {}))
+        self.assertEquals({}, __unit__.mapitems(MapItems.FUNCTION, {}))
+
+    def test_map(self):
+        self.assertEquals(self.MAPPED_DICT,
+                          __unit__.mapitems(MapItems.FUNCTION, self.DICT))
+
+
+class MapKeys(_Map):
+    FUNCTION = staticmethod(lambda k: -k)
+
+    #: Negative numbers to alphabet letters.
+    MAPPED_DICT = dict(zip(range(-1, -(len(ALPHABET) + 1), -1), ALPHABET))
+
+    def test_function__none(self):
+        self.assertEquals(self.DICT, __unit__.mapkeys(None, self.DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapkeys(object(), self.DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapkeys(MapKeys.FUNCTION, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapkeys(MapKeys.FUNCTION, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.mapkeys(None, {}))
+        self.assertEquals({}, __unit__.mapkeys(MapKeys.FUNCTION, {}))
+
+    def test_map(self):
+        self.assertEquals(self.MAPPED_DICT,
+                          __unit__.mapkeys(MapKeys.FUNCTION, self.DICT))
+
+
+class MapValues(_Map):
+    FUNCTION = staticmethod(lambda v: v.upper())
+
+    #: Numbers to upper-case alphabet letters.
+    MAPPED_DICT = dict(enumerate(ALPHABET.upper(), 1))
+
+    def test_function__none(self):
+        self.assertEquals(self.DICT, __unit__.mapvalues(None, self.DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapvalues(object(), self.DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapvalues(MapValues.FUNCTION, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.mapvalues(MapValues.FUNCTION, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.mapvalues(None, {}))
+        self.assertEquals({}, __unit__.mapvalues(MapValues.FUNCTION, {}))
+
+    def test_map(self):
+        self.assertEquals(self.MAPPED_DICT,
+                          __unit__.mapvalues(MapValues.FUNCTION, self.DICT))
+
+
+# Other transformation functions
+
+class Invert(TestCase):
+    INVERTIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
+    UNINVERTIBLE_DICT = dict(zip(range(1, 2 * len(ALPHABET) + 1),
+                                 ALPHABET * 2))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.invert(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.invert(object())
+
+    def test_empty(self):
+        self.assertEquals({}, __unit__.invert({}))
+
+    def test_invertible(self):
+        inverted_dict = __unit__.invert(self.INVERTIBLE_DICT)
+        self.assertItemsEqual(
+            self.INVERTIBLE_DICT.values(), inverted_dict.keys())
+        self.assertItemsEqual(
+            self.INVERTIBLE_DICT.keys(), inverted_dict.values())
+
+    def test_uninvertible(self):
+        # a bit of misnomer, but it means dictionary has duplicate values
+        inverted_dict = __unit__.invert(self.UNINVERTIBLE_DICT)
+        self.assertGreater(
+            set(self.UNINVERTIBLE_DICT.keys()), set(inverted_dict.values()))
+
+
+class Merge(TestCase):
+    KEYS = ('foo', 'bar', 'baz', 'qux', 'thud')
+
+    DICT = dict(zip(KEYS[:3], range(3)))
+    OTHER_DICT = dict(zip(KEYS[3:], range(3, len(KEYS))))
+    MANY_DICTS = [{k: v} for k, v in zip(KEYS, range(len(KEYS)))]
+
+    MERGED = dict(zip(KEYS, range(5)))
+
+    DEEP_DICT1 = {'foo': {'bar': 1}, 'baz': 'A'}
+    DEEP_DICT2 = {'foo': {'qux': 2}, 'thud': 'B'}
+    NOT_DEEP_DICT = {'foo': 'a'}
+    MERGED_DEEP_1_2 = {'foo': {'bar': 1, 'qux': 2}, 'baz': 'A', 'thud': 'B'}
+    MERGED_DEEP1_AND_NOT_DEEP = {'foo': 'a', 'baz': 'A'}
+
+    def test_no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge()
+
+    def test_single_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(None)
+
+    def test_single_arg__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(object())
+
+    def test_single_arg__dict(self):
+        result =  __unit__.merge(self.DICT)
+        self.assertEquals(self.DICT, result)
+        self.assertIsNot(self.DICT, result)
+
+    def test_two_args(self):
+        self.assertEquals(
+            self.MERGED, __unit__.merge(self.DICT, self.OTHER_DICT))
+
+    def test_many_args(self):
+        self.assertEquals(
+            self.MERGED, __unit__.merge(*self.MANY_DICTS))
+
+    def test_deep__no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(deep=True)
+
+    def test_deep__single_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(None, deep=True)
+
+    def test_deep__single_arg__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(object(), deep=True)
+
+    def test_deep__single_arg__dict(self):
+        result = __unit__.merge(self.DICT, deep=True)
+        self.assertEquals(self.DICT, result)
+        self.assertIsNot(self.DICT, result)
+
+    def test_deep__two_args__shallow(self):
+        result = __unit__.merge(self.DICT, self.OTHER_DICT, deep=True)
+        self.assertEquals(self.MERGED, result)
+
+    def test_deep__two_args__both_deep(self):
+        result = __unit__.merge(self.DEEP_DICT1, self.DEEP_DICT2, deep=True)
+        self.assertEquals(self.MERGED_DEEP_1_2, result)
+
+    def test_deep__two_args__deep_and_shallow(self):
+        result = __unit__.merge(self.DEEP_DICT1, self.NOT_DEEP_DICT, deep=True)
+        self.assertEquals(self.MERGED_DEEP1_AND_NOT_DEEP, result)

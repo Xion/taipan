@@ -1,14 +1,21 @@
 """
-Generator-related functions and classes.
+General purpose algorithms dealing with data structures.
 """
 from __future__ import absolute_import
 
 from collections import deque
 from itertools import chain, cycle as cycle_, islice, repeat
+from numbers import Integral
 
-from taipan._compat import imap, izip_longest, Numeric
+from taipan._compat import imap, izip_longest
 from taipan.collections import ensure_iterable
 from taipan.functional import ensure_callable
+
+
+__all__ = [
+    'batch', 'cycle', 'intertwine', 'iterate', 'pad', 'unique',
+    'breadth_first', 'depth_first',
+]
 
 
 # Itertools recipes
@@ -31,13 +38,13 @@ def batch(iterable, n, fillvalue=None):
         from the :module:`itertools` module documentation.
     """
     ensure_iterable(iterable)
-    if not isinstance(n, Numeric):
+    if not isinstance(n, Integral):
         raise TypeError("invalid number of elements in a batch")
     if not (n > 0):
         raise ValueError("number of elements in a batch must be positive")
 
-    # since we must use izip_longest
-    # (izip fails if n is greater than length of iterable),
+    # since we must use ``izip_longest``
+    # (``izip`` fails if ``n`` is greater than length of ``iterable``),
     # we will apply some 'trimming' to resulting tuples if necessary
     if fillvalue is None:
         fillvalue = object()
@@ -63,7 +70,7 @@ def cycle(iterable, n=None):
     if n is None:
         return cycle_(iterable)
     else:
-        if not isinstance(n, Numeric):
+        if not isinstance(n, Integral):
             raise TypeError("invalid number of cycles")
         if n < 0:
             raise ValueError("number of cycles cannot be negative")
@@ -75,8 +82,8 @@ def intertwine(*iterables):
     """Constructs an iterable which intertwines given iterables.
 
     The resulting iterable will return an item from first sequence,
-    then second, etc. until the last one - and then another item from
-    first, then second, etc. - up until all iterables are exhausted.
+    then from second, etc. until the last one - and then another item from
+    first, then from second, etc. - up until all iterables are exhausted.
     """
     iterables = tuple(map(ensure_iterable, iterables))
 
@@ -131,5 +138,60 @@ def unique(iterable, key=None):
             if k not in seen:
                 seen.add(k)
                 yield elem
+
+    return generator()
+
+
+# Traversal
+
+def breadth_first(start, expand):
+    """Performs a breadth-first search of a graph-like structure.
+
+    :param start: Node to start the search from
+    :param expand: Function taking a node as an argument and returning iterable
+                   of its child nodes
+
+    :return: Iterable of nodes in the BFS order
+
+    Example::
+
+        tree = json.loads(some_data)
+        for item in breadth_first(tree, key_func('children', default=())):
+            do_something_with(item)
+    """
+    ensure_callable(expand)
+
+    def generator():
+        queue = deque([start])
+        while queue:
+            node = queue.popleft()
+            yield node
+            queue.extend(expand(node))
+
+    return generator()
+
+
+def depth_first(start, descend):
+    """Performs a depth-first search of a graph-like structure.
+
+    :param start: Node to start the search from
+    :param expand: Function taking a node as an argument and returning iterable
+                   of its child nodes
+
+    :return: Iterable of nodes in the DFS order
+
+    Example::
+
+        for node in depth_first(graph, attr_func('adjacent')):
+            visit(node)
+    """
+    ensure_callable(descend)
+
+    def generator():
+        stack = [start]
+        while stack:
+            node = stack.pop()
+            yield node
+            stack.extend(descend(node))
 
     return generator()

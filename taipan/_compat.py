@@ -1,6 +1,11 @@
 """
-Compatibility shims for different Python versions.
+Compatibility shims for different Python versions and platforms.
 """
+try:
+    import builtins
+except ImportError:
+    import __builtin__ as builtins
+
 try:
     import json
 except ImportError:
@@ -11,6 +16,7 @@ except ImportError:
 
 
 import sys
+IS_PY26 = sys.version_info[:2] == (2, 6)
 IS_PY3 = sys.version_info[0] == 3
 
 
@@ -21,9 +27,9 @@ if IS_PY3:
     ifilter = filter
     imap = map
     izip = zip
-    from itertools import zip_longest as izip_longest
+    from itertools import (
+        zip_longest as izip_longest,
+        filterfalse as ifilterfalse,
+    )
 else:
-    from itertools import ifilter, imap, izip, izip_longest
-
-
-Numeric = (int,) if IS_PY3 else (int, long)
+    from itertools import ifilter, ifilterfalse, imap, izip, izip_longest

@@ -128,6 +128,9 @@ class AssertEmpty(_Assertion):
 
 class AssertStartsWith(_Assertion):
     PREFIX = "foo"
+    PREFIXES_WITH_ACTUAL = (PREFIX, "baz")
+    PREFIXES_SANS_ACTUAL = ("bar", "baz")
+
     STRING = "foobar"
 
     def test_prefix__none(self):
@@ -137,9 +140,6 @@ class AssertStartsWith(_Assertion):
     def test_prefix__some_object(self):
         with self._assertFailure():
             self._TESTCASE.assertStartsWith(object(), self.STRING)
-
-    def test_prefix__empty_string(self):
-        self._TESTCASE.assertStartsWith("", self.STRING)
 
     def test_string__none(self):
         with self._assertFailure():
@@ -153,12 +153,26 @@ class AssertStartsWith(_Assertion):
         with self._assertFailure():
             self._TESTCASE.assertStartsWith(self.PREFIX, "")
 
-    def test_success(self):
+    def test_success__empty_prefix(self):
+        self._TESTCASE.assertStartsWith("", self.STRING)
+
+    def test_success__nonempty_prefix(self):
         self._TESTCASE.assertStartsWith(self.PREFIX, self.STRING)
+
+    def test_success__prefix_tuple(self):
+        self._TESTCASE.assertStartsWith(self.PREFIXES_WITH_ACTUAL, self.STRING)
+
+    def test_failure__prefix_tuple(self):
+        with self._assertFailure():
+            self._TESTCASE.assertStartsWith(
+                self.PREFIXES_SANS_ACTUAL, self.STRING)
 
 
 class AssertEndsWith(_Assertion):
     SUFFIX = "bar"
+    SUFFIXES_WITH_ACTUAL = (SUFFIX, "baz")
+    SUFFIXES_SANS_ACTUAL = ("foo", "baz")
+
     STRING = "foobar"
 
     def test_suffix__none(self):
@@ -168,9 +182,6 @@ class AssertEndsWith(_Assertion):
     def test_suffix__some_object(self):
         with self._assertFailure():
             self._TESTCASE.assertEndsWith(object(), self.STRING)
-
-    def test_suffix__empty_string(self):
-        self._TESTCASE.assertEndsWith("", self.STRING)
 
     def test_string__none(self):
         with self._assertFailure():
@@ -184,8 +195,19 @@ class AssertEndsWith(_Assertion):
         with self._assertFailure():
             self._TESTCASE.assertEndsWith(self.SUFFIX, "")
 
-    def test_success(self):
+    def test_success__empty_suffix(self):
+        self._TESTCASE.assertEndsWith("", self.STRING)
+
+    def test_success__nonempty_suffix(self):
         self._TESTCASE.assertEndsWith(self.SUFFIX, self.STRING)
+
+    def test_success__suffix_tuple(self):
+        self._TESTCASE.assertEndsWith(self.SUFFIXES_WITH_ACTUAL, self.STRING)
+
+    def test_failure__suffix_tuple(self):
+        with self._assertFailure():
+            self._TESTCASE.assertEndsWith(
+                self.SUFFIXES_SANS_ACTUAL, self.STRING)
 
 
 class AssertHasAttr(_Assertion):
@@ -408,3 +430,32 @@ class AssertNoop(_Assertion):
     def test__function__effective(self):
         with self._assertFailure():
             self._TESTCASE.assertNoop(self.EFFECTIVE, self.ARGUMENT)
+
+
+class AssertResultsEqual(_Assertion):
+    CONSTANT = staticmethod(lambda: -42)
+
+    @staticmethod
+    def VARIABLE():
+        AssertResultsEqual.variable_result += 1
+        return AssertResultsEqual.variable_result
+    variable_result = 0
+
+    def test_none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(None, self.CONSTANT)
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(self.CONSTANT, None)
+
+    def test_non_callable(self):
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(object(), self.CONSTANT)
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(self.CONSTANT, object())
+
+    def test_constant_functions(self):
+        self._TESTCASE.assertResultsEqual(self.CONSTANT, self.CONSTANT)
+
+    def test_variable_functions(self):
+        with self._assertFailure():
+            self._TESTCASE.assertResultsEqual(self.VARIABLE, self.VARIABLE)

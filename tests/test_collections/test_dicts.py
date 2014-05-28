@@ -466,12 +466,18 @@ class _Map(TestCase):
     DICT = dict(enumerate(ALPHABET, 1))
 
 
-class MapItems(_Map):
-    FUNCTION = staticmethod(lambda k, v: (-k, v.upper()))
+class _MapItems(_Map):
+    KEY_FUNCTION = staticmethod(lambda k: -k)
+    VALUE_FUNCTION = staticmethod(lambda v: v.upper())
 
     #: Negative numbers to upper-case alphabet letters.
     MAPPED_DICT = dict(zip(range(-1, -(len(ALPHABET) + 1), -1),
                            ALPHABET.upper()))
+
+
+class MapItems(_MapItems):
+    FUNCTION = staticmethod(lambda kvp: (_MapItems.KEY_FUNCTION(kvp[0]),
+                                         _MapItems.VALUE_FUNCTION(kvp[1])))
 
     def test_function__none(self):
         self.assertEquals(self.DICT, __unit__.mapitems(None, self.DICT))
@@ -495,6 +501,35 @@ class MapItems(_Map):
     def test_map(self):
         self.assertEquals(self.MAPPED_DICT,
                           __unit__.mapitems(MapItems.FUNCTION, self.DICT))
+
+
+class StarMapItems(_MapItems):
+    FUNCTION = staticmethod(lambda k, v: (_MapItems.KEY_FUNCTION(k),
+                                          _MapItems.VALUE_FUNCTION(v)))
+
+    def test_function__none(self):
+        self.assertEquals(self.DICT, __unit__.starmapitems(None, self.DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.starmapitems(object(), self.DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.starmapitems(StarMapItems.FUNCTION, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.starmapitems(StarMapItems.FUNCTION, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.starmapitems(None, {}))
+        self.assertEquals({}, __unit__.starmapitems(StarMapItems.FUNCTION, {}))
+
+    def test_map(self):
+        self.assertEquals(
+            self.MAPPED_DICT,
+            __unit__.starmapitems(StarMapItems.FUNCTION, self.DICT))
 
 
 class MapKeys(_Map):

@@ -169,6 +169,27 @@ def filtervalues(function, dict_):
 
 def mapitems(function, dict_):
     """Return a new dictionary where the keys and values come from applying
+    ``function`` to key-value pairs from given dictionary.
+
+    .. warning::
+
+        If ``function`` returns a key-value pair with the same key
+        more than once, it is undefined which value will be chosen
+        for that key in the resulting dictionary.
+
+    :param function: Function taking a key-value pair as a single argument,
+                     and returning a new key-value pair; or None
+                     (corresponding to identity function)
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_mapping(dict_)
+    function = identity() if function is None else ensure_callable(function)
+    return dict_.__class__(imap(function, iteritems(dict_)))
+
+
+def starmapitems(function, dict_):
+    """Return a new dictionary where the keys and values come from applying
     ``function`` to the keys and values of given dictionary.
 
     .. warning::

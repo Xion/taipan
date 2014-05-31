@@ -16,6 +16,7 @@ __all__ = [
     'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
     'get', 'select',
     'filteritems', 'filterkeys', 'filtervalues',
+    'mapitems', 'starmapitems', 'mapkeys', 'mapvalues',
     'invert', 'merge',
 ]
 
@@ -32,7 +33,7 @@ class AbsentDict(dict):
 
     Example::
 
-        >>> dicts.AbsentDict({
+        >> dicts.AbsentDict({
             'zero': 0 or dicts.ABSENT,
             'one': 1,
         })

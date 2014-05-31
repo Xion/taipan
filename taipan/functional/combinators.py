@@ -4,11 +4,13 @@ Combinators for constructing new functions from existing functions.
 import functools
 
 from taipan._compat import imap
-from taipan.functional import ensure_argcount, ensure_callable
+from taipan.collections import ensure_sequence, is_mapping
+from taipan.functional import (
+    ensure_argcount, ensure_callable, ensure_keyword_args)
 
 
 __all__ = [
-    'curry', 'uncurry', 'flip', 'compose',
+    'curry', 'uncurry', 'flip', 'compose', 'merge',
     'not_', 'and_', 'or_', 'nand', 'nor',
 ]
 
@@ -69,6 +71,78 @@ def compose(*fs):
         return x
 
     return g
+
+
+def merge(arg, *rest, **kwargs):
+    """Merge a collection, with functions as items, into a single function
+    that takes a collection and maps its items through corresponding functions.
+
+    :param arg: A collection of functions, such as list, tuple, or dictionary
+    :param default: Optional default function to use for items
+                    within merged function's arguments that do not have
+                    corresponding functions in ``arg``
+
+    Example with two-element tuple::
+
+        >> dict_ = {'Alice': -5, 'Bob': 4}
+        >> func = merge((str.upper, abs))
+        >> dict(map(func, dict_.items()))
+        {'ALICE': 5, 'BOB': 4}
+
+    Example with a dictionary::
+
+        >> func = merge({'id': int, 'name': str.split})
+        >> data = [
+            {'id': '1', 'name': "John Doe"},
+            {'id': '2', 'name': "Anne Arbor"},
+        ]
+        >> list(map(func, data))
+        [{'id': 1, 'name': ['John', 'Doe']},
+         {'id': 2, 'name': ['Anne', 'Arbor']}]
+
+    :return: Merged function
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_keyword_args(kwargs, optional=('default',))
+
+    has_default = 'default' in kwargs
+    if has_default:
+        default = ensure_callable(kwargs['default'])
+
+    # if more than one argument was given, they must all be functions;
+    # result will be a function that takes multiple arguments (ratrher than
+    # a single collection) and returns a tuple
+    unary_result = True
+    if rest:
+        fs = (ensure_callable(arg),) + tuple(imap(ensure_callable, rest))
+        unary_result = False
+    else:
+        fs = arg
+
+    if is_mapping(fs):
+        if has_default:
+            return lambda arg_: fs.__class__((k, fs.get(k, default)(arg_[k]))
+                                             for k in arg_)
+        else:
+            return lambda arg_: fs.__class__((k, fs[k](arg_[k]))
+                                             for k in arg_)
+    else:
+        ensure_sequence(fs)
+        if has_default:
+            # we cannot use ``izip_longest(fs, arg_, fillvalue=default)``,
+            # because we want to terminate the generator
+            # only when ``arg_`` is exhausted (not when just ``fs`` is)
+            func = lambda arg_: fs.__class__(
+                (fs[i] if i < len(fs) else default)(x)
+                for i, x in enumerate(arg_))
+        else:
+            # we cannot use ``izip(fs, arg_)`` because it would short-circuit
+            # if ``arg_`` is longer than ``fs``, rather than raising
+            # the required ``IndexError``
+            func = lambda arg_: fs.__class__(fs[i](x)
+                                             for i, x in enumerate(arg_))
+        return func if unary_result else lambda *args: func(args)
 
 
 # Logical combinators

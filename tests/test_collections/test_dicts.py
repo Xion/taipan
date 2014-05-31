@@ -2,6 +2,7 @@
 Tests for the .collections.dicts module.
 """
 from taipan.collections import is_mapping, is_sequence
+from taipan.functional.combinators import merge
 from taipan.testing import TestCase
 
 import taipan.collections.dicts as __unit__
@@ -476,8 +477,9 @@ class _MapItems(_Map):
 
 
 class MapItems(_MapItems):
-    FUNCTION = staticmethod(lambda kvp: (_MapItems.KEY_FUNCTION(kvp[0]),
-                                         _MapItems.VALUE_FUNCTION(kvp[1])))
+    FUNCTION = staticmethod(merge(
+        (_MapItems.KEY_FUNCTION, _MapItems.VALUE_FUNCTION)
+    ))
 
     def test_function__none(self):
         self.assertEquals(self.DICT, __unit__.mapitems(None, self.DICT))
@@ -504,8 +506,9 @@ class MapItems(_MapItems):
 
 
 class StarMapItems(_MapItems):
-    FUNCTION = staticmethod(lambda k, v: (_MapItems.KEY_FUNCTION(k),
-                                          _MapItems.VALUE_FUNCTION(v)))
+    FUNCTION = staticmethod(merge(
+        _MapItems.KEY_FUNCTION, _MapItems.VALUE_FUNCTION
+    ))
 
     def test_function__none(self):
         self.assertEquals(self.DICT, __unit__.starmapitems(None, self.DICT))

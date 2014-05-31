@@ -173,6 +173,83 @@ class Compose(_Combinator):
             argcount=2)
 
 
+class Merge(_Combinator):
+    FUNCTIONS_DICT = {
+        'foo': lambda x: x + 1,
+        'bar': lambda x: 2 * x,
+    }
+    FUNCTIONS_LIST = [
+        lambda x: x + 1,
+        lambda x: 2 *x,
+    ]
+
+    DEFAULT = staticmethod(lambda x: -x)
+
+    def test_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(None)
+
+    def test_arg__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(object())
+
+    def test_arg__dict__empty(self):
+        func = __unit__.merge({})
+
+        self.assertIsInstance(func({}), dict)
+        with self.assertRaises(KeyError):
+            func({'foo': 42})
+
+    def test_arg__dict(self):
+        func = __unit__.merge(self.FUNCTIONS_DICT)
+
+        self.assertEquals({'foo': 2}, func({'foo': 1}))
+        self.assertEquals({'foo': 11, 'bar': 20},
+                          func({'foo': 10, 'bar': 10}))
+
+    def test_arg__dict__no_default(self):
+        func = __unit__.merge(self.FUNCTIONS_DICT)
+
+        with self.assertRaises(KeyError):
+            func({'extra': 42})
+
+    def test_arg__dict__with_default(self):
+        func = __unit__.merge(self.FUNCTIONS_DICT, default=Merge.DEFAULT)
+
+        self.assertEquals({'extra': -3}, func({'extra': 3}))
+
+    def test_arg__list__empty(self):
+        func = __unit__.merge([])
+
+        self.assertIsInstance(func([]), list)
+        with self.assertRaises(IndexError):
+            func([42])
+
+    def test_arg__list(self):
+        func = __unit__.merge(self.FUNCTIONS_LIST)
+
+        self.assertEquals([2], func([1]))
+        self.assertEquals([11, 20], func([10, 10]))
+
+    def test_arg__list__no_default(self):
+        func = __unit__.merge(self.FUNCTIONS_LIST)
+
+        with self.assertRaises(IndexError):
+            func([1, 2, 'extra'])
+
+    def test_arg__list__with_default(self):
+        func = __unit__.merge(self.FUNCTIONS_LIST, default=Merge.DEFAULT)
+
+        self.assertEquals([2, 4, -42], func([1, 2, 42]))
+
+    def test_arg__tuple__empty(self):
+        func = __unit__.merge(())
+
+        self.assertIsInstance(func(()), tuple)
+        with self.assertRaises(IndexError):
+            func((42,))
+
+
 # Logical combinators
 
 class _LogicalCombinator(_Combinator):

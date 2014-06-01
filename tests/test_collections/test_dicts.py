@@ -595,52 +595,28 @@ class MapValues(_Map):
                           __unit__.mapvalues(MapValues.FUNCTION, self.DICT))
 
 
-# Other transformation functions
+# Extending / combining dictionaries
 
-class Invert(TestCase):
-    INVERTIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
-    UNINVERTIBLE_DICT = dict(zip(range(1, 2 * len(ALPHABET) + 1),
-                                 ALPHABET * 2))
-
-    def test_none(self):
-        with self.assertRaises(TypeError):
-            __unit__.invert(None)
-
-    def test_some_object(self):
-        with self.assertRaises(TypeError):
-            __unit__.invert(object())
-
-    def test_empty(self):
-        self.assertEquals({}, __unit__.invert({}))
-
-    def test_invertible(self):
-        inverted_dict = __unit__.invert(self.INVERTIBLE_DICT)
-        self.assertItemsEqual(
-            self.INVERTIBLE_DICT.values(), inverted_dict.keys())
-        self.assertItemsEqual(
-            self.INVERTIBLE_DICT.keys(), inverted_dict.values())
-
-    def test_uninvertible(self):
-        # a bit of misnomer, but it means dictionary has duplicate values
-        inverted_dict = __unit__.invert(self.UNINVERTIBLE_DICT)
-        self.assertGreater(
-            set(self.UNINVERTIBLE_DICT.keys()), set(inverted_dict.values()))
-
-
-class Merge(TestCase):
+class _Combine(TestCase):
     KEYS = ('foo', 'bar', 'baz', 'qux', 'thud')
 
     DICT = dict(zip(KEYS[:3], range(3)))
     OTHER_DICT = dict(zip(KEYS[3:], range(3, len(KEYS))))
     MANY_DICTS = [{k: v} for k, v in zip(KEYS, range(len(KEYS)))]
 
-    MERGED = dict(zip(KEYS, range(5)))
+    COMBINED = dict(zip(KEYS, range(5)))
 
     DEEP_DICT1 = {'foo': {'bar': 1}, 'baz': 'A'}
     DEEP_DICT2 = {'foo': {'qux': 2}, 'thud': 'B'}
     NOT_DEEP_DICT = {'foo': 'a'}
-    MERGED_DEEP_1_2 = {'foo': {'bar': 1, 'qux': 2}, 'baz': 'A', 'thud': 'B'}
-    MERGED_DEEP1_AND_NOT_DEEP = {'foo': 'a', 'baz': 'A'}
+    COMBINED_DEEP_1_2 = {'foo': {'bar': 1, 'qux': 2}, 'baz': 'A', 'thud': 'B'}
+    COMBINED_DEEP1_AND_NOT_DEEP = {'foo': 'a', 'baz': 'A'}
+
+
+class Merge(_Combine):
+    MERGED = _Combine.COMBINED
+    MERGED_DEEP_1_2 = _Combine.COMBINED_DEEP_1_2
+    MERGED_DEEP1_AND_NOT_DEEP = _Combine.COMBINED_DEEP1_AND_NOT_DEEP
 
     def test_no_args(self):
         with self.assertRaises(TypeError):
@@ -695,3 +671,126 @@ class Merge(TestCase):
     def test_deep__two_args__deep_and_shallow(self):
         result = __unit__.merge(self.DEEP_DICT1, self.NOT_DEEP_DICT, deep=True)
         self.assertEquals(self.MERGED_DEEP1_AND_NOT_DEEP, result)
+
+
+class Extend(_Combine):
+    EXTENDED = _Combine.COMBINED
+    EXTENDED_DEEP_1_2 = _Combine.COMBINED_DEEP_1_2
+    EXTENDED_DEEP1_AND_NOT_DEEP = _Combine.COMBINED_DEEP1_AND_NOT_DEEP
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(object())
+
+    def test_empty_dict__one(self):
+        original = {}
+        extended = __unit__.extend(original)
+
+        self.assertIs(original, extended)
+        self.assertEquals({}, extended)
+
+    def test_empty_dict__many(self):
+        original = {}
+        extended = __unit__.extend(original, {}, {})
+
+        self.assertIs(original, extended)
+        self.assertEquals({}, extended)
+
+    def test_dict__one(self):
+        original = self.DICT.copy()
+        extended = __unit__.extend(original)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.DICT, extended)
+
+    def test_dict__two(self):
+        original = self.DICT.copy()
+        extended = __unit__.extend(original, self.OTHER_DICT)
+
+        self.assertIs(original, extended)
+        self.assertIsNot(self.DICT, extended)
+        self.assertIsNot(self.OTHER_DICT, extended)
+
+        self.assertEquals(self.EXTENDED, extended)
+
+    def test_dict__many(self):
+        original = self.MANY_DICTS[0].copy()
+        extended = __unit__.extend(original, *self.MANY_DICTS[1:])
+
+        self.assertIs(original, extended)
+        for d in self.MANY_DICTS:
+            self.assertIsNot(d, extended)
+
+        self.assertEquals(self.EXTENDED, extended)
+
+    def test_deep__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(None, deep=True)
+
+    def test_deep__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(object(), deep=True)
+
+    def test_deep__dict__empty(self):
+        original = {}
+        extended = __unit__.extend(original, {}, deep=True)
+
+        self.assertIs(original, extended)
+        self.assertEquals({}, extended)
+
+    def test_deep__dict__shallow(self):
+        original = self.DICT.copy()
+        extended = __unit__.extend(original, self.OTHER_DICT, deep=True)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.EXTENDED, extended)
+
+    def test_deep__dict__both_deep(self):
+        original = self.DEEP_DICT1.copy()
+        extended = __unit__.extend(original, self.DEEP_DICT2, deep=True)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.EXTENDED_DEEP_1_2, extended)
+
+    def test_deep__dict__deep_and_shallow(self):
+        original = self.DEEP_DICT1.copy()
+        extended = __unit__.extend(original, self.NOT_DEEP_DICT, deep=True)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.EXTENDED_DEEP1_AND_NOT_DEEP, extended)
+
+
+# Other transformation functions
+
+class Invert(TestCase):
+    INVERTIBLE_DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
+    UNINVERTIBLE_DICT = dict(zip(range(1, 2 * len(ALPHABET) + 1),
+                                 ALPHABET * 2))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.invert(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.invert(object())
+
+    def test_empty(self):
+        self.assertEquals({}, __unit__.invert({}))
+
+    def test_invertible(self):
+        inverted_dict = __unit__.invert(self.INVERTIBLE_DICT)
+        self.assertItemsEqual(
+            self.INVERTIBLE_DICT.values(), inverted_dict.keys())
+        self.assertItemsEqual(
+            self.INVERTIBLE_DICT.keys(), inverted_dict.values())
+
+    def test_uninvertible(self):
+        # a bit of misnomer, but it means dictionary has duplicate values
+        inverted_dict = __unit__.invert(self.UNINVERTIBLE_DICT)
+        self.assertGreater(
+            set(self.UNINVERTIBLE_DICT.keys()), set(inverted_dict.values()))

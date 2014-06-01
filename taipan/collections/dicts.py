@@ -17,7 +17,8 @@ __all__ = [
     'get', 'select',
     'filteritems', 'filterkeys', 'filtervalues',
     'mapitems', 'starmapitems', 'mapkeys', 'mapvalues',
-    'invert', 'merge',
+    'merge', 'extend',
+    'invert',
 ]
 
 
@@ -248,6 +249,107 @@ def mapvalues(function, dict_):
     return dict_.__class__((k, function(v)) for k, v in iteritems(dict_))
 
 
+# Extending / combining dictionaries
+
+def merge(*dicts, **kwargs):
+    """Merges two or more dictionaries into a single one.
+
+    Repeated keys will retain their last values,
+    as per given order of dictionaries.
+
+    :param deep:
+
+        Whether merging should proceed recursively, and cause
+        corresponding subdictionaries to be merged into each other.
+        By default, this does not happen (equivalent to ``deep=False``).
+
+        Example::
+
+            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=False)
+            {'a': {'c': 2}}
+            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=True)
+            {'a': {'b': 1, 'c': 2}}
+
+    :return: Merged dictionary
+
+    .. note:: For ``dict``\ s ``a`` and ``b``, ``merge(a, b)`` is equivalent
+              to ``extend({}, a, b)``.
+    """
+    ensure_argcount(dicts, min_=1)
+    dicts = list(imap(ensure_mapping, dicts))
+
+    ensure_keyword_args(kwargs, optional=('deep',))
+
+    return _nary_dict_update(dicts, copy=True, deep=kwargs.get('deep', False))
+
+
+def extend(dict_, *dicts, **kwargs):
+    """Extend a dictionary with keys and values from other dictionaries.
+
+    Repeated keys will retain their last values,
+    as per given order of dictionaries.
+
+    :param dict_: Dictionary to extend
+    :param deep:
+
+        Whether extending should proceed recursively, and cause
+        corresponding subdictionaries to be merged into each other.
+        By default, this does not happen (equivalent to ``deep=False``).
+
+        Example::
+
+            >> foo = {'a': {'b': 1}}
+            >> extend(foo, {'a': {'c': 2}}, deep=False)
+            {'a': {'c': 2}}
+            >> foo = {'a': {'b': 1}}
+            >> extend(foo, {'a': {'c': 2}}, deep=True)
+            {'a': {'b': 1, 'c': 2}}
+
+    :return: Extended ``dict_``
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_mapping(dict_)
+    dicts = list(imap(ensure_mapping, dicts))
+
+    ensure_keyword_args(kwargs, optional=('deep',))
+
+    return _nary_dict_update([dict_] + dicts,
+                             copy=False, deep=kwargs.get('deep', False))
+
+
+def _nary_dict_update(dicts, **kwargs):
+    """Implementation of n-argument ``dict.update``,
+    with flags controlling the exact strategy.
+    """
+    copy = kwargs.get('copy', False)
+    res = dicts[0].copy() if copy else dicts[0]
+    if len(dicts) == 1:
+        return res
+
+    deep = kwargs.get('deep', False)
+    dict_update = _recursive_dict_update if deep else res.__class__.update
+
+    for d in dicts[1:]:
+        dict_update(res, d)
+    return res
+
+
+def _recursive_dict_update(dict_, other):
+    """Deep/recursive version of ``dict.update``.
+
+    If a key is present in both dictionaries, and points to
+    "child" dictionaries, those will be appropriately merged.
+    """
+    for key, other_value in iteritems(other):
+        if key in dict_:
+            value = dict_[key]
+            if is_mapping(value) and is_mapping(other_value):
+                _recursive_dict_update(value, other_value)
+                continue
+        dict_[key] = other_value
+
+
 # Other transformation functions
 
 def invert(dict_):
@@ -264,67 +366,3 @@ def invert(dict_):
     """
     ensure_mapping(dict_)
     return dict_.__class__(izip(itervalues(dict_), iterkeys(dict_)))
-
-
-def merge(*dicts, **kwargs):
-    """Merges two or more dictionaries into a single one.
-
-    Repeated keys will retain their last values,
-    as per given order of dictionaries.
-
-    :param deep:
-
-        Whether merging should proceed recursively, and cause
-        corresponding subdictionaries to be merged into each other.
-
-        Example::
-
-            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=False)
-            {'a': {'c': 2}}
-            >> merge({'a': {'b': 1}}, {'a': {'c': 2}}, deep=True)
-            {'a': {'b': 1, 'c': 2}}
-
-    :return: Merged dictionary
-    """
-    ensure_argcount(dicts, min_=1)
-    dicts = list(imap(ensure_mapping, dicts))
-
-    ensure_keyword_args(kwargs, optional=('deep',))
-
-    res = dicts[0].copy()
-    if len(dicts) == 1:
-        return res
-
-    deep = kwargs.get('deep', False)
-    dict_update = _recursive_dict_update if deep else res.__class__.update
-
-    for d in dicts[1:]:
-        dict_update(res, d)
-    return res
-
-
-def _recursive_dict_update(one_dict, other_dict):
-    """Deep/recursive version of ``dict.update``.
-
-    If a key is present in both dictionaries, and points to
-    "child" dictionaries, those will be appropriately merged.
-
-    :return: First of the two dictionaries
-    """
-    result = one_dict  # first arg works like ``self`` in dict.update()
-
-    for key, other_value in iteritems(other_dict):
-        if key not in result:
-            result[key] = other_value
-            continue
-
-        # only merge if both values are subdictionaries
-        value = result[key]
-        both_dicts = is_mapping(value) and is_mapping(other_value)
-        if not both_dicts:
-            result[key] = other_value
-            continue
-
-        _recursive_dict_update(value, other_value)
-
-    return result

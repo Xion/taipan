@@ -190,7 +190,7 @@ class Var(object):
             list(map(examine, numbers))
             return even_count.get(), odd_count.get()
 
-    In real code, you'd use :class:`Var` to return a "result" from a function
+    In real code, you'd use :class:`Var` to "return" a "result" from a function
     that is called in a special way, e.g. in a database transaction.
 
     .. note::
@@ -263,6 +263,21 @@ class Var(object):
         :param value: The value to set
         """
         self.value = value
+
+    def transform(self, func):
+        """Transform the value stored in this variable
+        by applying a specified function to it.
+
+        :param func: Unary transformation function
+
+        :raise ValueAbsentError: When the variable has no value
+        :raise TypeError: When ``func`` is not a callable
+
+        .. versionadded:: 0.0.2
+        """
+        self._ensure_has_value()
+        ensure_callable(func)
+        self.value = func(self.value)
 
     # Note that :class:`Var` intentionally doesn't have any magic methods
     # that would proxy to the underlying ``value``. For clarity,

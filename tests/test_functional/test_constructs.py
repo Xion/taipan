@@ -325,6 +325,7 @@ class Var(TestCase):
     VALUES = [None, SIMPLE_VALUE, COMPOUND_VALUE]
 
     DELTA = 5
+    INCREMENT = staticmethod(lambda x: x + Var.DELTA)
 
     def test_ctor__argless(self):
         var = __unit__.Var()
@@ -438,6 +439,26 @@ class Var(TestCase):
         var = __unit__.Var(self.SIMPLE_VALUE)
         var.set(__unit__.Var.ABSENT)
         self._assertIsAbsent(var)
+
+    def test_transform__none(self):
+        var = __unit__.Var(self.INTEGER)
+        with self.assertRaises(TypeError):
+            var.transform(None)
+
+    def test_transform__some_object(self):
+        var = __unit__.Var(self.INTEGER)
+        with self.assertRaises(TypeError):
+            var.transform(object())
+
+    def test_transform__function__absent(self):
+        var = __unit__.Var()
+        with self._assertRaisesValueAbsent():
+            var.transform(self.INCREMENT)
+
+    def test_transform__function__present(self):
+        var = __unit__.Var(self.INTEGER)
+        var.transform(self.INCREMENT)
+        self.assertEquals(self.INTEGER + self.DELTA, var.value)
 
     # Tests for magic methods
 

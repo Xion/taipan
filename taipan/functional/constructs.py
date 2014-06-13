@@ -204,6 +204,10 @@ class Var(object):
         * single-element iterables ("containing" the variable's value)
         * callables of arbitrary arity (returning the variable's value)
         * no-op context managers (think analogous to files opened by ``open``)
+
+    .. versionchanged:: 0.0.2
+       Converting a :class:`Var` to :type:`bool` (e.g. ``if`` condition)
+       is now equivalent of calling :meth:`has_value` on it.
     """
     __slots__ = ['value', '__weakref__']
 
@@ -299,6 +303,10 @@ class Var(object):
 
     def __len__(self):
         return int(self.has_value())
+
+    def __nonzero__(self):
+        return self.has_value()
+    __bool__ = __nonzero__
 
     def __repr__(self):
         addr = hex(id(self))

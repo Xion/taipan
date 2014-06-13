@@ -462,6 +462,18 @@ class Var(TestCase):
 
     # Tests for magic methods
 
+    def test_bool__absent(self):
+        var = __unit__.Var()
+        self.assertFalse(var)
+
+    def test_bool__present__with_falsy_value(self):
+        var = __unit__.Var(None)
+        self.assertTrue(var)
+
+    def test_bool__present__with_truthy_value(self):
+        var = __unit__.Var('foo')
+        self.assertTrue(var)
+
     def test_call__absent(self):
         var = __unit__.Var()
         with self._assertRaisesValueAbsent():

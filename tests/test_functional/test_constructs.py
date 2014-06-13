@@ -509,6 +509,14 @@ class Var(TestCase):
             var = __unit__.Var(value)
             self.assertEquals(1, len(var))
 
+    def test_reversed__absent(self):
+        var = __unit__.Var()
+        self.assertEmpty(reversed(var))
+
+    def test_reversed__present(self):
+        for value in self.VALUES:
+            self.assertItemsEqual([value], reversed(__unit__.Var(value)))
+
     # Utility functions
 
     def _assertIsAbsent(self, var):

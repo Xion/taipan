@@ -227,7 +227,7 @@ class Var(object):
             raise ValueAbsentError()
 
     def clear(self):
-        """Clears the vaiable, making it uninitialized."""
+        """Clears the variable, making it uninitialized."""
         self.value = self.ABSENT
 
     def dec(self, by=1):

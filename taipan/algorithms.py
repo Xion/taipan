@@ -10,6 +10,7 @@ from numbers import Integral
 from taipan._compat import imap, izip_longest
 from taipan.collections import ensure_iterable
 from taipan.functional import ensure_callable
+from taipan.functional.functions import identity
 
 
 __all__ = [
@@ -34,7 +35,7 @@ def batch(iterable, n, fillvalue=None):
 
     .. note::
 
-        This an extended version of grouper() recipe
+        This is an extended version of grouper() recipe
         from the :module:`itertools` module documentation.
     """
     ensure_iterable(iterable)
@@ -50,7 +51,7 @@ def batch(iterable, n, fillvalue=None):
         fillvalue = object()
         trimmer = lambda item: tuple(x for x in item if x is not fillvalue)
     else:
-        trimmer = lambda item: item
+        trimmer = identity()
 
     args = [iter(iterable)] * n
     zipped = izip_longest(*args, fillvalue=fillvalue)
@@ -64,6 +65,12 @@ def cycle(iterable, n=None):
               If None, result cycles through ``iterable`` indefinitely.
 
     :return: Iterable that cycles through given one
+
+    .. note::
+
+        This is an extended version of ncycles() recipe
+        from the :module:`itertools` module documentation
+        that also has the functionality of standard :func:`itertools.cycle`.
     """
     ensure_iterable(iterable)
 
@@ -85,7 +92,7 @@ def intertwine(*iterables):
     then from second, etc. until the last one - and then another item from
     first, then from second, etc. - up until all iterables are exhausted.
     """
-    iterables = tuple(map(ensure_iterable, iterables))
+    iterables = tuple(imap(ensure_iterable, iterables))
 
     empty = object()
     return (item

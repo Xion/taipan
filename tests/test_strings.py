@@ -157,6 +157,11 @@ class Split(TestCase):
             __unit__.split(self.STRING, by=())
         self.assertIn("empty", str(r.exception))
 
+    def test_by__empty_generator(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.split(self.STRING, by =(x for x in ()))
+        self.assertIn("empty", str(r.exception))
+
     def test_by__multiple_strings(self):
         self.assertEquals(
             self.SPLIT_BY_A_OR_X, __unit__.split(self.STRING, by=('a', 'X')))
@@ -260,9 +265,14 @@ class Join(TestCase):
         with self.assertRaises(TypeError):
             __unit__.join(self.DELIMITER, object())
 
-    def test_iterable__empty(self):
+    def test_iterable__empty__sequence(self):
         expected = ""
         joined = __unit__.join(self.DELIMITER, ())
+        self.assertEquals(expected, joined)
+
+    def test_iterable__empty__generator(self):
+        expected = ""
+        joined = __unit__.join(self.DELIMITER, (x for x in ()))
         self.assertEquals(expected, joined)
 
     def test_normal(self):

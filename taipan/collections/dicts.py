@@ -7,7 +7,7 @@ from taipan._compat import IS_PY3, imap, izip
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
 from taipan.functional import (ensure_argcount, ensure_callable,
                                ensure_keyword_args)
-from taipan.functional.combinators import compose
+from taipan.functional.combinators import curry, compose
 from taipan.functional.functions import identity
 
 
@@ -254,8 +254,22 @@ def mapvalues(function, dict_):
 def merge(*dicts, **kwargs):
     """Merges two or more dictionaries into a single one.
 
-    Repeated keys will retain their last values,
-    as per given order of dictionaries.
+    Optional keyword arguments allow to control the exact way
+    in which the dictionaries will be merged.
+
+    :param overwrite:
+
+        Whether repeated keys should have their values overwritten,
+        retaining the last value, as per given order of dictionaries.
+        This is the default behavior (equivalent to ``overwrite=True``).
+        If ``overwrite=False``, repeated keys are simply ignored.
+
+        Example::
+
+            >> merge({'a': 1}, {'a': 10, 'b': 2}, overwrite=True)
+            {'a': 10, 'b': 2}
+            >> merge({'a': 1}, {'a': 10, 'b': 2}, overwrite=False)
+            {'a': 1, 'b': 2}
 
     :param deep:
 
@@ -274,22 +288,44 @@ def merge(*dicts, **kwargs):
 
     .. note:: For ``dict``\ s ``a`` and ``b``, ``merge(a, b)`` is equivalent
               to ``extend({}, a, b)``.
+
+    .. versionadded:: 0.0.2
+       The ``overwrite`` keyword argument.
     """
     ensure_argcount(dicts, min_=1)
     dicts = list(imap(ensure_mapping, dicts))
 
-    ensure_keyword_args(kwargs, optional=('deep',))
+    ensure_keyword_args(kwargs, optional=('deep', 'overwrite'))
 
-    return _nary_dict_update(dicts, copy=True, deep=kwargs.get('deep', False))
+    return _nary_dict_update(dicts, copy=True,
+                             deep=kwargs.get('deep', False),
+                             overwrite=kwargs.get('overwrite', True))
 
 
 def extend(dict_, *dicts, **kwargs):
     """Extend a dictionary with keys and values from other dictionaries.
 
-    Repeated keys will retain their last values,
-    as per given order of dictionaries.
-
     :param dict_: Dictionary to extend
+
+    Optional keyword arguments allow to control the exact way
+    in which ``dict_`` will be extended.
+
+    :param overwrite:
+
+        Whether repeated keys should have their values overwritten,
+        retaining the last value, as per given order of dictionaries.
+        This is the default behavior (equivalent to ``overwrite=True``).
+        If ``overwrite=False``, repeated keys are simply ignored.
+
+        Example::
+
+            >> foo = {'a': 1}
+            >> extend(foo, {'a': 10, 'b': 2}, overwrite=True)
+            {'a': 10, 'b': 2}
+            >> foo = {'a': 1}
+            >> extend(foo, {'a': 10, 'b': 2}, overwrite=False)
+            {'a': 1, 'b': 2}
+
     :param deep:
 
         Whether extending should proceed recursively, and cause
@@ -312,42 +348,61 @@ def extend(dict_, *dicts, **kwargs):
     ensure_mapping(dict_)
     dicts = list(imap(ensure_mapping, dicts))
 
-    ensure_keyword_args(kwargs, optional=('deep',))
+    ensure_keyword_args(kwargs, optional=('deep', 'overwrite'))
 
-    return _nary_dict_update([dict_] + dicts,
-                             copy=False, deep=kwargs.get('deep', False))
+    return _nary_dict_update([dict_] + dicts, copy=False,
+                             deep=kwargs.get('deep', False),
+                             overwrite=kwargs.get('overwrite', True))
 
 
 def _nary_dict_update(dicts, **kwargs):
     """Implementation of n-argument ``dict.update``,
     with flags controlling the exact strategy.
     """
-    copy = kwargs.get('copy', False)
+    copy = kwargs['copy']
     res = dicts[0].copy() if copy else dicts[0]
     if len(dicts) == 1:
         return res
 
-    deep = kwargs.get('deep', False)
-    dict_update = _recursive_dict_update if deep else res.__class__.update
+    # decide what strategy to use when updating a dictionary
+    # with the values from another: {(non)recursive} x {(non)overwriting}
+    deep = kwargs['deep']
+    overwrite = kwargs['overwrite']
+    if deep:
+        dict_update = curry(_recursive_dict_update, overwrite=overwrite)
+    else:
+        if overwrite:
+            dict_update = res.__class__.update
+        else:
+            def dict_update(dict_, other):
+                for k, v in iteritems(other):
+                    dict_.setdefault(k, v)
 
     for d in dicts[1:]:
         dict_update(res, d)
     return res
 
 
-def _recursive_dict_update(dict_, other):
+def _recursive_dict_update(dict_, other, **kwargs):
     """Deep/recursive version of ``dict.update``.
 
     If a key is present in both dictionaries, and points to
     "child" dictionaries, those will be appropriately merged.
+
+    :param overwrite: Whether to overwrite exisiting dictionary values
     """
+    overwrite = kwargs['overwrite']
+
     for key, other_value in iteritems(other):
         if key in dict_:
             value = dict_[key]
             if is_mapping(value) and is_mapping(other_value):
-                _recursive_dict_update(value, other_value)
+                _recursive_dict_update(value, other_value, overwrite=overwrite)
                 continue
-        dict_[key] = other_value
+        if overwrite:
+            dict_[key] = other_value
+        else:
+            dict_.setdefault(key, other_value)
 
 
 # Other transformation functions

@@ -606,11 +606,18 @@ class _Combine(TestCase):
 
     COMBINED = dict(zip(KEYS, range(5)))
 
+    # dicts used for testing deep= flag
     DEEP_DICT1 = {'foo': {'bar': 1}, 'baz': 'A'}
     DEEP_DICT2 = {'foo': {'qux': 2}, 'thud': 'B'}
     NOT_DEEP_DICT = {'foo': 'a'}
     COMBINED_DEEP_1_2 = {'foo': {'bar': 1, 'qux': 2}, 'baz': 'A', 'thud': 'B'}
     COMBINED_DEEP1_AND_NOT_DEEP = {'foo': 'a', 'baz': 'A'}
+
+    # dicts used for testing overwrite= flag
+    BASE_DICT = {'foo': 1, 'bar': 2}
+    OVERWRITING_DICT = {'foo': 10, 'baz': 30}
+    OVERWRITTEN_DICT = {'foo': 10, 'bar': 2, 'baz': 30}
+    NOT_OVERWRITTEN_DICT = {'foo': 1, 'bar': 2, 'baz': 30}
 
 
 class Merge(_Combine):
@@ -671,6 +678,35 @@ class Merge(_Combine):
     def test_deep__two_args__deep_and_shallow(self):
         result = __unit__.merge(self.DEEP_DICT1, self.NOT_DEEP_DICT, deep=True)
         self.assertEquals(self.MERGED_DEEP1_AND_NOT_DEEP, result)
+
+    def test_overwrite__no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(overwrite=False)
+
+    def test_overwrite__single_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(None, overwrite=False)
+
+    def test_overwrite__single_arg__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(object(), overwrite=False)
+
+    def test_overwrite__single_arg__dict(self):
+        result = __unit__.merge(self.BASE_DICT, overwrite=False)
+        self.assertEquals(self.BASE_DICT, result)
+        self.assertIsNot(self.BASE_DICT, result)
+
+    def test_overwrite__two_args__true(self):
+        self.assertEquals(
+            self.OVERWRITTEN_DICT,
+            __unit__.merge(self.BASE_DICT, self.OVERWRITING_DICT,
+                           overwrite=True))
+
+    def test_overwrite__two_args__false(self):
+        self.assertEquals(
+            self.NOT_OVERWRITTEN_DICT,
+            __unit__.merge(self.BASE_DICT, self.OVERWRITING_DICT,
+                           overwrite=False))
 
 
 class Extend(_Combine):
@@ -762,6 +798,37 @@ class Extend(_Combine):
 
         self.assertIs(original, extended)
         self.assertEquals(self.EXTENDED_DEEP1_AND_NOT_DEEP, extended)
+
+    def test_overwrite__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(None, overwrite=False)
+
+    def test_overwrite__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(object(), overwrite=False)
+
+    def test_overwrite__empty_dicts(self):
+        original = {}
+        extended = __unit__.extend(original, {}, overwrite=False)
+
+        self.assertIs(original, extended)
+        self.assertEquals({}, extended)
+
+    def test_overwrite__true(self):
+        original = self.BASE_DICT.copy()
+        extended = __unit__.extend(original, self.OVERWRITING_DICT,
+                                   overwrite=True)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.OVERWRITTEN_DICT, extended)
+
+    def test_overwrite__false(self):
+        original = self.BASE_DICT.copy()
+        extended = __unit__.extend(original, self.OVERWRITING_DICT,
+                                   overwrite=False)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.NOT_OVERWRITTEN_DICT, extended)
 
 
 # Other transformation functions

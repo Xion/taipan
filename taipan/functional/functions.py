@@ -10,12 +10,13 @@ from taipan.strings import ensure_string
 
 
 __all__ = [
-    'identity', 'const', 'true', 'false', 'none', 'zero', 'one', 'empty',
+    'identity', 'packing',
+    'const', 'true', 'false', 'none', 'zero', 'one', 'empty',
     'attr_func', 'key_func', 'item_func', 'dotcall',
 ]
 
 
-# Constant functions
+# Identity functions
 
 def identity():
     """Returns an identity function.
@@ -23,6 +24,17 @@ def identity():
     """
     return lambda x: x
 
+
+def packing():
+    """Creates a function that returns all positional arguments
+    that were passed to it as an argument tuple.
+
+    ... versionadded:: 0.0.2
+    """
+    return lambda *args: args
+
+
+# Constant functions
 
 def const(k):
     """Creates a function that always returns the same value.

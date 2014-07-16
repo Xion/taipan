@@ -10,6 +10,7 @@ from taipan.collections import (ensure_iterable, ensure_ordered_mapping,
                                 is_mapping)
 from taipan.functional import ensure_callable
 from taipan.functional.functions import none
+from taipan.lang import ensure_contextmanager
 
 
 __all__ = [
@@ -155,10 +156,7 @@ def with_(contextmanager, do):
         all_lines = sum((with_(open(filename), do=dotcall('readlines'))
                          for filename in files), [])
     """
-    # TODO(xion): extract an ``ensure_contextmanager`` function
-    # once we figure out (or come up with) a correct place for it
-    if not hasattr(contextmanager, '__exit__'):
-        raise TypeError("%r is not a context manager" % (contextmanager,))
+    ensure_contextmanager(contextmanager)
     ensure_callable(do)
 
     with contextmanager as value:
@@ -227,7 +225,7 @@ class Var(object):
             raise ValueAbsentError()
 
     def clear(self):
-        """Clears the vaiable, making it uninitialized."""
+        """Clears the variable, making it uninitialized."""
         self.value = self.ABSENT
 
     def dec(self, by=1):

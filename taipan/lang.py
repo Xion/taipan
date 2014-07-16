@@ -11,10 +11,35 @@ from taipan.strings import ensure_string
 
 
 __all__ = [
+    'is_contextmanager',
+    'ensure_contextmanager',
+
     'has_identifier_form', 'is_identifier',
     'is_keyword',
     'is_magic', 'is_dunder',
 ]
+
+
+# Kind checks
+
+def is_contextmanager(obj):
+    """Checks whether given object is a context manager.,
+    i.e. an object suitable for use with the ``with`` statement.
+    :return: ``True`` if ``obj`` is a context manager, ``False`` otherwise
+    """
+    return hasattr(obj, '__exit__')
+
+
+# Assertions
+
+def ensure_contextmanager(arg):
+    """Checks whether argument is a context manager.
+    :return: Argument, if it's a context manager
+    :raise TypeError: When argument is not a context manager
+    """
+    if not is_contextmanager(arg):
+        raise TypeError("expected a string, got %s" % type(arg).__name__)
+    return arg
 
 
 # Language token classification

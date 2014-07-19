@@ -92,6 +92,8 @@ is_keyword = keyword.iskeyword
 def is_magic(s):
     """Check whether given string is a __magic__ Python identifier.
     :return: Whether ``s`` is a __magic__ Python identifier
+
+    .. versionadded:: 0.0.2
     """
     if not is_identifier(s):
         return False

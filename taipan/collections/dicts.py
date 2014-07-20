@@ -5,6 +5,7 @@ from itertools import chain, starmap
 
 from taipan._compat import IS_PY3, imap, izip
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
+from taipan.collections.sets import remove_subset
 from taipan.functional import (ensure_argcount, ensure_callable,
                                ensure_keyword_args)
 from taipan.functional.combinators import curry, compose
@@ -14,7 +15,7 @@ from taipan.functional.functions import identity
 __all__ = [
     'AbsentDict', 'ABSENT',
     'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
-    'get', 'select',
+    'get', 'select', 'pick', 'omit',
     'filteritems', 'filterkeys', 'filtervalues',
     'mapitems', 'starmapitems', 'mapkeys', 'mapvalues',
     'merge', 'extend',
@@ -124,6 +125,36 @@ def select(keys, from_, strict=False):
     else:
         existing_keys = set(keys) & set(iterkeys(from_))
         return from_.__class__((k, from_[k]) for k in existing_keys)
+
+
+#: Alias for :func:`select`.
+#: .. versionadded:: 0.0.2
+pick = select
+
+
+def omit(keys, from_, strict=False):
+    """Returns a subset of given dictionary, omitting specified keys.
+
+    :param keys: Iterable of keys to exclude
+    :param strict: Whether ``keys`` are required to exist in the dictionary
+
+    :return: Dictionary filtered by omitting ``keys``
+
+    :raise KeyError: If ``strict`` is True and one of ``keys`` is not found
+                     in the dictionary
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_iterable(keys)
+    ensure_mapping(from_)
+
+    if strict:
+        remaining_keys = set(iterkeys(from_))
+        remove_subset(remaining_keys, keys)  # raises KeyError if necessary
+    else:
+        remaining_keys = set(iterkeys(from_)) - set(keys)
+
+    return from_.__class__((k, from_[k]) for k in remaining_keys)
 
 
 # Filter functions

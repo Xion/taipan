@@ -3,7 +3,8 @@ Tests for .lang module.
 """
 from contextlib import contextmanager
 
-from taipan.testing import TestCase
+from taipan._compat import IS_PY3
+from taipan.testing import TestCase, skipIf, skipUnless
 
 import taipan.lang as __unit__
 
@@ -139,10 +140,17 @@ class IsIdentifier(TestCase):
     def test_string__self(self):
         self.assertTrue(__unit__.is_identifier('self'))
 
-    def test_string__global_constants(self):
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_string__global_constants__py2(self):
         self.assertTrue(__unit__.is_identifier('True'))
         self.assertTrue(__unit__.is_identifier('False'))
         self.assertFalse(__unit__.is_identifier('None'))  # can't assign to it
+
+    @skipUnless(IS_PY3, "requires Python 3.x")
+    def test_string__global_constants__py3(self):
+        self.assertFalse(__unit__.is_identifier('True'))  # keyword in py3
+        self.assertFalse(__unit__.is_identifier('False'))  # keyword in py3
+        self.assertFalse(__unit__.is_identifier('None'))  # keyword in py3
 
 
 class IsMagic(TestCase):

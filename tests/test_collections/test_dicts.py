@@ -286,13 +286,15 @@ class Get(TestCase):
             __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
 
 
-class Select(TestCase):
+class _Projection(TestCase):
     DICT = dict(zip(('foo', 'bar', 'baz', 'thud', 'qux'), range(5)))
 
     STRICT_KEYS = ('foo', 'bar')
     EXTRANEOUS_KEY = 'blah'
     NONSTRICT_KEYS = ('bar', 'qux', EXTRANEOUS_KEY)
 
+
+class Select(_Projection):
     SELECTED_BY_STRICT_KEYS = {'foo': 0, 'bar': 1}
     SELECTED_BY_NONSTRICT_KEYS = {'bar': 1, 'qux': 4}
 
@@ -337,6 +339,54 @@ class Select(TestCase):
         self.assertEquals(
             self.SELECTED_BY_NONSTRICT_KEYS,
             __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=False))
+
+
+class Omit(_Projection):
+    WITH_STRICT_KEYS_OMITTED = {'baz': 2, 'thud': 3, 'qux': 4}
+    WITH_NONSTRICT_KEYS_OMITTED = {'foo': 0, 'baz': 2, 'thud': 3}
+
+    def test_keys__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(None, self.DICT)
+
+    def test_keys__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(object(), self.DICT)
+
+    def test_keys__empty(self):
+        self.assertEquals(self.DICT, __unit__.omit((), self.DICT))
+
+    def test_from__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(self.STRICT_KEYS, None)
+
+    def test_from__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(self.STRICT_KEYS, object())
+
+    def test_from__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.omit(self.STRICT_KEYS, {}, strict=True)
+        self.assertEquals(
+            {}, __unit__.omit(self.NONSTRICT_KEYS, {}, strict=False))
+
+    def test_strict__true(self):
+        self.assertEquals(
+            self.WITH_STRICT_KEYS_OMITTED,
+            __unit__.omit(self.STRICT_KEYS, self.DICT, strict=True))
+
+        with self.assertRaises(KeyError) as r:
+            __unit__.omit(self.NONSTRICT_KEYS, self.DICT, strict=True)
+        self.assertIn(repr(self.EXTRANEOUS_KEY), str(r.exception))
+
+    def test_strict__false(self):
+        self.assertEquals(
+            self.WITH_STRICT_KEYS_OMITTED,
+            __unit__.omit(self.STRICT_KEYS, self.DICT, strict=False))
+        self.assertEquals(
+            self.WITH_NONSTRICT_KEYS_OMITTED,
+            __unit__.omit(self.NONSTRICT_KEYS, self.DICT, strict=False))
+
 
 
 # Filter functions

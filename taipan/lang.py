@@ -44,7 +44,7 @@ def ensure_contextmanager(arg):
 
 # Language token classification
 
-IDENTIFIER_FORM_RE = re.compile(r'(?!\d)\w\w*', re.UNICODE)
+IDENTIFIER_FORM_RE = re.compile(r'^(?!\d)\w\w*$', re.UNICODE)
 
 
 def has_identifier_form(s):

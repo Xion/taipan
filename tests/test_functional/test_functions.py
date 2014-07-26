@@ -2,6 +2,7 @@
 Tests for the .functional.functions module.
 """
 from collections import namedtuple
+from contextlib import contextmanager
 
 from taipan.testing import TestCase
 
@@ -147,6 +148,18 @@ class AttrFunc(TestCase):
         with self.assertRaises(TypeError):
             __unit__.attr_func(object())
 
+    def test_string__empty(self):
+        with self._assertAttributeNameValueError():
+            __unit__.attr_func('')
+
+    def test_string__with_spaces(self):
+        with self._assertAttributeNameValueError():
+            __unit__.attr_func('foo bar')
+
+    def test_string__number(self):
+        with self._assertAttributeNameValueError():
+            __unit__.attr_func('42')
+
     def test_single_attr__good(self):
         func = __unit__.attr_func('foo')
         self.assertEquals(
@@ -196,6 +209,17 @@ class AttrFunc(TestCase):
     def test_two_attrs__bad__with_default(self):
         func = __unit__.attr_func('foo', 'doesnt_exist', default=self.DEFAULT)
         self.assertEquals(self.DEFAULT, func(self.DOUBLY_NESTED_OBJECT))
+
+    # Utility functions
+
+    @contextmanager
+    def _assertAttributeNameValueError(self):
+        with self.assertRaises(ValueError) as r:
+            yield r
+
+        msg = str(r.exception)
+        self.assertIn("not", msg)
+        self.assertIn("valid", msg)
 
 
 class KeyFunc(TestCase):

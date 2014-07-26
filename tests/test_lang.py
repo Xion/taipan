@@ -92,6 +92,10 @@ class HasIdentifierForm(TestCase):
     def test_string__letters(self):
         self.assertTrue(__unit__.has_identifier_form('foo'))
 
+    def test_string__with_whitespace(self):
+        self.assertFalse(__unit__.has_identifier_form('foo bar'))
+        self.assertFalse(__unit__.has_identifier_form('foo\tbar'))
+
     def test_string__camel_case(self):
         self.assertTrue(__unit__.has_identifier_form('FooBar'))
         self.assertTrue(__unit__.has_identifier_form('fooBar'))
@@ -125,6 +129,10 @@ class IsIdentifier(TestCase):
     def test_string__letters(self):
         self.assertTrue(__unit__.is_identifier('FooBar'))
         self.assertTrue(__unit__.is_identifier('fooBar'))
+
+    def test_string__with_whitespace(self):
+        self.assertFalse(__unit__.is_identifier('foo bar'))
+        self.assertFalse(__unit__.is_identifier('foo\tbar'))
 
     def test_string__snake_case(self):
         self.assertTrue(__unit__.is_identifier('foo_bar'))

@@ -396,13 +396,19 @@ class _Filter(TestCase):
     FALSY_DICT = {'foo': 0, '': 1, False: 2, 'bar': 3, (): 4, 'baz': ()}
 
 
-class FilterItems(_Filter):
+class _FilterItems(_Filter):
     COALESCED_FALSY_DICT = {'bar': 3}
 
-    FILTER = staticmethod(
-        lambda k, v: (k and k[0] == 'b') or (v and v % 2 == 1))
+    KEY_FILTER = staticmethod(lambda k: k and k[0] == 'b')
+    VALUE_FILTER = staticmethod(lambda v: v and v %2 == 1)
+
     FILTERED_TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
     FILTERED_FALSY_DICT = {'': 1, 'bar': 3, 'baz': ()}
+
+
+class FilterItems(_FilterItems):
+    FILTER = staticmethod(lambda (k, v): _FilterItems.KEY_FILTER(k) or
+                                         _FilterItems.VALUE_FILTER(v))
 
     def test_function__none(self):
         self.assertEquals(self.TRUTHY_DICT,
@@ -412,7 +418,7 @@ class FilterItems(_Filter):
 
     def test_function__non_function(self):
         with self.assertRaises(TypeError):
-            __unit__.filteritems(object(), self.TRUTHY_DICT)
+            __unit__.starfilteritems(object(), self.TRUTHY_DICT)
 
     def test_dict__none(self):
         with self.assertRaises(TypeError):
@@ -433,6 +439,41 @@ class FilterItems(_Filter):
         self.assertEquals(
             self.FILTERED_FALSY_DICT,
             __unit__.filteritems(FilterItems.FILTER, self.FALSY_DICT))
+
+
+class StarFilterItems(_FilterItems):
+    FILTER = staticmethod(lambda k, v: _FilterItems.KEY_FILTER(k) or
+                                       _FilterItems.VALUE_FILTER(v))
+
+    def test_function__none(self):
+        self.assertEquals(self.TRUTHY_DICT,
+                          __unit__.starfilteritems(None, self.TRUTHY_DICT))
+        self.assertEquals(self.COALESCED_FALSY_DICT,
+                          __unit__.starfilteritems(None, self.FALSY_DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.starfilteritems(object(), self.TRUTHY_DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.starfilteritems(StarFilterItems.FILTER, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.starfilteritems(StarFilterItems.FILTER, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.starfilteritems(None, {}))
+        self.assertEquals({}, __unit__.starfilteritems(self.FILTER, {}))
+
+    def test_filter(self):
+        self.assertEquals(
+            self.FILTERED_TRUTHY_DICT,
+            __unit__.starfilteritems(StarFilterItems.FILTER, self.TRUTHY_DICT))
+        self.assertEquals(
+            self.FILTERED_FALSY_DICT,
+            __unit__.starfilteritems(StarFilterItems.FILTER, self.FALSY_DICT))
 
 
 class FilterKeys(_Filter):

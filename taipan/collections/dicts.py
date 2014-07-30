@@ -3,7 +3,7 @@ Dictionary-related functions and classes.
 """
 from itertools import chain, starmap
 
-from taipan._compat import IS_PY3, imap, izip
+from taipan._compat import IS_PY3, ifilter, imap, izip
 from taipan.collections import ensure_iterable, ensure_mapping, is_mapping
 from taipan.collections.sets import remove_subset
 from taipan.functional import (ensure_argcount, ensure_callable,
@@ -16,7 +16,7 @@ __all__ = [
     'AbsentDict', 'ABSENT',
     'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
     'get', 'select', 'pick', 'omit',
-    'filteritems', 'filterkeys', 'filtervalues',
+    'filteritems', 'starfilteritems', 'filterkeys', 'filtervalues',
     'mapitems', 'starmapitems', 'mapkeys', 'mapvalues',
     'merge', 'extend',
     'invert',
@@ -163,7 +163,24 @@ def filteritems(function, dict_):
     """Return a new dictionary comprising of items
     for which ``function`` returns True.
 
+    :param function: Function taking a key-value pair, or None
+
+    .. versionchanged: 0.0.2
+       ``function`` is now taking a key-value pair as a single argument.
+    """
+    function = all if function is None else ensure_callable(function)
+    ensure_mapping(dict_)
+    return dict_.__class__(ifilter(function, iteritems(dict_)))
+
+
+def starfilteritems(function, dict_):
+    """Return a new dictionary comprising of keys and values
+    for which ``function`` returns True.
+
     :param function: Function taking key and value, or None
+
+    .. versionchanged:: 0.0.2
+       Renamed ``starfilteritems`` for consistency with :func:`starmapitems`.
     """
     ensure_mapping(dict_)
 

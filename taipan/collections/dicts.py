@@ -159,60 +159,60 @@ def omit(keys, from_, strict=False):
 
 # Filter functions
 
-def filteritems(function, dict_):
+def filteritems(predicate, dict_):
     """Return a new dictionary comprising of items
-    for which ``function`` returns True.
+    for which ``predicate`` returns True.
 
-    :param function: Function taking a key-value pair, or None
+    :param predicate: Predicate taking a key-value pair, or None
 
     .. versionchanged: 0.0.2
-       ``function`` is now taking a key-value pair as a single argument.
+       ``predicate`` is now taking a key-value pair as a single argument.
     """
-    function = all if function is None else ensure_callable(function)
+    predicate = all if predicate is None else ensure_callable(predicate)
     ensure_mapping(dict_)
-    return dict_.__class__(ifilter(function, iteritems(dict_)))
+    return dict_.__class__(ifilter(predicate, iteritems(dict_)))
 
 
-def starfilteritems(function, dict_):
+def starfilteritems(predicate, dict_):
     """Return a new dictionary comprising of keys and values
-    for which ``function`` returns True.
+    for which ``predicate`` returns True.
 
-    :param function: Function taking key and value, or None
+    :param predicate: Predicate taking key and value, or None
 
     .. versionchanged:: 0.0.2
        Renamed ``starfilteritems`` for consistency with :func:`starmapitems`.
     """
     ensure_mapping(dict_)
 
-    if function is None:
-        function = lambda k, v: all((k, v))
+    if predicate is None:
+        predicate = lambda k, v: all((k, v))
     else:
-        ensure_callable(function)
+        ensure_callable(predicate)
 
     return dict_.__class__((k, v) for k, v in iteritems(dict_)
-                           if function(k, v))
+                           if predicate(k, v))
 
 
-def filterkeys(function, dict_):
+def filterkeys(predicate, dict_):
     """Return a new dictionary comprising of keys
-    for which ``function`` returns True, and their corresponding values.
+    for which ``predicate`` returns True, and their corresponding values.
 
-    :param function: Function taking a dictionary key, or None
+    :param predicate: Predicate taking a dictionary key, or None
     """
-    function = bool if function is None else ensure_callable(function)
+    predicate = bool if predicate is None else ensure_callable(predicate)
     ensure_mapping(dict_)
-    return dict_.__class__((k, v) for k, v in iteritems(dict_) if function(k))
+    return dict_.__class__((k, v) for k, v in iteritems(dict_) if predicate(k))
 
 
-def filtervalues(function, dict_):
+def filtervalues(predicate, dict_):
     """Returns a new dictionary comprising of values
-    for which ``function`` return True, and keys that corresponded to them.
+    for which ``predicate`` return True, and keys that corresponded to them.
 
-    :param function: Function taking a dictionary value, or None
+    :param predicate: Predicate taking a dictionary value, or None
     """
-    function = bool if function is None else ensure_callable(function)
+    predicate = bool if predicate is None else ensure_callable(predicate)
     ensure_mapping(dict_)
-    return dict_.__class__((k, v) for k, v in iteritems(dict_) if function(v))
+    return dict_.__class__((k, v) for k, v in iteritems(dict_) if predicate(v))
 
 
 # Mapping functions

@@ -38,8 +38,9 @@ class _UnaryCombinator(_Combinator):
     ARG_AND_KWARG = ((42,), {'foo': 1})
     ARGS_AND_KWARGS = ((13, 42), {'foo': 1, 'bar': 2})
 
-    def _invoke(self, func, (args, kwargs)):
-        return func(*args, **kwargs)
+    def _invoke(self, func, argspec):
+        varargs, kwargs = argspec
+        return func(*varargs, **kwargs)
 
 
 class Uncurry(_UnaryCombinator):

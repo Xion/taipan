@@ -407,8 +407,8 @@ class _FilterItems(_Filter):
 
 
 class FilterItems(_FilterItems):
-    FILTER = staticmethod(lambda (k, v): _FilterItems.KEY_FILTER(k) or
-                                         _FilterItems.VALUE_FILTER(v))
+    FILTER = staticmethod(lambda item: _FilterItems.KEY_FILTER(item[0]) or
+                                       _FilterItems.VALUE_FILTER(item[1]))
 
     def test_function__none(self):
         self.assertEquals(self.TRUTHY_DICT,

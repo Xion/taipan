@@ -9,6 +9,52 @@ from taipan.testing import TestCase, skipIf, skipUnless
 import taipan.lang as __unit__
 
 
+class Cast(TestCase):
+    NUMBER_TYPE = int
+
+    VALID_NUMBER_VALUE = '42'
+    CASTED_NUMBER_VALUE = 42
+
+    INVALID_NUMBER_VALUE = 'foo'
+    DEFAULT_NUMBER_VALUE =  0
+
+    INVALID_COLLECTION = 42
+
+    def test_type__none(self):
+        with self.assertRaises(AssertionError):
+            __unit__.cast(None, self.VALID_NUMBER_VALUE)
+
+    def test_type__some_object(self):
+        with self.assertRaises(AssertionError):
+            __unit__.cast(object(), self.VALID_NUMBER_VALUE)
+
+    def test_type__numeric__valid_cast(self):
+        self.assertEquals(
+            self.CASTED_NUMBER_VALUE,
+            __unit__.cast(self.NUMBER_TYPE, self.VALID_NUMBER_VALUE))
+
+    def test_type__numeric__invalid_cast__sans_default(self):
+        with self.assertRaises(TypeError):
+            __unit__.cast(self.NUMBER_TYPE, self.INVALID_NUMBER_VALUE)
+
+    def test_type__numeric__invalid_cast__with_default__positional(self):
+        self.assertEquals(
+            self.DEFAULT_NUMBER_VALUE,
+            __unit__.cast(self.NUMBER_TYPE, self.INVALID_NUMBER_VALUE,
+                          self.DEFAULT_NUMBER_VALUE))
+
+    def test_type__numeric__invalid_cast__with_default__keyword(self):
+        self.assertEquals(
+            self.CASTED_NUMBER_VALUE,
+            __unit__.cast(self.NUMBER_TYPE, self.VALID_NUMBER_VALUE,
+                          default=self.DEFAULT_NUMBER_VALUE))
+
+    def test_type__collections__invalid_cast__with_default(self):
+        self.assertEquals((), __unit__.cast(tuple, self.INVALID_COLLECTION, ()))
+        self.assertEquals([], __unit__.cast(list, self.INVALID_COLLECTION, []))
+        self.assertEquals({}, __unit__.cast(dict, self.INVALID_COLLECTION, {}))
+
+
 class IsContextmanager(TestCase):
 
     def test_none(self):

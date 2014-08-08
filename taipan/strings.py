@@ -209,7 +209,6 @@ def replace(needle, with_=None, in_=None):
     if not needle:
         raise ValueError("replacement needle cannot be empty")
 
-    # TODO(xion): allow for regex needles
     if is_string(needle):
         replacer = Replacer((needle,))
     else:

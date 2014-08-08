@@ -16,8 +16,9 @@ from taipan.strings import ensure_string
 
 __all__ = [
     'cast',
-    'is_contextmanager',
-    'ensure_contextmanager',
+
+    'is_contextmanager','ensure_contextmanager',
+    'ensure_boolean',
 
     'has_identifier_form', 'is_identifier',
     'is_keyword',
@@ -81,6 +82,18 @@ def is_contextmanager(obj):
 
 
 # Assertions
+
+def ensure_boolean(arg):
+    """Checks whether given argument is a boolean value.
+    :return: Argument, if it's a boolean
+    :raise TypeError: When argument is not a boolean
+
+    .. versionadded:: 0.0.3
+    """
+    if not isinstance(arg, bool):
+        raise TypeError("expected a boolean, got %s" % type(arg).__name__)
+    return arg
+
 
 def ensure_contextmanager(arg):
     """Checks whether argument is a context manager.

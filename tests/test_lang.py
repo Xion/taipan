@@ -82,6 +82,45 @@ class IsContextmanager(TestCase):
         self.assertTrue(__unit__.is_contextmanager(cm))
 
 
+class EnsureBoolean(TestCase):
+    # These will be always True/False, even if True, False or even bool
+    # symbols have been overwritten
+    SAFE_TRUE = 0 == 0
+    SAFE_FALSE = 0 == 1
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_boolean(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_boolean(object())
+
+    def test_true(self):
+        __unit__.ensure_boolean(self.SAFE_TRUE)
+        __unit__.ensure_boolean(not bool())
+        __unit__.ensure_boolean(True)
+
+    def test_false(self):
+        __unit__.ensure_boolean(self.SAFE_FALSE)
+        __unit__.ensure_boolean(bool())
+        __unit__.ensure_boolean(False)
+
+    def test_bool_type(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_boolean(bool)
+
+    def test_truthy(self):
+        for val in (1, 'True', (42,)):
+            with self.assertRaises(TypeError):
+                __unit__.ensure_boolean(val)
+
+    def test_falsy(self):
+        for val in (0, '', (), [], {}):
+            with self.assertRaises(TypeError):
+                __unit__.ensure_boolean(val)
+
+
 class EnsureContextmanager(TestCase):
 
     def test_none(self):

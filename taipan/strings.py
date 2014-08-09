@@ -10,6 +10,7 @@ import string
 from taipan._compat import IS_PY3, ifilter, imap, xrange
 from taipan.collections import ensure_iterable, is_iterable, is_mapping
 from taipan.collections.tuples import is_pair
+from taipan.functional import ensure_keyword_args
 
 
 __all__ = [
@@ -145,13 +146,11 @@ def join(delimiter, iterable, **kwargs):
             * ``'raise'`` (or ``True``) -- raise exception for any non-strings
             * ``'replace'`` -- replace non-strings with alternative value
 
-    :param with_: Replacement value, used when ``errors == 'replace'``
+    :param with_: Replacement string, used when ``errors == 'replace'``
 
     .. versionadded:: 0.0.3
        Allow to specify error handling policy through ``errors`` parameter
     """
-    from taipan.functional import ensure_keyword_args
-
     ensure_string(delimiter)
     ensure_iterable(iterable)
 
@@ -174,8 +173,7 @@ def join(delimiter, iterable, **kwargs):
         iterable = imap(ensure_string, iterable)
     else:
         raise TypeError(
-            "%r is not a valid non-strings handling policy for join()" % (
-                errors))
+            "%r is not a valid error handling policy for join()" % (errors,))
 
     return delimiter.join(iterable)
 

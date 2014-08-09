@@ -119,6 +119,7 @@ def split(s, by=None, maxsplit=None):
     if is_iterable(by):
         if not by:
             raise ValueError("empty separator list")
+        by = list(imap(ensure_string, by))
         if not s:
             return ['']  # quickly eliminate trivial case
         or_ = s.__class__('|')

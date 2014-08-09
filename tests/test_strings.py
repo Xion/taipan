@@ -157,6 +157,10 @@ class Split(TestCase):
             __unit__.split(self.STRING, by=())
         self.assertIn("empty", str(r.exception))
 
+    def test_by__invalid_tuple(self):
+        with self.assertRaises(TypeError):
+            __unit__.split(self.STRING, by=(42, 'a', 'X'))
+
     def test_by__multiple_strings(self):
         self.assertEquals(
             self.SPLIT_BY_A_OR_X, __unit__.split(self.STRING, by=('a', 'X')))

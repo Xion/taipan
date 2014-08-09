@@ -235,9 +235,17 @@ class Split(TestCase):
 
 
 class Join(TestCase):
-    ITERABLE = ['foo', 'bar', 'baz']
     DELIMITER = 'X'
+    REPLACEMENT = '_'
+
+    ITERABLE = ['foo', 'bar', 'baz']
+    ITERABLE_WITH_NONES = ['foo', None, 'bar', None, 'baz']
+    ITERABLE_WITH_NUMBERS = ['foo', 42, 'bar', 42, 'baz']
+
     JOINED = 'fooXbarXbaz'
+    JOINED_WITH_CASTED_NONES = 'fooXNoneXbarXNoneXbaz'
+    JOINED_WITH_CASTED_NUMBERS = 'fooX42XbarX42Xbaz'
+    JOINED_WITH_REPLACEMENTS = 'fooX_XbarX_Xbaz'
 
     def test_delimiter__none(self):
         with self.assertRaises(TypeError):
@@ -265,9 +273,97 @@ class Join(TestCase):
         joined = __unit__.join(self.DELIMITER, ())
         self.assertEquals(expected, joined)
 
-    def test_normal(self):
+    def test_default(self):
         joined = __unit__.join(self.DELIMITER, self.ITERABLE)
         self.assertEquals(self.JOINED, joined)
+
+    def test_errors__unexpected(self):
+        errors = 'unexpected'
+        with self.assertRaises(TypeError) as r:
+            __unit__.join(self.DELIMITER, self.ITERABLE, errors=errors)
+        self.assertIn(repr(errors), str(r.exception))
+
+    def test_errors__default__strings_with_nones(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NONES)
+
+    def test_errors__default__strings_with_numbers(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NUMBERS)
+
+    def test_errors__raise__just_strings(self):
+        for errors in ('raise', True):
+            joined = __unit__.join(self.DELIMITER, self.ITERABLE,
+                                   errors=errors)
+            self.assertEquals(self.JOINED, joined)
+
+    def test_errors__raise__strings_with_nones(self):
+        for errors in ('raise', True):
+            with self.assertRaises(TypeError):
+                __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NONES,
+                              errors=errors)
+
+    def test_errors__raise__strings_with_numbers(self):
+        for errors in ('raise', True):
+            with self.assertRaises(TypeError):
+                __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NUMBERS,
+                              errors=errors)
+
+    def test_errors__cast__just_strings(self):
+        for errors in ('cast', False):
+            joined = __unit__.join(self.DELIMITER, self.ITERABLE,
+                                   errors=errors)
+            self.assertEquals(self.JOINED, joined)
+
+    def test_errors__cast__strings_with_nones(self):
+        for errors in ('cast', False):
+            joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NONES,
+                                   errors=errors)
+            self.assertEquals(self.JOINED_WITH_CASTED_NONES, joined)
+
+    def test_errors__cast__strings_with_numbers(self):
+        for errors in ('cast', False):
+            joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NUMBERS,
+                                   errors=errors)
+            self.assertEquals(self.JOINED_WITH_CASTED_NUMBERS, joined)
+
+    def test_errors__ignore__just_strings(self):
+        for errors in ('ignore', None):
+            joined = __unit__.join(self.DELIMITER, self.ITERABLE,
+                                   errors=errors)
+            self.assertEquals(self.JOINED, joined)
+
+    def test_errors__ignore__strings_with_nones(self):
+        for errors in ('ignore', None):
+            joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NONES,
+                                   errors=errors)
+            self.assertEquals(self.JOINED, joined)
+
+    def test_errors__ignore__strings_with_numbers(self):
+        for errors in ('ignore', None):
+            joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NUMBERS,
+                                   errors=errors)
+            self.assertEquals(self.JOINED, joined)
+
+    def test_errors__replace__just_strings__no_with(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.join(self.DELIMITER, self.ITERABLE, errors='replace')
+        self.assertIn("with_", str(r.exception))
+
+    def test_errors__replace__just_strings(self):
+        joined = __unit__.join(self.DELIMITER, self.ITERABLE,
+                               errors='replace', with_=self.REPLACEMENT)
+        self.assertEquals(self.JOINED, joined)
+
+    def test_errors__replace__strings_with_nones(self):
+        joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NONES,
+                               errors='replace', with_=self.REPLACEMENT)
+        self.assertEquals(self.JOINED_WITH_REPLACEMENTS, joined)
+
+    def test_errors__replace__strings_with_numbers(self):
+        joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NUMBERS,
+                               errors='replace', with_=self.REPLACEMENT)
+        self.assertEquals(self.JOINED_WITH_REPLACEMENTS, joined)
 
 
 class CamelCase(TestCase):

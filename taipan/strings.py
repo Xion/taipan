@@ -7,7 +7,7 @@ from random import choice, randint
 import re
 import string
 
-from taipan._compat import IS_PY3, imap, xrange
+from taipan._compat import IS_PY3, ifilter, imap, xrange
 from taipan.collections import ensure_iterable, is_iterable, is_mapping
 from taipan.collections.tuples import is_pair
 
@@ -127,16 +127,57 @@ def split(s, by=None, maxsplit=None):
     raise TypeError("invalid separator")
 
 
-def join(delimiter, iterable):
+def join(delimiter, iterable, **kwargs):
     """Returns a string which is a concatenation of strings in ``iterable``,
     separated by given ``delimiter``.
+
+    :param delimiter: Delimiter to put between strings
+    :param iterable: Iterable to join
+
+    Optional keyword arguments control the exact joining strategy:
+
+    :param errors:
+        What to do with erroneous non-strings in the input.
+        Possible values include:
+
+            * ``'ignore'`` (or ``None``)
+            * ``'cast'`` (or ``False``) -- convert non-strings to strings
+            * ``'raise'`` (or ``True``) -- raise exception for any non-strings
+            * ``'replace'`` -- replace non-strings with alternative value
+
+    :param with_: Replacement value, used when ``errors == 'replace'``
+
+    .. versionadded:: 0.0.3
+       Allow to specify error handling policy through ``errors`` parameter
     """
-    # TODO(xion): add arg(s) that control handling Nones (skip/replace/error)
+    from taipan.functional import ensure_keyword_args
+
     ensure_string(delimiter)
     ensure_iterable(iterable)
 
-    string_class = delimiter.__class__
-    return delimiter.join(imap(string_class, iterable))
+    ensure_keyword_args(kwargs, optional=('errors', 'with_'))
+    errors = kwargs.get('errors', True)
+
+    if errors == 'replace':
+        if 'with_' not in kwargs:
+            raise ValueError("'replace' error policy requires specifying "
+                             "replacement through with_=")
+        # TODO(xion): allow with_= to be callable
+        replacement = ensure_string(kwargs['with_'])
+        iterable = (x if is_string(x) else replacement
+                    for x in iterable)
+    elif errors in ('ignore', None):
+        iterable = ifilter(is_string, iterable)
+    elif errors in ('cast', False):
+        iterable = imap(delimiter.__class__, iterable)
+    elif errors in ('raise', True):
+        iterable = imap(ensure_string, iterable)
+    else:
+        raise TypeError(
+            "%r is not a valid non-strings handling policy for join()" % (
+                errors))
+
+    return delimiter.join(iterable)
 
 
 # Case conversion

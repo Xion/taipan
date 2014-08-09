@@ -17,8 +17,8 @@ from taipan.strings import ensure_string
 __all__ = [
     'cast',
 
-    'is_contextmanager','ensure_contextmanager',
-    'ensure_boolean',
+    'is_contextmanager', 'is_number',
+    'ensure_boolean', 'ensure_contextmanager', 'ensure_number',
 
     'has_identifier_form', 'is_identifier',
     'is_keyword',
@@ -81,6 +81,13 @@ def is_contextmanager(obj):
     return hasattr(obj, '__exit__')
 
 
+def is_number(obj):
+    """Checks whether given object is a number.
+    :return: ``True`` if ``obj`` is a number, ``False`` otherwise
+    """
+    return isinstance(obj, Number)
+
+
 # Assertions
 
 def ensure_boolean(arg):
@@ -102,6 +109,16 @@ def ensure_contextmanager(arg):
     """
     if not is_contextmanager(arg):
         raise TypeError("expected a string, got %s" % type(arg).__name__)
+    return arg
+
+
+def ensure_number(arg):
+    """Checks whether argument is a number.
+    :return: Argument, if it's a number
+    :raise TypeError: When argument is not a number
+    """
+    if not is_number(arg):
+        raise TypeError("expected a number, got %s" % type(arg).__name__)
     return arg
 
 

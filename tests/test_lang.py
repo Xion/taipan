@@ -55,6 +55,8 @@ class Cast(TestCase):
         self.assertEquals({}, __unit__.cast(dict, self.INVALID_COLLECTION, {}))
 
 
+# Kind checks and assertion
+
 class IsContextmanager(TestCase):
 
     def test_none(self):
@@ -80,6 +82,39 @@ class IsContextmanager(TestCase):
 
         cm = func()
         self.assertTrue(__unit__.is_contextmanager(cm))
+
+
+class IsNumber(TestCase):
+
+    def test_none(self):
+        self.assertFalse(__unit__.is_number(None))
+
+    def test_some_object(self):
+        self.assertFalse(__unit__.is_number(object()))
+
+    def test_string(self):
+        self.assertFalse(__unit__.is_number(''))
+
+    def test_int__ctor(self):
+        self.assertTrue(__unit__.is_number(int()))
+
+    def test_int__literal(self):
+        self.assertTrue(__unit__.is_number(42))
+
+    def test_int__type(self):
+        self.assertFalse(__unit__.is_number(int))
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_long__ctor(self):
+        self.assertTrue(__unit__.is_number(long()))
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_long__literal(self):
+        self.assertTrue(__unit__.is_number(eval('42L')))
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_long__type(self):
+        self.assertFalse(__unit__.is_number(long))
 
 
 class EnsureBoolean(TestCase):
@@ -148,6 +183,44 @@ class EnsureContextmanager(TestCase):
 
         cm = func()
         __unit__.ensure_contextmanager(cm)
+
+
+class EnsureNumber(TestCase):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_number(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_number(object())
+
+    def test_string(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_number('')
+
+    def test_int__ctor(self):
+        __unit__.ensure_number(int())
+
+    def test_int__literal(self):
+        __unit__.ensure_number(42)
+
+    def test_int__type(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_number(int)
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_long__ctor(self):
+        __unit__.ensure_number(long())
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_long__literal(self):
+        __unit__.ensure_number(eval('42L'))
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_long__type(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_number(long)
 
 
 # Language token classification

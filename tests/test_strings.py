@@ -240,7 +240,8 @@ class Split(TestCase):
 
 class Join(TestCase):
     DELIMITER = 'X'
-    REPLACEMENT = '_'
+    STRING_REPLACEMENT = '_'
+    FUNCTION_REPLACEMENT = staticmethod(lambda x: Join.STRING_REPLACEMENT)
 
     ITERABLE = ['foo', 'bar', 'baz']
     ITERABLE_WITH_NONES = ['foo', None, 'bar', None, 'baz']
@@ -349,24 +350,52 @@ class Join(TestCase):
                                    errors=errors)
             self.assertEquals(self.JOINED, joined)
 
+    def test_errors__replace__with_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(self.DELIMITER, self.ITERABLE,
+                          errors='replace', with_=None)
+
+    def test_errors__replace__with_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.join(self.DELIMITER, self.ITERABLE,
+                          errors='replace', with_=object())
+
     def test_errors__replace__just_strings__no_with(self):
         with self.assertRaises(ValueError) as r:
             __unit__.join(self.DELIMITER, self.ITERABLE, errors='replace')
         self.assertIn("with_", str(r.exception))
 
-    def test_errors__replace__just_strings(self):
+    def test_errors__replace__just_strings__with_string(self):
         joined = __unit__.join(self.DELIMITER, self.ITERABLE,
-                               errors='replace', with_=self.REPLACEMENT)
+                               errors='replace', with_=self.STRING_REPLACEMENT)
         self.assertEquals(self.JOINED, joined)
 
-    def test_errors__replace__strings_with_nones(self):
+    def test_errors__replace__strings_with_nones__with_string(self):
         joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NONES,
-                               errors='replace', with_=self.REPLACEMENT)
+                               errors='replace', with_=self.STRING_REPLACEMENT)
         self.assertEquals(self.JOINED_WITH_REPLACEMENTS, joined)
 
-    def test_errors__replace__strings_with_numbers(self):
+    def test_errors__replace__strings_with_numbers__with_string(self):
         joined = __unit__.join(self.DELIMITER, self.ITERABLE_WITH_NUMBERS,
-                               errors='replace', with_=self.REPLACEMENT)
+                               errors='replace', with_=self.STRING_REPLACEMENT)
+        self.assertEquals(self.JOINED_WITH_REPLACEMENTS, joined)
+
+    def test_errors__replace__just_strings__with_function(self):
+        joined = __unit__.join(
+            self.DELIMITER, self.ITERABLE,
+            errors='replace', with_=self.FUNCTION_REPLACEMENT)
+        self.assertEquals(self.JOINED, joined)
+
+    def test_errors__replace__strings_with_nones__with_function(self):
+        joined = __unit__.join(
+            self.DELIMITER, self.ITERABLE_WITH_NONES,
+            errors='replace', with_=self.FUNCTION_REPLACEMENT)
+        self.assertEquals(self.JOINED_WITH_REPLACEMENTS, joined)
+
+    def test_errors__replace__strings_with_numbers__with_function(self):
+        joined = __unit__.join(
+            self.DELIMITER, self.ITERABLE_WITH_NUMBERS,
+            errors='replace', with_=self.FUNCTION_REPLACEMENT)
         self.assertEquals(self.JOINED_WITH_REPLACEMENTS, joined)
 
 

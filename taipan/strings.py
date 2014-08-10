@@ -147,7 +147,9 @@ def join(delimiter, iterable, **kwargs):
             * ``'raise'`` (or ``True``) -- raise exception for any non-strings
             * ``'replace'`` -- replace non-strings with alternative value
 
-    :param with_: Replacement string, used when ``errors == 'replace'``
+    :param with_: Replacement used when ``errors == 'replace'``.
+                  This can be a string, or a callable taking erroneous value
+                  and returning a string replacement.
 
     .. versionadded:: 0.0.3
        Allow to specify error handling policy through ``errors`` parameter
@@ -162,9 +164,17 @@ def join(delimiter, iterable, **kwargs):
         if 'with_' not in kwargs:
             raise ValueError("'replace' error policy requires specifying "
                              "replacement through with_=")
-        # TODO(xion): allow with_= to be callable
-        replacement = ensure_string(kwargs['with_'])
-        iterable = (x if is_string(x) else replacement
+
+        with_ = kwargs['with_']
+        if is_string(with_):
+            replacement = lambda x: with_
+        elif callable(with_):
+            replacement = with_
+        else:
+            raise TypeError("error replacement must be a string or function, "
+                            "got %s" % type(with_).__name__)
+
+        iterable = (x if is_string(x) else ensure_string(replacement(x))
                     for x in iterable)
     elif errors in ('ignore', None):
         iterable = ifilter(is_string, iterable)

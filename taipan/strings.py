@@ -160,7 +160,13 @@ def join(delimiter, iterable, **kwargs):
     ensure_keyword_args(kwargs, optional=('errors', 'with_'))
     errors = kwargs.get('errors', True)
 
-    if errors == 'replace':
+    if errors in ('raise', True):
+        iterable = imap(ensure_string, iterable)
+    elif errors in ('ignore', None):
+        iterable = ifilter(is_string, iterable)
+    elif errors in ('cast', False):
+        iterable = imap(delimiter.__class__, iterable)
+    elif errors == 'replace':
         if 'with_' not in kwargs:
             raise ValueError("'replace' error policy requires specifying "
                              "replacement through with_=")
@@ -176,12 +182,6 @@ def join(delimiter, iterable, **kwargs):
 
         iterable = (x if is_string(x) else ensure_string(replacement(x))
                     for x in iterable)
-    elif errors in ('ignore', None):
-        iterable = ifilter(is_string, iterable)
-    elif errors in ('cast', False):
-        iterable = imap(delimiter.__class__, iterable)
-    elif errors in ('raise', True):
-        iterable = imap(ensure_string, iterable)
     else:
         raise TypeError(
             "%r is not a valid error handling policy for join()" % (errors,))

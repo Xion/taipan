@@ -1,15 +1,49 @@
 """
 Modifiers ("annotation" decorators) for classes and class members.
 """
+import abc
 import inspect
 
 from taipan.objective import _get_first_arg_name
 from taipan.objective.base import ObjectMetaclass
+from taipan.objective.classes import metaclass
 from taipan.objective.methods import ensure_method
 
 
-__all__ = ['final', 'override']
+__all__ = ['abstract', 'final', 'override']
 
+
+# @abstract
+
+def abstract(class_):
+    """Mark the class as _abstract_ base class, forbidding its instantiation
+    if it has at least one abstract method or property.
+
+    .. note::
+
+        Unlike other modifiers, ``@abstract`` can be applied
+        to regular Python classes, not subclasses of :class:`Object`.
+
+    .. versionadded:: 0.0.3
+    """
+    if not inspect.isclass(class_):
+        raise TypeError("@abstract can only be applied to classes")
+    if type(class_) is not type:
+        raise ValueError(
+            "@abstract cannot be applied to classes with custom metaclass")
+
+    return metaclass(abc.ABCMeta)(class_)
+
+#: Alias for :func:`abc.abstractmethod` for marking abstract methods
+#: inside abstract base classes.
+abstract.method = abc.abstractmethod
+
+#: Alias for :func:`abc.abstractproperty` for marking abstract properties
+#: inside abstract base classes.
+abstract.property = abc.abstractproperty
+
+
+# @final
 
 def final(class_):
     """Mark a class as _final_, forbidding any more classes from
@@ -23,6 +57,8 @@ def final(class_):
     class_.__final__ = True
     return class_
 
+
+# @override
 
 def override(method):
     """Mark a method as overriding a corresponding method from superclass.

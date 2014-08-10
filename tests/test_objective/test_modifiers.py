@@ -1,11 +1,98 @@
 """
 Tests for .objective.modifiers module.
 """
+import abc
+
 from taipan.objective.base import Object
-from taipan.testing import skipIf
+from taipan.testing import TestCase
 
 from tests.test_objective.test_base import _UniversalBaseClass
 import taipan.objective.modifiers as __unit__
+
+
+class Abstract(TestCase):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.abstract(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.abstract(object())
+
+    def test_function(self):
+        with self.assertRaises(TypeError):
+            @__unit__.abstract
+            def foo():
+                pass
+
+    def test_class__empty(self):
+        @__unit__.abstract
+        class Foo(object):
+            pass
+
+        self._assertIsABC(Foo)
+
+    def test_class__with_abstract_method(self):
+        Foo = self._create_abstract_method_class()
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_class__with_abstract_property(self):
+        @__unit__.abstract
+        class Foo(object):
+            @__unit__.abstract.property
+            def foo(self):
+                pass
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_inheritance__without_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            pass
+
+        self._assertCantInstantiate(Bar)
+
+    def test_inheritance__with_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            def foo(self):
+                pass
+
+        Bar().foo()
+
+    def test__inheritance__with_override__and_super_call(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            def foo(self):
+                super(Bar, self).foo()
+
+        Bar().foo()
+
+    # Utility functions
+
+    def _assertIsABC(self, class_):
+        self.assertIs(type(class_), abc.ABCMeta)
+
+    def _assertCantInstantiate(self, class_, *args, **kwargs):
+        with self.assertRaises(TypeError) as r:
+            class_(*args, **kwargs)
+
+        msg = str(r.exception)
+        self.assertIn("instantiate", msg)
+        self.assertIn(class_.__name__, msg)
+
+    def _create_abstract_method_class(self):
+        @__unit__.abstract
+        class Foo(object):
+            @__unit__.abstract.method
+            def foo(self):
+                pass
+
+        return Foo
 
 
 class Final(_UniversalBaseClass):

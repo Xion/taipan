@@ -116,6 +116,21 @@ class IsNumber(TestCase):
     def test_long__type(self):
         self.assertFalse(__unit__.is_number(long))
 
+    def test_float__ctor(self):
+        self.assertTrue(__unit__.is_number(float()))
+
+    def test_float__literal(self):
+        self.assertTrue(__unit__.is_number(42.0))
+
+    def test_float__type(self):
+        self.assertFalse(__unit__.is_number(float))
+
+    def test_complex__ctor(self):
+        self.assertTrue(__unit__.is_number(complex()))
+
+    def test_complex__type(self):
+        self.assertFalse(__unit__.is_number(complex))
+
 
 class EnsureBoolean(TestCase):
     # These will be always True/False, even if True, False or even bool
@@ -221,6 +236,23 @@ class EnsureNumber(TestCase):
     def test_long__type(self):
         with self.assertRaises(TypeError):
             __unit__.ensure_number(long)
+
+    def test_float__ctor(self):
+        __unit__.ensure_number(float())
+
+    def test_float__literal(self):
+        __unit__.ensure_number(42.0)
+
+    def test_float__type(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_number(float)
+
+    def test_complex__ctor(self):
+        __unit__.ensure_number(complex())
+
+    def test_complex__type(self):
+        with self.assertRaises(TypeError):
+            __unit__.ensure_number(complex)
 
 
 # Language token classification

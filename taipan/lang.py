@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 import keyword
 from numbers import Number
 import re
-import sys
 
 from taipan._compat import IS_PY3
 from taipan.strings import ensure_string
@@ -55,11 +54,9 @@ def cast(type_, value, default=__missing):
 
     try:
         return type_(value)
-    except exception:
+    except exception as e:
         if default is __missing:
             if to_number:
-                e = sys.exc_info()[1]
-
                 # since Python 3 chains exceptions, we can supply slightly
                 # more relevant error message while still retaining
                 # the original information of ValueError as the cause

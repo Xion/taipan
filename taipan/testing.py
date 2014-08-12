@@ -78,6 +78,17 @@ class TestCase(_BaseTestCase):
         if not string.endswith(suffix):
             self.__fail(msg, "%r does not end with %r" % (string, suffix))
 
+    def assertIsSubclass(self, class_, superclass, msg=None):
+        """Assert that ``class_`` inherits from given ``superclass``.
+        .. versionadded:: 0.0.3
+        """
+        for c in (class_, superclass):
+            if not isinstance(c, type):
+                self.fail("%r is not a class" % (c,))
+        if not issubclass(class_, superclass):
+            self.__fail(
+                msg, "%r is not a subclass of %r" % (class_, superclass))
+
     def assertHasAttr(self, attr, obj, msg=None):
         """Assert that ``obj``\ ect has given ``attr``\ ibute."""
         self.assertIsInstance(attr, BaseString)

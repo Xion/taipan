@@ -210,6 +210,41 @@ class AssertEndsWith(_Assertion):
                 self.SUFFIXES_SANS_ACTUAL, self.STRING)
 
 
+class AssertIsSubclass(_Assertion):
+
+    class Superclass(object):
+        pass
+    class Subclass(Superclass):
+        pass
+
+    def test_class__none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertIsSubclass(None, self.Superclass)
+
+    def test_class__some_object(self):
+        with self._assertFailure():
+            self._TESTCASE.assertIsSubclass(object(), self.Superclass)
+
+    def test_superclass__none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertIsSubclass(self.Subclass, None)
+
+    def test_superclass__some_object(self):
+        with self._assertFailure():
+            self._TESTCASE.assertIsSubclass(self.Subclass, object())
+
+    def test_builtins(self):
+        self._TESTCASE.assertIsSubclass(tuple, object)
+        self._TESTCASE.assertIsSubclass(list, object)
+        self._TESTCASE.assertIsSubclass(dict, object)
+        self._TESTCASE.assertIsSubclass(set, object)
+        self._TESTCASE.assertIsSubclass(frozenset, object)
+
+    def test_custom_class(self):
+        self._TESTCASE.assertIsSubclass(self.Superclass, object)
+        self._TESTCASE.assertIsSubclass(self.Subclass, self.Superclass)
+
+
 class AssertHasAttr(_Assertion):
 
     class Object(object):

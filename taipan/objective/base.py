@@ -1,16 +1,21 @@
 """
 Universal base class for objects.
 """
-from taipan._compat import IS_PY3
+import abc
+import functools
+
+from taipan._compat import IS_PY3, ifilter
 from taipan.objective.classes import metaclass
 from taipan.objective.methods import is_method
 
 
 __all__ = [
     'Object', 'ObjectMetaclass',
-    'ClassError',
+    'ClassError', 'AbstractError',
 ]
 
+
+# Universal base class
 
 class ObjectMetaclass(type):
     """Metaclass for the :class:`Object` class.
@@ -40,6 +45,9 @@ class ObjectMetaclass(type):
         """Creates a new class using this metaclass.
         Usually this means the class is inheriting from :class:`Object`.
         """
+        # TODO(xion): employ some code inspection tricks to serve ClassErrors
+        # as if they were thrown at the offending class's/method's definition
+
         # prevent class creation if any of its base classes is final
         for base in bases:
             if getattr(base, '__final__', False):
@@ -57,13 +65,13 @@ class ObjectMetaclass(type):
             if meta._is_override(method):
                 if not shadows_base:
                     raise ClassError("unnecessary @override on %s.%s" % (
-                        class_.__name__, name))
+                        class_.__name__, name), class_=class_)
                 setattr(class_, name, method.method)
             else:
                 if shadows_base and name not in meta.OVERRIDE_EXEMPTIONS:
                     raise ClassError(
                         "overridden method %s.%s must be marked with @override"
-                        % (class_.__name__, name))
+                        % (class_.__name__, name), class_=class_)
 
         return class_
 
@@ -85,7 +93,112 @@ class Object(object):
     """
 
 
+# Special flavors for metaclasses
+
+class _ABCMetaclass(abc.ABCMeta):
+    """Enhanced version of :class:`abc.ABCMeta` that wholly prevents
+    instantiation of ``@abstract`` classes, only allowing to inherit from them.
+    """
+    def __new__(meta, name, bases, dict_):
+        """Creates a new class using this metaclass.
+        Usually this means the class is NOT inheriting from :class:`Object`
+        while having ``@abstract`` modifier applied.
+        """
+        # abstract-ness is not transitive, so we explicitly mark subclasses
+        # of abstract classes as concrete (this is irrespective of their
+        # abstract methods/properties, if any)
+        is_abstract = dict_.get('__abstract__', False)
+        if not is_abstract:
+            dict_['__abstract__'] = False
+
+        # to prevent instantiation, either enhance existing __new__ method
+        # of the upcming class, or equip it with a dedicated one
+        if '__new__' in dict_:
+            # create the class and obtain its custom instantiator,
+            # i.e. the __new__ method (not to be confused with
+            # the __new__ method of the METAclass)
+            class_ = super(_ABCMetaclass, meta).__new__(
+                meta, name, bases, dict_)
+            instantiator = class_.__new__
+
+            # replace the class's __new__ to check for abstract-ness
+            @functools.wraps(instantiator)
+            def new_instantiator(cls, *args, **kwargs):
+                meta._ensure_concrete_class(cls)
+                return instantiator(*args, **kwargs)
+
+            class_.__new__ = new_instantiator
+        else:
+            # include straightforward instantation to check for abstract-ness
+            def __new__(cls, *args, **kwargs):
+                meta._ensure_concrete_class(cls)
+                return super(class_, cls).__new__(cls, *args, **kwargs)
+
+            dict_['__new__'] = __new__
+            class_ = super(_ABCMetaclass, meta).__new__(
+                meta, name, bases, dict_)
+
+        return class_
+
+    @classmethod
+    def _ensure_concrete_class(meta, cls):
+        """Check if given class is non-abstract."""
+        if getattr(cls, '__abstract__', False):
+            raise AbstractError(
+                "cannot instantiate abstract class %s" % cls.__name__)
+
+
+class _ABCObjectMetaclass(ObjectMetaclass, _ABCMetaclass):
+    """Specialized version of :class:`ObjectMetaclass` for ``@abstract``
+    subclassess of :class:`Object`.
+
+    Do not use this metaclass directly; it can be only applied through
+    the ``@abstract`` decorator.
+    """
+    def __new__(meta, name, bases, dict_):
+        """Creates a new class using this metaclass.
+        Usually this means the class is inheriting from :class:`Object`
+        and has the ``@abstract`` modifier applied.
+        """
+        try:
+            return super(_ABCObjectMetaclass, meta).__new__(
+                meta, name, bases, dict_)
+        except ClassError as e:
+            # creating class failed; unfortunately, the ephemeral class
+            # might have been already registered as implementation of some
+            # abstract base classes residing up the inheritance chain;
+            # we go up and de-register it manually
+            if e.class_:
+                for base in bases:
+                    abclasses = ifilter(meta._is_abc, base.__mro__)
+                    for abclass in abclasses:
+                        # remove the class from given ABC's registry,
+                        # its temporary cache, and so-called negative cache
+                        # (+= 1 invalidates said negative cache)
+                        abclass._abc_registry.discard(e.class_)
+                        abclass._abc_cache.discard(e.class_)
+                        abc.ABCMeta._abc_invalidation_counter += 1
+            raise
+
+    @classmethod
+    def _is_abc(meta, class_):
+        """Checks if given class is an abstract base class
+        (in the traditional Python meaning).
+        """
+        return issubclass(type(class_), abc.ABCMeta)
+
+
+# Exceptions
+
 class ClassError(RuntimeError):
     """Exception raised when the class definition of :class:`Object` subclass
     is found to be incorrect.
     """
+    def __init__(self, *args, **kwargs):
+        class_ = kwargs.pop('class_', None)
+        super(ClassError, self).__init__(*args, **kwargs)
+        self.class_ = class_
+
+
+class AbstractError(TypeError):
+    """Exception rasied when trying to instantiate an ``@abstract`` class."""

@@ -5,7 +5,8 @@ import abc
 import inspect
 
 from taipan.objective import _get_first_arg_name
-from taipan.objective.base import ObjectMetaclass
+from taipan.objective.base import (_ABCMetaclass, _ABCObjectMetaclass,
+                                   ObjectMetaclass)
 from taipan.objective.classes import metaclass
 from taipan.objective.methods import ensure_method
 
@@ -16,23 +17,30 @@ __all__ = ['abstract', 'final', 'override']
 # @abstract
 
 def abstract(class_):
-    """Mark the class as _abstract_ base class, forbidding its instantiation
-    if it has at least one abstract method or property.
+    """Mark the class as _abstract_ base class, forbidding its instantiation.
 
     .. note::
 
         Unlike other modifiers, ``@abstract`` can be applied
-        to regular Python classes, not subclasses of :class:`Object`.
+        to all Python classes, not just subclasses of :class:`Object`.
 
     .. versionadded:: 0.0.3
     """
     if not inspect.isclass(class_):
         raise TypeError("@abstract can only be applied to classes")
-    if type(class_) is not type:
+
+    # decide what metaclass to use, depending on whether it's a subclass
+    # of our universal :class:`Object` or not
+    if type(class_) is type:
+        abc_meta = _ABCMetaclass  # like ABCMeta, but can never instantiate
+    elif type(class_) is ObjectMetaclass:
+        abc_meta = _ABCObjectMetaclass  # ABCMeta mixed with ObjectMetaclass
+    else:
         raise ValueError(
             "@abstract cannot be applied to classes with custom metaclass")
 
-    return metaclass(abc.ABCMeta)(class_)
+    class_.__abstract__ = True
+    return metaclass(abc_meta)(class_)
 
 #: Alias for :func:`abc.abstractmethod` for marking abstract methods
 #: inside abstract base classes.

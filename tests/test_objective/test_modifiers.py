@@ -10,7 +10,30 @@ from tests.test_objective.test_base import _UniversalBaseClass
 import taipan.objective.modifiers as __unit__
 
 
-class Abstract(TestCase):
+class _Abstract(_UniversalBaseClass):
+
+    def _assertIsABC(self, class_):
+        self.assertIsSubclass(type(class_), abc.ABCMeta)
+
+    def _assertCantInstantiate(self, class_, *args, **kwargs):
+        with self.assertRaises(TypeError) as r:
+            class_(*args, **kwargs)
+
+        msg = str(r.exception)
+        self.assertIn("instantiate", msg)
+        self.assertIn(class_.__name__, msg)
+
+    def _create_abstract_method_class(self, base):
+        @__unit__.abstract
+        class Foo(base):
+            @__unit__.abstract.method
+            def foo(self):
+                pass
+
+        return Foo
+
+
+class Abstract(_Abstract):
 
     def test_none(self):
         with self.assertRaises(TypeError):
@@ -26,12 +49,17 @@ class Abstract(TestCase):
             def foo():
                 pass
 
+
+class Abstract_StandardClasses(_Abstract):
+    """Tests for @abstract modifier as applied to standard Python classes."""
+
     def test_class__empty(self):
         @__unit__.abstract
         class Foo(object):
             pass
 
         self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
 
     def test_class__with_abstract_method(self):
         Foo = self._create_abstract_method_class()
@@ -64,7 +92,7 @@ class Abstract(TestCase):
 
         Bar().foo()
 
-    def test__inheritance__with_override__and_super_call(self):
+    def test_inheritance__with_override__and_super_call(self):
         Foo = self._create_abstract_method_class()
         class Bar(Foo):
             def foo(self):
@@ -74,25 +102,77 @@ class Abstract(TestCase):
 
     # Utility functions
 
-    def _assertIsABC(self, class_):
-        self.assertIs(type(class_), abc.ABCMeta)
-
-    def _assertCantInstantiate(self, class_, *args, **kwargs):
-        with self.assertRaises(TypeError) as r:
-            class_(*args, **kwargs)
-
-        msg = str(r.exception)
-        self.assertIn("instantiate", msg)
-        self.assertIn(class_.__name__, msg)
-
     def _create_abstract_method_class(self):
+        return super(Abstract_StandardClasses, self) \
+            ._create_abstract_method_class(base=object)
+
+
+class Abstract_ObjectiveClasses(_Abstract):
+    """Tests for @abstract modifier as applied to our 'objective' classes
+    (descendants of :class:`taipan.objective.base.Object`).
+    """
+    def test_class__empty(self):
         @__unit__.abstract
-        class Foo(object):
-            @__unit__.abstract.method
+        class Foo(Object):
+            pass
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_class__with_abstract_method(self):
+        Foo = self._create_abstract_method_class()
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_class__with_abstract_property(self):
+        @__unit__.abstract
+        class Foo(Object):
+            @__unit__.abstract.property
             def foo(self):
                 pass
 
-        return Foo
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_inheritance__without_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            pass
+
+        self._assertCantInstantiate(Bar)
+
+    def test_inheritance__with_override__but_no_modifier(self):
+        Foo = self._create_abstract_method_class()
+
+        with self._assertRaisesMissingOverrideException():
+            class Bar(Foo):
+                def foo(self):  # no ``@override``
+                    pass
+
+    def test_inheritance__with_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            @__unit__.override
+            def foo(self):
+                pass
+
+        Bar().foo()
+
+    def test_inheritance__with_override__and_super_call(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            @__unit__.override
+            def foo(self):
+                super(Bar, self).foo()
+
+        Bar().foo()
+
+    # Utility functions
+
+    def _create_abstract_method_class(self):
+        return super(Abstract_ObjectiveClasses, self) \
+            ._create_abstract_method_class(base=Object)
 
 
 class Final(_UniversalBaseClass):

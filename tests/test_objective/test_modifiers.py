@@ -4,7 +4,7 @@ Tests for .objective.modifiers module.
 import abc
 
 from taipan.objective.base import Object
-from taipan.testing import TestCase
+from taipan.functional.functions import const
 
 from tests.test_objective.test_base import _UniversalBaseClass
 import taipan.objective.modifiers as __unit__
@@ -23,12 +23,14 @@ class _Abstract(_UniversalBaseClass):
         self.assertIn("instantiate", msg)
         self.assertIn(class_.__name__, msg)
 
-    def _create_abstract_method_class(self, base):
+    def _create_abstract_method_class(self, base, method=None):
+        method = method or (lambda self: None)
+
         @__unit__.abstract
         class Foo(base):
             @__unit__.abstract.method
             def foo(self):
-                pass
+                return method(self)
 
         return Foo
 
@@ -93,18 +95,20 @@ class Abstract_StandardClasses(_Abstract):
         Bar().foo()
 
     def test_inheritance__with_override__and_super_call(self):
-        Foo = self._create_abstract_method_class()
+        retval = 42
+        Foo = self._create_abstract_method_class(method=const(retval))
+
         class Bar(Foo):
             def foo(self):
-                super(Bar, self).foo()
+                return super(Bar, self).foo()
 
-        Bar().foo()
+        self.assertEquals(retval, Bar().foo())
 
     # Utility functions
 
-    def _create_abstract_method_class(self):
+    def _create_abstract_method_class(self, method=None):
         return super(Abstract_StandardClasses, self) \
-            ._create_abstract_method_class(base=object)
+            ._create_abstract_method_class(base=object, method=method)
 
 
 class Abstract_ObjectiveClasses(_Abstract):
@@ -160,19 +164,21 @@ class Abstract_ObjectiveClasses(_Abstract):
         Bar().foo()
 
     def test_inheritance__with_override__and_super_call(self):
-        Foo = self._create_abstract_method_class()
+        retval = 42
+        Foo = self._create_abstract_method_class(method=const(retval))
+
         class Bar(Foo):
             @__unit__.override
             def foo(self):
-                super(Bar, self).foo()
+                return super(Bar, self).foo()
 
-        Bar().foo()
+        self.assertEquals(retval, Bar().foo())
 
     # Utility functions
 
-    def _create_abstract_method_class(self):
+    def _create_abstract_method_class(self, method=None):
         return super(Abstract_ObjectiveClasses, self) \
-            ._create_abstract_method_class(base=Object)
+            ._create_abstract_method_class(base=Object, method=method)
 
 
 class Final(_UniversalBaseClass):

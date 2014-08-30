@@ -3,6 +3,7 @@ Tests for .objective.base module.
 """
 from contextlib import contextmanager
 
+from taipan.functional.combinators import curry
 from taipan.objective.modifiers import final, override
 from taipan.testing import TestCase
 
@@ -43,7 +44,7 @@ class ObjectMetaclass(_UniversalBaseClass):
           subclass in addition to other metaclass that is NOT a subclass
           of ObjectMetaclass
 
-    The latter case is disntictly more important, too, as it allows for
+    The latter case is distinctly more important, too, as it allows for
     ObjectMetaclass to be incorporated into existing metaclass hierarchy.
     """
     def test_noop_meta_base__empty_class(self):
@@ -175,6 +176,7 @@ class ObjectMetaclass(_UniversalBaseClass):
     # Utility functions
 
     def _create_class(self, metaclass, name, dict_=None):
+        """Shorthand for creating a class using given metaclass."""
         return metaclass(name, (object,), dict_ or {})
 
     def _create_noop_metaclass(self, base=__unit__.ObjectMetaclass):
@@ -184,6 +186,9 @@ class ObjectMetaclass(_UniversalBaseClass):
         return NoopMeta
 
     def _create_tagging_metaclass(self, tagname, base=__unit__.ObjectMetaclass):
+        """Create metaclass that adds 'tag' (attribute) with given name
+        to every class it participates in creation of.
+        """
         class TaggingMeta(base):
             def __new__(meta, name, bases, dict_):
                 dict_.setdefault(tagname, True)
@@ -192,8 +197,13 @@ class ObjectMetaclass(_UniversalBaseClass):
 
         return TaggingMeta
 
-    def _create_multitagging_metaclass(self, *tags):
-        tagging_metaclasses = map(self._create_tagging_metaclass, tags)
+    def _create_multitagging_metaclass(self, *tags, **kwargs):
+        """Create a metaclass that applies multiple tags with given name
+        to every class it participates in creation of.
+        """
+        base = kwargs.pop('base', __unit__.ObjectMetaclass)
+        tagging_metaclasses = map(
+            curry(self._create_tagging_metaclass, base=base), tags)
 
         # sadly, the following is syntax error:
         #
@@ -213,9 +223,10 @@ class ObjectMetaclass(_UniversalBaseClass):
 class Object(_UniversalBaseClass):
 
     def test_definition(self):
-        # make sure unusual definition of ``Object`` class
+        # make sure the unusual definition of ``Object`` class
         # still has necessary members intact
         self.assertGreater(len(__unit__.Object.__doc__), 0)
+        self.assertEquals('Object', __unit__.Object.__name__)
 
     def test_empty_class(self):
         class Foo(__unit__.Object):

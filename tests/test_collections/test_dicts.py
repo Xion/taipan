@@ -286,6 +286,27 @@ class Get(TestCase):
             __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
 
 
+class PeekItem(TestCase):
+    DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekitem(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekitem(object())
+
+    def test_dict__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.peekitem({})
+
+    def test_dict__normal(self):
+        key, value = __unit__.peekitem(self.DICT)
+        self.assertIn(key, self.DICT)
+        self.assertEquals(value, self.DICT[key])
+
+
 class _Projection(TestCase):
     DICT = dict(zip(('foo', 'bar', 'baz', 'thud', 'qux'), range(5)))
 

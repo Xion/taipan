@@ -15,7 +15,7 @@ from taipan.functional.functions import identity
 __all__ = [
     'AbsentDict', 'ABSENT',
     'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
-    'get', 'select', 'pick', 'omit',
+    'get', 'peekitem', 'select', 'pick', 'omit',
     'filteritems', 'starfilteritems', 'filterkeys', 'filtervalues',
     'mapitems', 'starmapitems', 'mapkeys', 'mapvalues',
     'merge', 'extend',
@@ -104,6 +104,22 @@ def get(dict_, keys=(), default=None):
             pass
 
     return default
+
+
+def peekitem(dict_):
+    """Return some item from the dictionary without modifying it.
+
+    :param dict_: Dictionary to retrieve the item from
+    :return: Pair of ``(key, value)`` from ``dict_``
+
+    :raise KeyError: If the dictionary is empty
+
+    .. versionadded:: 0.0.3
+    """
+    ensure_mapping(dict_)
+    if not dict_:
+        raise KeyError("peekitem(): dictionary is empty")
+    return next(iteritems(dict_))
 
 
 def select(keys, from_, strict=False):

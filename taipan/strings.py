@@ -312,6 +312,7 @@ class Replacer(object):
         """Provide replacement for string "needles".
 
         :param replacement: Target replacement for needles given in constructor
+        :return: The :class:`Replacement` object
 
         :raise TypeError: If ``replacement`` is not a string
         :raise ReplacementError: If replacement has been already given
@@ -333,6 +334,8 @@ class Replacer(object):
         :raise TypeError: If ``haystack`` if not a string
         :raise ReplacementError: If no replacement(s) have been provided yet
         """
+        from taipan.collections import dicts
+
         ensure_string(haystack)
         if not is_mapping(self._replacements):
             raise ReplacementError("string replacements not provided")
@@ -341,7 +344,7 @@ class Replacer(object):
         if not self._replacements:
             return haystack
         if len(self._replacements) == 1:
-            return haystack.replace(*self._replacements.popitem())
+            return haystack.replace(*dicts.peekitem(self._replacements))
 
         # construct a regex matching any of the needles in the order
         # of descending length (to prevent issues if they contain each other)

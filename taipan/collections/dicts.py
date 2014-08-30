@@ -63,13 +63,13 @@ ABSENT = object()
 # Compatibility shims
 
 #: Return an iterator over key-value pairs stored within the dictionary.
-iteritems = dict.items if IS_PY3 else dict.iteritems
+iteritems = compose(iter, dict.items) if IS_PY3 else dict.iteritems
 
 #: Return an iterator over keys stored within the dictionary.
-iterkeys = dict.keys if IS_PY3 else dict.iterkeys
+iterkeys = compose(iter, dict.keys) if IS_PY3 else dict.iterkeys
 
 #: Return an iterator over values stored within the dictionary
-itervalues = dict.values if IS_PY3 else dict.itervalues
+itervalues = compose(iter, dict.values) if IS_PY3 else dict.itervalues
 
 #: Return a list of key-value pairs stored within the dictionary.
 items = compose(list, dict.items) if IS_PY3 else dict.items

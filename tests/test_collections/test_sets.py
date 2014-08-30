@@ -11,6 +11,30 @@ from taipan.testing import TestCase
 import taipan.collections.sets as __unit__
 
 
+class Peek(TestCase):
+    SET = set(xrange(3))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.peek(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.peek(object())
+
+    def test_non_set_iterable(self):
+        with self.assertRaises(TypeError):
+            __unit__.peek([42])
+
+    def test_set__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.peek(set())
+
+    def test_set__normal(self):
+        element = __unit__.peek(self.SET)
+        self.assertIn(element, self.SET)
+
+
 class RemoveSubset(TestCase):
     SINGLETON = set(['foo'])
     SET = set('foo bar baz'.split())

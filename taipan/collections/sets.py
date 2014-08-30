@@ -11,9 +11,24 @@ from taipan.collections.tuples import is_tuple
 
 
 __all__ = [
+    'peek',
     'remove_subset',
     'k_subsets', 'power', 'powerset', 'trivial_partition',
 ]
+
+
+# Access functions
+
+def peek(set_):
+    """Return an arbitrary set element.
+    :raise KeyError: If the set is empty
+
+    ..versionadded:: 0.0.3
+    """
+    ensure_set(set_)
+    if not set_:
+        raise KeyError("peek into an empty set")
+    return next(iter(set_))
 
 
 # Set operations

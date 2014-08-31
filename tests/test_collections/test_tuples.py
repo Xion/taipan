@@ -88,13 +88,15 @@ class AccessFunctions(TestCase):
             self.assertEquals(index, func(t))
 
 
-class Select(TestCase):
+class _Projection(TestCase):
     TUPLE = tuple(range(5))
 
     STRICT_INDICES = (1, 2)
     EXTRANEOUS_INDEX = 5
     NONSTRICT_INDICES = (3, 4, EXTRANEOUS_INDEX)
 
+
+class Select(_Projection):
     SELECTED_BY_STRICT_INDICES = (1, 2)
     SELECTED_BY_NONSTRICT_INDICES = (3, 4)
 
@@ -137,3 +139,48 @@ class Select(TestCase):
         self.assertEquals(
             self.SELECTED_BY_NONSTRICT_INDICES,
             __unit__.select(self.NONSTRICT_INDICES, self.TUPLE, strict=False))
+
+
+class Omit(_Projection):
+    WITH_STRICT_INDICES_OMITTED = (0, 3, 4)
+    WITH_NONSTRICT_INDICES_OMITTED = (0, 1, 2)
+
+    def test_indices__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(None, self.TUPLE)
+
+    def test_indices__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.select(object(), self.TUPLE)
+
+    def test_indices__empty(self):
+        self.assertEquals(self.TUPLE, __unit__.omit((), self.TUPLE))
+
+    def test_from__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(self.STRICT_INDICES, None)
+
+    def test_from__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(self.STRICT_INDICES, object())
+
+    def test_from__empty(self):
+        with self.assertRaises(IndexError):
+            __unit__.omit(self.STRICT_INDICES, (), strict=True)
+        self.assertEquals(
+            (), __unit__.omit(self.NONSTRICT_INDICES, (), strict=False))
+
+    def test_strict__true(self):
+        self.assertEquals(
+            self.WITH_STRICT_INDICES_OMITTED,
+            __unit__.omit(self.STRICT_INDICES, self.TUPLE, strict=True))
+        with self.assertRaises(IndexError):
+            __unit__.omit(self.NONSTRICT_INDICES, self.TUPLE, strict=True)
+
+    def test_strict__false(self):
+        self.assertEquals(
+            self.WITH_STRICT_INDICES_OMITTED,
+            __unit__.omit(self.STRICT_INDICES, self.TUPLE, strict=False))
+        self.assertEquals(
+            self.WITH_NONSTRICT_INDICES_OMITTED,
+            __unit__.omit(self.NONSTRICT_INDICES, self.TUPLE, strict=False))

@@ -7,11 +7,39 @@ import inspect
 from taipan.objective import _get_first_arg_name
 from taipan.objective.base import (_ABCMetaclass, _ABCObjectMetaclass,
                                    ObjectMetaclass)
-from taipan.objective.classes import metaclass
-from taipan.objective.methods import ensure_method, is_method
+from taipan.objective.classes import is_class, metaclass
+from taipan.objective.methods import ensure_method, is_method, NonInstanceMethod
+from taipan.strings import is_string
 
 
 __all__ = ['abstract', 'final', 'override']
+
+
+class _WrappedMethod(object):
+    """Wrapper for methods that have been marked with a modifier.
+
+    Those methods will be unpacked by :class:`ObjectMetaclass` during creation
+    of the class which contains them.
+    """
+    def __init__(self, method, modifier=None):
+        self.method = method
+        self.modifier = modifier
+
+    # We proxy most operations to the underlying method to support the use case
+    # when it's called / referenced / etc. even before its class is created.
+    # An example would be a class attribute defined in terms of calling
+    # an overridden class or static method.
+
+    def __call__(self, *args, **kwargs):
+        """Proxy calls to underlying method."""
+        return self.method(*args, **kwargs)
+
+    def __getattribute__(self, attr):
+        """Proxy attribute access to underlying method."""
+        if attr in ('method', 'modifier'):
+            return object.__getattribute__(self, attr)
+        else:
+            return getattr(self.method, attr)
 
 
 # @abstract
@@ -94,8 +122,16 @@ def final(arg):
 
 # @override
 
-def override(method):
+__missing = object()
+
+
+def override(base=__missing):
     """Mark a method as overriding a corresponding method from superclass.
+
+    :param base:
+
+        Optional base class from which this method is being overridden.
+        If provided, it can be a class itself, or its (qualified) name.
 
     .. note::
 
@@ -108,45 +144,50 @@ def override(method):
                 def florb(cls):
                     pass
     """
-    try:
-        ensure_method(method)
-    except TypeError:
-        # in case user mixed up the order of ``@override`` and ``@classmethod``,
-        # we can detect the issue and provide a targeted exception message
+    arg = base  # ``base`` is just for clean, user-facing argument name
+
+    # direct application of the modifier through ``@override``
+    if inspect.isfunction(arg) or isinstance(arg, NonInstanceMethod):
+        _OverrideDecorator.maybe_signal_classmethod(arg)
+        decorator = _OverrideDecorator(None)
+        return decorator(arg)
+
+    # indirect (but simple) application of the modifier through ``@override()``
+    if arg is __missing:
+        return _OverrideDecorator(None)
+
+    # full-blown application, with base class specified
+    if is_class(arg) or is_string(arg):
+        return _OverrideDecorator(arg)
+
+    raise TypeError("explicit base class for @override "
+                    "must be either a string or a class object")
+
+
+class _OverrideDecorator(object):
+    """Decorator for applying the ``@override`` modifier.
+    This should not be used directly -- use :func:`override` instead.
+    """
+    def __init__(self, base):
+        self.base = base
+
+    def __call__(self, method):
+        try:
+            ensure_method(method)
+        except TypeError:
+            if not _OverrideDecorator.maybe_signal_classmethod(method):
+                raise
+
+        return _OverriddenMethod(method, self)  # remember the override's base
+
+    @staticmethod
+    def maybe_signal_classmethod(method):
+        """Signal the case when user mixed up the order of ``@override`` and
+        ``@classmethod``, detecting the problem and providing a targeted
+        exception message.
+        """
         if inspect.isfunction(method) and _get_first_arg_name(method) == 'cls':
             raise TypeError("@override must be applied above @classmethod")
-        else:
-            raise
-
-    return _OverriddenMethod(method)
-
-
-class _WrappedMethod(object):
-    """Wrapper for methods that have been marked with a modifier.
-
-    Those methods will be unpacked by :class:`ObjectMetaclass` during creation
-    of the class which contains them.
-    """
-    __slots__ = ['method']
-
-    def __init__(self, method):
-        self.method = method
-
-    # We proxy most operations to the underlying method to support the use case
-    # when it's called / referenced / etc. even before its class is created.
-    # An example would be a class attribute defined in terms of calling
-    # an overridden class or static method.
-
-    def __call__(self, *args, **kwargs):
-        """Proxy calls to underlying method."""
-        return self.method(*args, **kwargs)
-
-    def __getattribute__(self, attr):
-        """Proxy attribute access to underlying method."""
-        if attr == 'method':
-            return object.__getattribute__(self, attr)
-        else:
-            return getattr(self.method, attr)
 
 
 class _OverriddenMethod(_WrappedMethod):

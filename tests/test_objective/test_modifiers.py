@@ -360,12 +360,6 @@ class Override_Basics(_Override):
         with self.assertRaises(TypeError):
             __unit__.override(object())
 
-    def test_class(self):
-        with self.assertRaises(TypeError):
-            @__unit__.override
-            class Foo(object):
-                pass
-
     def test_regular_function(self):
         with self.assertRaises(TypeError):
             @__unit__.override

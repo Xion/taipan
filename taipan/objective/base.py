@@ -4,9 +4,10 @@ Universal base class for objects.
 import abc
 import functools
 import inspect
+import sys
 
 from taipan._compat import IS_PY3, ifilter
-from taipan.objective.classes import metaclass
+from taipan.objective.classes import is_class, metaclass
 from taipan.objective.methods import is_method
 
 
@@ -69,6 +70,7 @@ class ObjectMetaclass(type):
                 (None, None)
             )
             if meta._is_override(method):
+                override_base = meta._get_override_base(method)
                 if not shadowed_method:
                     raise ClassError("unnecessary @override on %s.%s" % (
                         class_.__name__, name), class_=class_)
@@ -76,6 +78,10 @@ class ObjectMetaclass(type):
                     raise ClassError(
                         "illegal @override on a @final method %s.%s" % (
                             base_class.__name__, name), class_=class_)
+                if override_base and base_class is not override_base:
+                    raise ClassError(
+                        "incorrect override base: expected %s, got %s" % (
+                            base_class.__name__, override_base.__name__))
                 setattr(class_, name, method.method)
             else:
                 if shadowed_method and name not in meta.OVERRIDE_EXEMPTIONS:
@@ -112,6 +118,25 @@ class ObjectMetaclass(type):
             arg = arg.method
 
         return getattr(arg, '__final__', False)
+
+    @classmethod
+    def _get_override_base(self, method_wrapper):
+        base = method_wrapper.modifier.base
+        if not base:
+            return None
+        if is_class(base):
+            return base
+
+        # resolve the (possibly qualified) class name
+        if '.' in base:
+            module_name, class_name = base.rsplit('.', 1)
+            module = __import__(module_name)
+        else:
+            class_name = base
+            module_name = method_wrapper.method.__module__
+            module = sys.modules[module_name]
+
+        return getattr(module, class_name)
 
 
 @metaclass(ObjectMetaclass)

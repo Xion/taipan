@@ -274,6 +274,34 @@ class Final_Methods(_UniversalBaseClass):
                 def florb(self):
                     pass
 
+    def test_method__reversed_final_and_override(self):
+        """Test for 'reversed' application of @override and @final
+        on a single method.
+
+        This is 'reversed' in contrast to the recommended and more readable
+        way of placing @final before @override, as mentioned by docs
+        of the former. Nevertheless, the reversed way should still work.
+        """
+        class Base(Object):
+            def florb(self):
+                pass
+
+        class Foo(Base):
+            @__unit__.override
+            @__unit__.final
+            def florb(self):
+                pass
+
+        with self._assertRaisesOverrideFinalException():
+            class Bar(Foo):
+                @__unit__.override
+                def florb(self):
+                    pass
+        with self._assertRaisesHideFinalException():
+            class Bar(Foo):
+                def florb(self):
+                    pass
+
     # Utility functions
 
     def _create_class_with_final_method(self):

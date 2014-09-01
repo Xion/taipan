@@ -9,6 +9,7 @@ with ``sys.version_info`` being perhaps the most well known one).
 """
 from numbers import Integral
 
+from taipan._compat import xrange
 from taipan.collections import ensure_iterable, ensure_sequence
 
 

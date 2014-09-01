@@ -168,6 +168,165 @@ class _FunctionDecorator(_Decorator):
                 pass
 
 
+class MethodDecorator(_Decorator):
+    """Tests for @method_decorator."""
+
+    def setUp(self):
+        self.decorator_under_test = __unit__.method_decorator
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.method_decorator(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.method_decorator(object())
+
+    def test_decorator_function__no_args__apply_to_function(self):
+        decorator = self._create_argless_decorator_function()
+        with self.assertRaises(TypeError):
+            @decorator
+            def foo():
+                pass
+        with self.assertRaises(TypeError):
+            @decorator()
+            def bar():
+                pass
+
+    def test_decorator_function__no_args__apply_to_method(self):
+        decorator = self._create_argless_decorator_function()
+        class Foo(object):
+            @decorator
+            def foo(self):
+                pass
+        class Bar(object):
+            @decorator
+            def bar(self):
+                pass
+        self._assertIsDecorated(Foo.foo)
+        self._assertIsDecorated(Foo().foo)
+        self._assertIsDecorated(Bar.bar)
+        self._assertIsDecorated(Bar().bar)
+
+    def test_decorator_function__no_args__apply_to_class(self):
+        decorator = self._create_argless_decorator_function()
+        with self.assertRaises(TypeError):
+            @decorator
+            class Foo(object):
+                pass
+        with self.assertRaises(TypeError):
+            @decorator()
+            class Bar(object):
+                pass
+
+    def test_decorator_function__with_args__apply_to_function(self):
+        decorator = self._create_decorator_function_with_args()
+        with self.assertRaises(TypeError):
+            @decorator(self.DECORATOR_ARG)
+            def foo():
+                pass
+
+    def test_decorator_function__with_args__apply_to_method(self):
+        decorator = self._create_decorator_function_with_args()
+        class Foo(object):
+            @decorator(self.DECORATOR_ARG)
+            def foo(self):
+                pass
+        class Bar(object):
+            @decorator(self.DECORATOR_ARG)
+            def bar(self):
+                pass
+        self._assertIsDecorated(Foo.foo, self.DECORATOR_ARG)
+        self._assertIsDecorated(Foo().foo, self.DECORATOR_ARG)
+        self._assertIsDecorated(Bar.bar, self.DECORATOR_ARG)
+        self._assertIsDecorated(Bar().bar, self.DECORATOR_ARG)
+
+    def test_decorator_function__with_args__apply_to_method__badly(self):
+        decorator = self._create_decorator_function_with_args()
+        with self.assertRaises(TypeError):
+            class Foo(object):
+                @decorator()
+                def foo(self):
+                    pass
+        with self.assertRaises(TypeError):
+            class Bar(object):
+                @decorator
+                def bar(self):
+                    pass
+
+    def test_decorator_class__no_args__apply_to_function(self):
+        decorator = self._create_argless_decorator_class()
+        with self.assertRaises(TypeError):
+            @decorator
+            def foo():
+                pass
+        with self.assertRaises(TypeError):
+            @decorator()
+            def bar():
+                pass
+
+    def test_decorator_class__no_args__apply_to_method(self):
+        decorator = self._create_argless_decorator_class()
+        class Foo(object):
+            @decorator
+            def foo(self):
+                pass
+        class Bar(object):
+            @decorator
+            def bar(self):
+                pass
+        self._assertIsDecorated(Foo.foo)
+        self._assertIsDecorated(Foo().foo)
+        self._assertIsDecorated(Bar.bar)
+        self._assertIsDecorated(Bar().bar)
+
+    def test_decorator_class__no_args__apply_to_class(self):
+        decorator = self._create_argless_decorator_class()
+        with self.assertRaises(TypeError):
+            @decorator
+            class Foo(object):
+                pass
+        with self.assertRaises(TypeError):
+            @decorator()
+            class Bar(object):
+                pass
+
+    def test_decorator_class__with_args__apply_to_function(self):
+        decorator = self._create_decorator_class_with_args()
+        with self.assertRaises(TypeError):
+            @decorator(self.DECORATOR_ARG)
+            def foo():
+                pass
+
+    def test_decorator_class__with_args__apply_to_method(self):
+        decorator = self._create_decorator_class_with_args()
+        class Foo(object):
+            @decorator(self.DECORATOR_ARG)
+            def foo(self):
+                pass
+        class Bar(object):
+            @decorator(self.DECORATOR_ARG)
+            def bar(self):
+                pass
+        self._assertIsDecorated(Foo.foo, self.DECORATOR_ARG)
+        self._assertIsDecorated(Foo().foo, self.DECORATOR_ARG)
+        self._assertIsDecorated(Bar.bar, self.DECORATOR_ARG)
+        self._assertIsDecorated(Bar().bar, self.DECORATOR_ARG)
+
+    def test_decorator_class__with_args__apply_to_method__badly(self):
+        decorator = self._create_decorator_class_with_args()
+        with self.assertRaises(TypeError):
+            class Foo(object):
+                @decorator()
+                def foo(self):
+                    pass
+        with self.assertRaises(TypeError):
+            class Bar(object):
+                @decorator
+                def bar(self):
+                    pass
+
+
 class ClassDecorator(_Decorator):
     """Tests for @class_decorator."""
 

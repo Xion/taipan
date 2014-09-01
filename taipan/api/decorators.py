@@ -6,9 +6,14 @@ import inspect
 
 from taipan.functional import ensure_callable
 from taipan.functional.combinators import or_
+from taipan.objective.methods import is_method
 
 
-__all__ = ['decorator', 'function_decorator', 'class_decorator']
+__all__ = [
+    'decorator',
+    'function_decorator', 'method_decorator',
+    'class_decorator',
+]
 
 
 def decorator(decor):
@@ -37,8 +42,8 @@ def decorator(decor):
 
         :func:`decorator` makes decorator appicable for both
         functions and classes. If you want to restrict the type of
-        decorator targets, use either :func:`function_decorator`
-        or :func:`class_decorator`.
+        decorator targets, use :func:`function_decorator`,
+        :func:`method_decorator` or :func:`class_decorator`.
     """
     ensure_callable(decor)
     return _wrap_decorator(decor, "functions or classes",
@@ -78,6 +83,43 @@ def function_decorator(decor):
     return _wrap_decorator(decor, "functions", inspect.isfunction)
 
 
+def method_decorator(decor):
+    """Decorator for function decorators (sic), written either
+    as classes or functions.
+
+    In either case, the decorator ``decor`` must be "doubly-callable":
+
+        * for classes, this means implementing ``__call__`` method
+          in addition to possible ``__init__``
+        * for functions, this means returning a function that acts
+          as an actual decorator, i.e. taking a function and returning
+          its decorated version
+
+    Although it works for any decorator, it's useful mainly for those
+    that should take optional arguments. If the decorator is adorned
+    with ``@method_decorator``, it's possible to use it without the pair of
+    empty parentheses::
+
+        class Foo(object):
+            @enhanced  # rather than @enhanced()
+            def foo(self):
+                pass
+
+    when we don't want to pass any arguments to it.
+
+    .. note::
+
+        :func:`function_decorator` makes decorator applicable
+        only to methods inside a class. Use :func:`decorator`,
+        :func:`function_decorator` or :func:`class_decorator` for decorators
+        that should be applicable to other language constructs.
+
+    .. versionadded:: 0.0.3
+    """
+    ensure_callable(decor)
+    return _wrap_decorator(decor, "methods", is_method)
+
+
 def class_decorator(decor):
     """Decorator for class decorators (sic), written either
     as classes or functions.
@@ -96,7 +138,7 @@ def class_decorator(decor):
     empty parentheses::
 
         @enhanced  # rather than @enhanced()
-        def foo():
+        class Foo(object):
             pass
 
     when we don't want to pass any arguments to it.
@@ -104,8 +146,9 @@ def class_decorator(decor):
     .. note::
 
         :func:`class_decorator` makes decorator applicable only to classes.
-        Use :func:`decorator` or :func:`class_decorator` for decorators
-        that should be applicable to functions.
+        Use :func:`decorator`, :func:`method_decorator`
+        or :func:`class_decorator` for decorators that should be applicable
+        to other language constructs.
     """
     ensure_callable(decor)
     return _wrap_decorator(decor, "classes", inspect.isclass)

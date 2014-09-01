@@ -86,7 +86,7 @@ def final(arg):
     elif not is_method(arg):
         raise TypeError("@final can only be applied to classes or methods")
 
-    method = arg.method if isinstance(arg, _OverriddenMethod) else arg
+    method = arg.method if isinstance(arg, _WrappedMethod) else arg
     method.__final__ = True
 
     return arg
@@ -121,12 +121,14 @@ def override(method):
     return _OverriddenMethod(method)
 
 
-class _OverriddenMethod(object):
-    """Wrapper for methods that have been marked with ``@override``.
+class _WrappedMethod(object):
+    """Wrapper for methods that have been marked with a modifier.
 
     Those methods will be unpacked by :class:`ObjectMetaclass` during creation
     of the class which contains them.
     """
+    __slots__ = ['method']
+
     def __init__(self, method):
         self.method = method
 
@@ -145,3 +147,7 @@ class _OverriddenMethod(object):
             return object.__getattribute__(self, attr)
         else:
             return getattr(self.method, attr)
+
+
+class _OverriddenMethod(_WrappedMethod):
+    """Wrapper for methods that have been marked with ``@override``."""

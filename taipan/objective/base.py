@@ -106,9 +106,9 @@ class ObjectMetaclass(type):
         if inspect.isclass(arg) and not isinstance(arg, ObjectMetaclass):
             return False  # of classes, only subclasses of Object can be final
 
-        # account for the wrapper that ``@override`` may have introduced
-        from taipan.objective.modifiers import _OverriddenMethod
-        if isinstance(arg, _OverriddenMethod):
+        # account for method wrappers, such as the one introduced by @override
+        from taipan.objective.modifiers import _WrappedMethod
+        if isinstance(arg, _WrappedMethod):
             arg = arg.method
 
         return getattr(arg, '__final__', False)

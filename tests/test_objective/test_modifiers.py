@@ -10,6 +10,8 @@ from tests.test_objective.test_base import _UniversalBaseClass
 import taipan.objective.modifiers as __unit__
 
 
+# @abstract
+
 class _Abstract(_UniversalBaseClass):
 
     def _assertIsABC(self, class_):
@@ -181,6 +183,8 @@ class Abstract_ObjectiveClasses(_Abstract):
             ._create_abstract_method_class(base=Object, method=method)
 
 
+# @final
+
 class Final(_UniversalBaseClass):
 
     def test_none(self):
@@ -196,6 +200,9 @@ class Final(_UniversalBaseClass):
             @__unit__.final
             def foo():
                 pass
+
+
+class Final_Classes(_UniversalBaseClass):
 
     def test_class__incompatible(self):
         with self.assertRaises(ValueError):
@@ -230,6 +237,68 @@ class Final(_UniversalBaseClass):
             pass
         return Foo
 
+
+class Final_Methods(_UniversalBaseClass):
+
+    def test_method__normal__attempt_override(self):
+        Base = self._create_class_with_final_method()
+
+        with self._assertRaisesOverrideFinalException():
+            class Foo(Base):
+                @__unit__.override
+                def florb(self):
+                    pass
+
+    def test_method__normal__attempt_hiding(self):
+        Base = self._create_class_with_final_method()
+
+        with self._assertRaisesHideFinalException():
+            class Foo(Base):
+                def florb(self):
+                    pass
+
+    def test_method__override__attempt_further_override(self):
+        Foo = self._create_class_with_final_override_method()
+
+        with self._assertRaisesOverrideFinalException():
+            class Bar(Foo):
+                @__unit__.override
+                def florb(self):
+                    pass
+
+    def test_method__override__attempt_hiding(self):
+        Foo = self._create_class_with_final_override_method()
+
+        with self._assertRaisesHideFinalException():
+            class Bar(Foo):
+                def florb(self):
+                    pass
+
+    # Utility functions
+
+    def _create_class_with_final_method(self):
+        class Base(Object):
+            @__unit__.final
+            def florb(self):
+                pass
+
+        return Base
+
+    def _create_class_with_final_override_method(self):
+        class Base(Object):
+            def florb(self):
+                pass
+
+        class Foo(Base):
+            @__unit__.final
+            @__unit__.override
+            def florb(self):
+                pass
+
+        return Foo
+
+
+# @override
 
 class _Override(_UniversalBaseClass):
 

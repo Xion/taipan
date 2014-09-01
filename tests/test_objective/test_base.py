@@ -33,6 +33,24 @@ class _UniversalBaseClass(TestCase):
             yield r
         self.assertIn("must be marked", str(r.exception))
 
+    @contextmanager
+    def _assertRaisesOverrideFinalException(self):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+
+        msg = str(r.exception)
+        self.assertIn("final", msg)
+        self.assertIn("illegal", msg)
+
+    @contextmanager
+    def _assertRaisesHideFinalException(self):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+
+        msg = str(r.exception)
+        self.assertIn("final", msg)
+        self.assertIn("hiding", msg)
+
 
 class ObjectMetaclass(_UniversalBaseClass):
     """Test case to ensure ObjectMetaclass plays with other metaclasses

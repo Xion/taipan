@@ -3,6 +3,7 @@ Universal base class for objects.
 """
 import abc
 import functools
+import inspect
 
 from taipan._compat import IS_PY3, ifilter
 from taipan.objective.classes import metaclass
@@ -50,28 +51,42 @@ class ObjectMetaclass(type):
 
         # prevent class creation if any of its base classes is final
         for base in bases:
-            if getattr(base, '__final__', False):
+            if meta._is_final(base):
                 raise ClassError(
                     "cannot inherit from @final class %s" % (base.__name__,))
 
         class_ = super(ObjectMetaclass, meta).__new__(meta, name, bases, dict_)
 
-        # check for presence of ``@override`` on appropriate methods
+        # check that ``@override`` modifier is present where it should be
+        # and absent where it shouldn't (e.g. ``@final`` methods)
         super_mro = class_.__mro__[1:]
         own_methods = ((name, member) for name, member in dict_.items()
                        if is_method(member))
         for name, method in own_methods:
-            shadows_base = any(hasattr(base, name) for base in super_mro)
+            shadowed_method, base_class = next(
+                ((getattr(base, name), base)
+                 for base in super_mro if hasattr(base, name)),
+                (None, None)
+            )
             if meta._is_override(method):
-                if not shadows_base:
+                if not shadowed_method:
                     raise ClassError("unnecessary @override on %s.%s" % (
                         class_.__name__, name), class_=class_)
+                if meta._is_final(shadowed_method):
+                    raise ClassError(
+                        "illegal @override on a @final method %s.%s" % (
+                            base_class.__name__, name), class_=class_)
                 setattr(class_, name, method.method)
             else:
-                if shadows_base and name not in meta.OVERRIDE_EXEMPTIONS:
-                    raise ClassError(
-                        "overridden method %s.%s must be marked with @override"
-                        % (class_.__name__, name), class_=class_)
+                if shadowed_method and name not in meta.OVERRIDE_EXEMPTIONS:
+                    if meta._is_final(shadowed_method):
+                        msg = "%s.%s is hiding a @final method %s.%s" % (
+                            class_.__name__, name, base_class.__name__, name)
+                    else:
+                        msg = ("overridden method %s.%s "
+                               "must be marked with @override" % (
+                                class_.__name__, name))
+                    raise ClassError(msg, class_=class_)
 
         return class_
 
@@ -82,6 +97,21 @@ class ObjectMetaclass(type):
         """
         from taipan.objective.modifiers import _OverriddenMethod
         return isinstance(method, _OverriddenMethod)
+
+    @classmethod
+    def _is_final(meta, arg):
+        """Checks whether given class or method has been marked
+        with the ``@final`` decorator.
+        """
+        if inspect.isclass(arg) and not isinstance(arg, ObjectMetaclass):
+            return False  # of classes, only subclasses of Object can be final
+
+        # account for the wrapper that ``@override`` may have introduced
+        from taipan.objective.modifiers import _OverriddenMethod
+        if isinstance(arg, _OverriddenMethod):
+            arg = arg.method
+
+        return getattr(arg, '__final__', False)
 
 
 @metaclass(ObjectMetaclass)

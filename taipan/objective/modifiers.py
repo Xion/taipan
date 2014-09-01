@@ -8,7 +8,7 @@ from taipan.objective import _get_first_arg_name
 from taipan.objective.base import (_ABCMetaclass, _ABCObjectMetaclass,
                                    ObjectMetaclass)
 from taipan.objective.classes import metaclass
-from taipan.objective.methods import ensure_method
+from taipan.objective.methods import ensure_method, is_method
 
 
 __all__ = ['abstract', 'final', 'override']
@@ -53,17 +53,43 @@ abstract.property = abc.abstractproperty
 
 # @final
 
-def final(class_):
-    """Mark a class as _final_, forbidding any more classes from
-    inheriting from it (subclassing it).
-    """
-    if not inspect.isclass(class_):
-        raise TypeError("@final can only be applied to classes")
-    if not isinstance(class_, ObjectMetaclass):
-        raise ValueError("@final can only be applied to subclasses of Object")
+def final(arg):
+    """Mark a class or method as _final_.
 
-    class_.__final__ = True
-    return class_
+    Final classes are those that end the inheritance chain, i.e. forbid
+    further subclassing. A final class can thus be only instantiated,
+    not inherited from.
+
+    Similarly, methods marked as final in a superclass cannot be overridden
+    in any of the subclasses.
+
+    .. note::
+
+        Final method itself can also be (in fact, it usually is) an overridden
+        method from a superclass. In those cases, it's recommended to place
+        @\ :func:`final` modifier before @\ :func:`override` for clarity::
+
+            class Foo(Base):
+                @final
+                @override
+                def florb(self):
+                    super(Foo, self).florb()
+                    # ...
+
+    .. versionadded:: 0.0.3
+       Now applicable to methods in addition to classes
+    """
+    if inspect.isclass(arg):
+        if not isinstance(arg, ObjectMetaclass):
+            raise ValueError("@final can only be applied to a class "
+                             "that is a subclass of Object")
+    elif not is_method(arg):
+        raise TypeError("@final can only be applied to classes or methods")
+
+    method = arg.method if isinstance(arg, _OverriddenMethod) else arg
+    method.__final__ = True
+
+    return arg
 
 
 # @override

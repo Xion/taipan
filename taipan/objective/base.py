@@ -120,8 +120,11 @@ class ObjectMetaclass(type):
         return getattr(arg, '__final__', False)
 
     @classmethod
-    def _get_override_base(self, method_wrapper):
-        base = method_wrapper.modifier.base
+    def _get_override_base(self, override_wrapper):
+        """Retrieve the override base class from the
+        :class:`_OverriddenMethod` wrapper.
+        """
+        base = override_wrapper.modifier.base
         if not base:
             return None
         if is_class(base):
@@ -129,11 +132,14 @@ class ObjectMetaclass(type):
 
         # resolve the (possibly qualified) class name
         if '.' in base:
+            # TODO(xion): this won't work for `module.Class.InnerClass`;
+            # solve by repeatedly trying to import the first N-1, N-2, ...
+            # dot-separated parts of the qualified name
             module_name, class_name = base.rsplit('.', 1)
-            module = __import__(module_name)
+            module = __import__(module_name, fromlist=[class_name])
         else:
             class_name = base
-            module_name = method_wrapper.method.__module__
+            module_name = override_wrapper.method.__module__
             module = sys.modules[module_name]
 
         return getattr(module, class_name)

@@ -34,6 +34,21 @@ class _UniversalBaseClass(TestCase):
         self.assertIn("must be marked", str(r.exception))
 
     @contextmanager
+    def _assertRaisesIncorrectOverrideBase(self, given, correct):
+        with self.assertRaises(__unit__.ClassError) as r:
+            yield r
+
+        msg = str(r.exception)
+        self.assertIn("incorrect override base", msg)
+
+        # a trick for semi-robust assertion on "expected X, got Y" message,
+        # insofar as it's not reliant on exact wording, just order of X & Y
+        self.assertLess(msg.find(correct.__name__), msg.find(given.__name__),
+                        msg="override bases: %r (correct) and %r (given) "
+                            "not found in error message: %s" % (
+                                correct, given, msg))
+
+    @contextmanager
     def _assertRaisesOverrideFinalException(self):
         with self.assertRaises(__unit__.ClassError) as r:
             yield r

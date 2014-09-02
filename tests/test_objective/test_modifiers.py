@@ -412,6 +412,45 @@ class Override_InstanceMethods(_Override):
                 pass
 
 
+class Override_InstanceMethods_WithExplicitBase(_Override):
+    OBJECT_CLASSNAME = 'taipan.objective.base.Object'
+
+    def test_override_base__class_object__correct(self):
+        Base = self._create_objective_class()
+
+        class Bar(Base):
+            @__unit__.override(Base)
+            def florb(self):
+                pass
+
+    def test_override_base__class_object__incorrect(self):
+        Base = self._create_objective_class()
+
+        with self._assertRaisesIncorrectOverrideBase(Object, correct=Base):
+            class Bar(Base):
+                @__unit__.override(Object)
+                def florb(self):
+                    pass
+
+    def test_override_base__class_name(self):
+        # we can use the universal base Object class itself to avoid
+        # introducing another class in the global scope
+        with self._assertRaisesUnnecessaryOverrideException():
+            class Foo(Object):
+                @__unit__.override(self.OBJECT_CLASSNAME)
+                def foo(self):
+                    pass
+
+    def test_override_base__class_name__incorrect(self):
+        Base = self._create_objective_class()
+
+        with self._assertRaisesIncorrectOverrideBase(Object, correct=Base):
+            class Bar(Base):
+                @__unit__.override(self.OBJECT_CLASSNAME)
+                def florb(self):
+                    pass
+
+
 class Override_ClassMethods(_Override):
 
     def test_class_method__unnecessary(self):

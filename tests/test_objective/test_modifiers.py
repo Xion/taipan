@@ -415,6 +415,10 @@ class Override_InstanceMethods(_Override):
 class Override_InstanceMethods_WithExplicitBase(_Override):
     OBJECT_CLASSNAME = 'taipan.objective.base.Object'
 
+    class InnerClass(object):
+        def florb(self):
+            pass
+
     def test_override_base__class_object__correct(self):
         Base = self._create_objective_class()
 
@@ -449,6 +453,16 @@ class Override_InstanceMethods_WithExplicitBase(_Override):
                 @__unit__.override(self.OBJECT_CLASSNAME)
                 def florb(self):
                     pass
+
+    def test_override_base__class_name__inner_class(self):
+        Base = self.InnerClass
+        classname = '.'.join([
+            __name__, self.__class__.__name__, Base.__name__])
+
+        class Bar(Base):
+            @__unit__.override(classname)
+            def florb(self):
+                pass
 
 
 class Override_ClassMethods(_Override):

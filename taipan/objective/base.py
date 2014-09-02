@@ -6,7 +6,7 @@ import functools
 import inspect
 import sys
 
-from taipan._compat import IS_PY3, ifilter
+from taipan._compat import IS_PY3, ifilter, xrange
 from taipan.objective.classes import is_class, metaclass
 from taipan.objective.methods import is_method
 
@@ -70,7 +70,6 @@ class ObjectMetaclass(type):
                 (None, None)
             )
             if meta._is_override(method):
-                override_base = meta._get_override_base(method)
                 if not shadowed_method:
                     raise ClassError("unnecessary @override on %s.%s" % (
                         class_.__name__, name), class_=class_)
@@ -78,10 +77,19 @@ class ObjectMetaclass(type):
                     raise ClassError(
                         "illegal @override on a @final method %s.%s" % (
                             base_class.__name__, name), class_=class_)
+
+                # if @override had parameter supplied, verify if it was
+                # the same class as the base of shadowed method
+                override_base = meta._get_override_base(method)
                 if override_base and base_class is not override_base:
-                    raise ClassError(
-                        "incorrect override base: expected %s, got %s" % (
-                            base_class.__name__, override_base.__name__))
+                    if is_class(override_base):
+                        raise ClassError(
+                            "incorrect override base: expected %s, got %s" % (
+                                base_class.__name__, override_base.__name__))
+                    else:
+                        raise ClassError(
+                            "invalid override base specified: %s" % (
+                                override_base,))
                 setattr(class_, name, method.method)
             else:
                 if shadowed_method and name not in meta.OVERRIDE_EXEMPTIONS:
@@ -132,11 +140,21 @@ class ObjectMetaclass(type):
 
         # resolve the (possibly qualified) class name
         if '.' in base:
-            # TODO(xion): this won't work for `module.Class.InnerClass`;
-            # solve by repeatedly trying to import the first N-1, N-2, ...
-            # dot-separated parts of the qualified name
-            module_name, class_name = base.rsplit('.', 1)
-            module = __import__(module_name, fromlist=[class_name])
+            # repeatedly try to import the first N-1, N-2, etc. dot-separated
+            # parts of the qualified name; this way we can handle all names
+            # including `package.module.Class.InnerClass`
+            dot_parts = base.split('.')
+            for i in xrange(len(dot_parts) - 1, 1, -1):  # n-1 -> 1
+                module_name = '.'.join(dot_parts[:i])
+                class_name = '.'.join(dot_parts[i:])
+                try:
+                    module = __import__(module_name, fromlist=[dot_parts[i]])
+                    break
+                except ImportError:
+                    pass
+            else:
+                # couldn't resolve class name, return it verbatim
+                return base
         else:
             class_name = base
             module_name = override_wrapper.method.__module__
@@ -255,6 +273,9 @@ class ClassError(RuntimeError):
     """Exception raised when the class definition of :class:`Object` subclass
     is found to be incorrect.
     """
+    # TODO(xion): introduce subclasses for all the various misuses
+    # of @override, @final, and combinations thereof
+
     def __init__(self, *args, **kwargs):
         class_ = kwargs.pop('class_', None)
         super(ClassError, self).__init__(*args, **kwargs)

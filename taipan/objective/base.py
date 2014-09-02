@@ -47,22 +47,38 @@ class ObjectMetaclass(type):
         """Creates a new class using this metaclass.
         Usually this means the class is inheriting from :class:`Object`.
         """
-        # TODO(xion): employ some code inspection tricks to serve ClassErrors
-        # as if they were thrown at the offending class's/method's definition
+        meta._validate_base_classes(bases)
 
-        # prevent class creation if any of its base classes is final
+        class_ = super(ObjectMetaclass, meta).__new__(meta, name, bases, dict_)
+        meta._validate_method_decoration(class_)
+
+        return class_
+
+    @classmethod
+    def _validate_base_classes(meta, bases):
+        """Validate the base classes of the new class to be created,
+        making sure none of them are ``@final``.
+        """
         for base in bases:
             if meta._is_final(base):
                 raise ClassError(
                     "cannot inherit from @final class %s" % (base.__name__,))
 
-        class_ = super(ObjectMetaclass, meta).__new__(meta, name, bases, dict_)
+    @classmethod
+    def _validate_method_decoration(meta, class_):
+        """Validate the usage of ``@override`` and ``@final`` modifiers
+        on methods of the given ``class_``.
+        """
+        # TODO(xion): employ some code inspection tricks to serve ClassErrors
+        # as if they were thrown at the offending class's/method's definition
+
+        super_mro = class_.__mro__[1:]
+        own_methods = ((name, member)
+                       for name, member in class_.__dict__.items()
+                       if is_method(member))
 
         # check that ``@override`` modifier is present where it should be
         # and absent where it shouldn't (e.g. ``@final`` methods)
-        super_mro = class_.__mro__[1:]
-        own_methods = ((name, member) for name, member in dict_.items()
-                       if is_method(member))
         for name, method in own_methods:
             shadowed_method, base_class = next(
                 ((getattr(base, name), base)
@@ -70,6 +86,8 @@ class ObjectMetaclass(type):
                 (None, None)
             )
             if meta._is_override(method):
+                # ``@override`` is legal only when the method actually shadows
+                # a method from a superclass, and that metod is not ``@final``
                 if not shadowed_method:
                     raise ClassError("unnecessary @override on %s.%s" % (
                         class_.__name__, name), class_=class_)
@@ -90,6 +108,7 @@ class ObjectMetaclass(type):
                         raise ClassError(
                             "invalid override base specified: %s" % (
                                 override_base,))
+
                 setattr(class_, name, method.method)
             else:
                 if shadowed_method and name not in meta.OVERRIDE_EXEMPTIONS:
@@ -101,16 +120,6 @@ class ObjectMetaclass(type):
                                "must be marked with @override" % (
                                 class_.__name__, name))
                     raise ClassError(msg, class_=class_)
-
-        return class_
-
-    @classmethod
-    def _is_override(meta, method):
-        """Checks whether given class or instance method has been marked
-        with the ``@override`` decorator.
-        """
-        from taipan.objective.modifiers import _OverriddenMethod
-        return isinstance(method, _OverriddenMethod)
 
     @classmethod
     def _is_final(meta, arg):
@@ -126,6 +135,14 @@ class ObjectMetaclass(type):
             arg = arg.method
 
         return getattr(arg, '__final__', False)
+
+    @classmethod
+    def _is_override(meta, method):
+        """Checks whether given class or instance method has been marked
+        with the ``@override`` decorator.
+        """
+        from taipan.objective.modifiers import _OverriddenMethod
+        return isinstance(method, _OverriddenMethod)
 
     @classmethod
     def _get_override_base(self, override_wrapper):
@@ -180,6 +197,7 @@ class _ABCMetaclass(abc.ABCMeta):
     """
     def __new__(meta, name, bases, dict_):
         """Creates a new class using this metaclass.
+
         Usually this means the class is NOT inheriting from :class:`Object`
         while having ``@abstract`` modifier applied.
         """
@@ -236,6 +254,7 @@ class _ABCObjectMetaclass(ObjectMetaclass, _ABCMetaclass):
     """
     def __new__(meta, name, bases, dict_):
         """Creates a new class using this metaclass.
+
         Usually this means the class is inheriting from :class:`Object`
         and has the ``@abstract`` modifier applied.
         """

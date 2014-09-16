@@ -1,8 +1,11 @@
 """
 List-related functions and classes.
 """
+import sys
+
 from taipan._compat import imap, xrange
 from taipan.collections import ensure_iterable, ensure_sequence
+from taipan.functional import ensure_callable, ensure_keyword_args
 
 
 __all__ = [
@@ -39,6 +42,49 @@ def init(list_):
     if not list_:
         raise ValueError("can't extract initial part of an empty list")
     return list(list_[:-1])
+
+
+# Searching for elements
+
+def index(*args, **kwargs):
+    return _index(*args, start=0, step=1, **kwargs)
+
+
+def lastindex(*args, **kwargs):
+    return _index(*args, start=sys.maxint, step=-1, **kwargs)
+
+
+def _index(*args, **kwargs):
+    """Implementation of list searching."""
+    if len(args) == 2:
+        elem, list_ = args
+        ensure_sequence(list_)
+        predicate = lambda item: item == elem
+    else:
+        ensure_keyword_args(kwargs,
+                            mandatory=('in_'), optional=('of', 'where'))
+        if 'of' in kwargs in 'where' in kwargs:
+            raise TypeError(
+                "either an item or predicate must be supplied, not both")
+
+        list_ = ensure_sequence(kwargs['in_'])
+        if 'where' in kwargs:
+            predicate = ensure_callable(kwargs['where'])
+        else:
+            elem = kwargs['of']
+            predicate = lambda item: item == elem
+
+    len_ = len(list_)
+    start = max(0, min(len_ - 1, kwargs.get('start', 0)))
+    step = kwargs.get('step', 1)
+
+    i = start
+    while 0 <= i < len_:
+        if predicate(list_[i]):
+            return i
+        i += step
+    else:
+        return -1
 
 
 # List manipulation

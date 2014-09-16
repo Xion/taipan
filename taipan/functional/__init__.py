@@ -80,6 +80,7 @@ def ensure_keyword_args(kwargs, mandatory=(), optional=()):
         if len(excess) == 1:
             raise TypeError("unexpected keyword argument '%s'" % excess.pop())
         else:
-            raise TypeError("unexpected keyword arguments: %s" % tuple(excess))
+            raise TypeError(
+                "unexpected keyword arguments: %s" % (tuple(excess),))
 
     return kwargs

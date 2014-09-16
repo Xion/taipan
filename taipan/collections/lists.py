@@ -56,6 +56,9 @@ def lastindex(*args, **kwargs):
 
 def _index(*args, **kwargs):
     """Implementation of list searching."""
+    start = kwargs.pop('start', 0)
+    step = kwargs.pop('step', 1)
+
     if len(args) == 2:
         elem, list_ = args
         ensure_sequence(list_)
@@ -75,8 +78,7 @@ def _index(*args, **kwargs):
             predicate = lambda item: item == elem
 
     len_ = len(list_)
-    start = max(0, min(len_ - 1, kwargs.get('start', 0)))
-    step = kwargs.get('step', 1)
+    start = max(0, min(len_ - 1, start))
 
     i = start
     while 0 <= i < len_:

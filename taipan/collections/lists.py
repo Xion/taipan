@@ -89,7 +89,7 @@ def lastindex(*args, **kwargs):
 
     .. versionadded:: 0.0.3
     """
-    return _index(*args, start=sys.maxint, step=-1, **kwargs)
+    return _index(*args, start=sys.maxsize, step=-1, **kwargs)
 
 
 def _index(*args, **kwargs):

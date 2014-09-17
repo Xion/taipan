@@ -66,9 +66,11 @@ def _index(*args, **kwargs):
     else:
         ensure_keyword_args(kwargs,
                             mandatory=('in_',), optional=('of', 'where'))
-        if 'of' in kwargs in 'where' in kwargs:
+        if 'of' in kwargs and 'where' in kwargs:
             raise TypeError(
                 "either an item or predicate must be supplied, not both")
+        if not ('of' in kwargs or 'where' in kwargs):
+            raise TypeError("an item or predicate must be supplied")
 
         list_ = ensure_sequence(kwargs['in_'])
         if 'where' in kwargs:

@@ -10,6 +10,7 @@ from taipan.functional import ensure_callable, ensure_keyword_args
 
 __all__ = [
     'head', 'last', 'tail', 'init',
+    'index', 'lastindex',
     'intersperse', 'intercalate', 'concat', 'join', 'flatten',
 ]
 
@@ -47,15 +48,61 @@ def init(list_):
 # Searching for elements
 
 def index(*args, **kwargs):
+    """Search a list for an exact element, or element satisfying a predicate.
+
+    Usage::
+
+        index(element, list_)
+        index(of=element, in_=list_)
+        index(where=predicate, in_=list_)
+
+    :param element, of: Element to search for
+    :param where: Predicate defining an element to search for.
+                  This should be a callable taking a single argument
+                  and returning a boolean result.
+    :param list_, in_: List to search in
+
+    :return: Index of first matching element, or -1 if none was found
+
+    .. versionadded:: 0.0.3
+    """
     return _index(*args, start=0, step=1, **kwargs)
 
 
 def lastindex(*args, **kwargs):
+    """Search a list backwards for an exact element,
+    or element satisfying a predicate.
+
+    Usage::
+
+        lastindex(element, list_)
+        lastindex(of=element, in_=list_)
+        lastindex(where=predicate, in_=list_)
+
+    :param element, of: Element to search for
+    :param where: Predicate defining an element to search for.
+                  This should be a callable taking a single argument
+                  and returning a boolean result.
+    :param list_, in_: List to search in
+
+    :return: Index of the last matching element, or -1 if none was found
+
+    .. versionadded:: 0.0.3
+    """
     return _index(*args, start=sys.maxint, step=-1, **kwargs)
 
 
 def _index(*args, **kwargs):
-    """Implementation of list searching."""
+    """Implementation of list searching.
+
+    :param of: Element to search for
+    :param where: Predicate to search for
+    :param in_: List to search in
+    :param start: Start index for the lookup
+    :param step: Counter step (i.e. in/decrement) for each iteration
+
+    :return: Index of the first element found, or -1
+    """
     start = kwargs.pop('start', 0)
     step = kwargs.pop('step', 1)
 

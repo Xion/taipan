@@ -9,7 +9,7 @@ from taipan.collections.sets import remove_subset
 from taipan.functional import (ensure_argcount, ensure_callable,
                                ensure_keyword_args)
 from taipan.functional.combinators import curry, compose
-from taipan.functional.functions import identity
+from taipan.functional.functions import dotcall, identity
 
 
 __all__ = [
@@ -62,23 +62,26 @@ ABSENT = object()
 
 # Compatibility shims
 
+# Helper function to call a method of a dictionary
+_m = lambda method: compose(dotcall(method), ensure_mapping)
+
 #: Return an iterator over key-value pairs stored within the dictionary.
-iteritems = compose(iter, dict.items) if IS_PY3 else dict.iteritems
+iteritems = compose(iter, _m('items')) if IS_PY3 else _m('iteritems')
 
 #: Return an iterator over keys stored within the dictionary.
-iterkeys = compose(iter, dict.keys) if IS_PY3 else dict.iterkeys
+iterkeys = compose(iter, _m('keys')) if IS_PY3 else _m('iterkeys')
 
 #: Return an iterator over values stored within the dictionary
-itervalues = compose(iter, dict.values) if IS_PY3 else dict.itervalues
+itervalues = compose(iter, _m('values')) if IS_PY3 else _m('itervalues')
 
 #: Return a list of key-value pairs stored within the dictionary.
-items = compose(list, dict.items) if IS_PY3 else dict.items
+items = compose(list, _m('items')) if IS_PY3 else _m('items')
 
 #: Return a list of keys stored within the dictionary.
-keys = compose(list, dict.keys) if IS_PY3 else dict.keys
+keys = compose(list, _m('keys')) if IS_PY3 else _m('keys')
 
 #: Return a list of values stored within the dictionary.
-values = compose(list, dict.values) if IS_PY3 else dict.values
+values = compose(list, _m('values')) if IS_PY3 else _m('values')
 
 
 # Access functions

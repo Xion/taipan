@@ -22,6 +22,8 @@ class _WrappedMethod(object):
     Those methods will be unpacked by :class:`ObjectMetaclass` during creation
     of the class that contains them.
     """
+    __slots__ = ['method', 'modifier']
+
     def __init__(self, method, modifier=None):
         self.method = method
         self.modifier = modifier
@@ -37,7 +39,7 @@ class _WrappedMethod(object):
 
     def __getattribute__(self, attr):
         """Proxy attribute access to underlying method."""
-        if attr in ('method', 'modifier'):
+        if attr in _WrappedMethod.__slots__:
             return object.__getattribute__(self, attr)
         else:
             return getattr(self.method, attr)
@@ -190,3 +192,4 @@ class _OverrideDecorator(object):
 
 class _OverriddenMethod(_WrappedMethod):
     """Wrapper for methods that have been marked with ``@override``."""
+    __slots__ = _WrappedMethod.__slots__

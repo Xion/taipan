@@ -10,6 +10,7 @@ from taipan.functional import (ensure_argcount, ensure_callable,
                                ensure_keyword_args)
 from taipan.functional.combinators import curry, compose
 from taipan.functional.functions import dotcall, identity
+import taipan.lang
 
 
 __all__ = [
@@ -24,7 +25,7 @@ __all__ = [
 
 
 class AbsentDict(dict):
-    """Improved dictionary that supports a special ``ABSENT`` value.
+    """Improved dictionary that supports the special ``ABSENT`` value.
 
     Assigning the ``ABSENT`` value to key will remove the key from dictionary.
     Initializing a key with ``ABSENT`` value will result in key not being
@@ -57,7 +58,8 @@ class AbsentDict(dict):
 
 
 #: Value which indicates that its key is absent from :class:`AbsentDict`.
-ABSENT = object()
+#: This is the same object as ``taipan.lang.ABSENT``.
+ABSENT = taipan.lang.ABSENT
 
 
 # Compatibility shims

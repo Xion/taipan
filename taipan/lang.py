@@ -9,11 +9,12 @@ import keyword
 from numbers import Number
 import re
 
-from taipan._compat import IS_PY3
+from taipan._compat import IS_PY3, metaclass
 from taipan.strings import ensure_string
 
 
 __all__ = [
+    'ABSENT',
     'cast',
 
     'is_contextmanager', 'is_number',
@@ -25,10 +26,52 @@ __all__ = [
 ]
 
 
-__missing = object()
+# Absent value
+
+class AbsentMetaclass(type):
+    """Metaclass for the absent value class."""
+
+    def __instancecheck__(self, instance):
+        return False
+
+    def __subclasscheck__(self, subclass):
+        return False
 
 
-def cast(type_, value, default=__missing):
+@metaclass(AbsentMetaclass)
+class Absent(object):
+    """Absent value class.
+
+    Instances (the only instance, really) of this class represent the lack
+    of any value or object whatsoever. As such, magic methods of this class
+    return falsy result, or are just omitted altogether.
+    """
+    def __new__(cls):
+        if 'ABSENT' in globals():
+            raise RuntimeError("only one absent value object may exist")
+        return super(Absent, cls).__new__(cls)
+
+    def __nonzero__(self):
+        return False
+    __bool__ = __nonzero__
+
+    def __repr__(self):
+        return ''
+
+
+#: Unique object that indicates an absent (missing) value.
+#:
+#: It can be used as default value for optional arguments, among other things.
+#: See also :class:`collections.dicts.AbsentDict`.
+ABSENT = Absent()
+
+del Absent
+del AbsentMetaclass
+
+
+# Type casting
+
+def cast(type_, value, default=ABSENT):
     """Cast a value to given type, optionally returning a default, if provided.
 
     :param type_: Type to cast the ``value`` into
@@ -41,7 +84,7 @@ def cast(type_, value, default=__missing):
     :raise AssertionError: When ``type_`` is not actually a Python type
     :raise TypeError: When cast was unsuccessful and no ``default`` was given
     """
-    # ``type_`` nor being a type would theoretically be grounds for TypeError,
+    # ``type_`` not being a type would theoretically be grounds for TypeError,
     # but since that kind of exception is a valid and expected outcome here
     # in some cases, we use the closest Python has to compilation error instead
     assert isinstance(type_, type)
@@ -55,7 +98,7 @@ def cast(type_, value, default=__missing):
     try:
         return type_(value)
     except exception as e:
-        if default is __missing:
+        if default is ABSENT:
             if to_number:
                 # since Python 3 chains exceptions, we can supply slightly
                 # more relevant error message while still retaining

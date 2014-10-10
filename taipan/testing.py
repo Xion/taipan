@@ -14,6 +14,7 @@ except ImportError:
 from taipan._compat import IS_PY3, imap
 from taipan.collections import is_countable, is_iterable
 from taipan.functional.functions import identity
+from taipan.lang import ABSENT
 from taipan.strings import BaseString, is_string
 
 
@@ -33,8 +34,6 @@ class TestCase(_BaseTestCase):
 
     Includes few additional, convenience assertion methods.
     """
-    __missing = object()
-
     def assertZero(self, argument, msg=None):
         """Assert that ``argument`` is equal to zero."""
         if msg is None:
@@ -98,7 +97,7 @@ class TestCase(_BaseTestCase):
         if not hasattr(obj, attr):
             self.__fail(msg, "%r does not have attribute %r" % (obj, attr))
 
-    def assertThat(self, predicate, argument=__missing, msg=None):
+    def assertThat(self, predicate, argument=ABSENT, msg=None):
         """Assert that a ``predicate`` applies to given ``argument``.
 
         Example::
@@ -108,16 +107,14 @@ class TestCase(_BaseTestCase):
         if not callable(predicate):
             self.fail("%r is not a callable predicate" % (predicate,))
 
-        satisfied = (predicate()
-                     if argument is self.__missing
-                     else predicate(argument))
+        satisfied = predicate() if argument is ABSENT else predicate(argument)
 
         if not satisfied:
-            argument_part = ("" if argument is self.__missing
+            argument_part = ("" if argument is ABSENT
                              else " for %r" % (argument,))
             self.__fail(msg, "predicate not satisfied%s" % (argument_part,))
 
-    def assertAll(self, arg, iterable=__missing, msg=None):
+    def assertAll(self, arg, iterable=ABSENT, msg=None):
         """Assert that all elements of an iterable are truthy
         or satisfy given predicate.
 
@@ -146,7 +143,7 @@ class TestCase(_BaseTestCase):
             self.__fail_unless_iterable(arg)
 
             # shift arguments to the left
-            if msg is None and iterable is not self.__missing:
+            if msg is None and iterable is not ABSENT:
                 msg = iterable
             iterable = arg
 
@@ -154,7 +151,7 @@ class TestCase(_BaseTestCase):
                 if not elem:
                     self.__fail(msg, "falsy element #%d: %r" % (i, elem))
 
-    def assertAny(self, arg, iterable=__missing, msg=None):
+    def assertAny(self, arg, iterable=ABSENT, msg=None):
         """Assert that at least one element of an iterable is truthy
         or satisfies given predicate.
 
@@ -178,7 +175,7 @@ class TestCase(_BaseTestCase):
             self.__fail_unless_iterable(arg)
 
             # shift arguments to the left
-            if msg is None and iterable is not self.__missing:
+            if msg is None and iterable is not ABSENT:
                 msg = iterable
 
             if not any(arg):

@@ -4,6 +4,7 @@ Modifiers ("annotation" decorators) for classes and class members.
 import abc
 import inspect
 
+from taipan.lang import ABSENT
 from taipan.objective import _get_first_arg_name
 from taipan.objective.base import (_ABCMetaclass, _ABCObjectMetaclass,
                                    ObjectMetaclass)
@@ -19,7 +20,7 @@ class _WrappedMethod(object):
     """Wrapper for methods that have been marked with a modifier.
 
     Those methods will be unpacked by :class:`ObjectMetaclass` during creation
-    of the class which contains them.
+    of the class that contains them.
     """
     def __init__(self, method, modifier=None):
         self.method = method
@@ -122,10 +123,7 @@ def final(arg):
 
 # @override
 
-__missing = object()
-
-
-def override(base=__missing):
+def override(base=ABSENT):
     """Mark a method as overriding a corresponding method from superclass.
 
     :param base:
@@ -153,7 +151,7 @@ def override(base=__missing):
         return decorator(arg)
 
     # indirect (but simple) application of the modifier through ``@override()``
-    if arg is __missing:
+    if arg is ABSENT:
         return _OverrideDecorator(None)
 
     # full-blown application, with base class specified

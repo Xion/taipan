@@ -63,6 +63,8 @@ class Absent(object):
 #:
 #: It can be used as default value for optional arguments, among other things.
 #: See also :class:`collections.dicts.AbsentDict`.
+#:
+#: .. versionadded:: 0.0.3
 ABSENT = Absent()
 
 del Absent

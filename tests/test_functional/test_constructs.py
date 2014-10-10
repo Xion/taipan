@@ -5,6 +5,7 @@ import collections
 from contextlib import contextmanager
 
 from taipan._compat import IS_PY26, IS_PY3
+from taipan.lang import ABSENT
 from taipan.testing import TestCase, skipIf, skipUnless
 
 import taipan.functional.constructs as __unit__
@@ -329,7 +330,7 @@ class Var(TestCase):
 
     def test_ctor__argless(self):
         var = __unit__.Var()
-        self.assertIs(__unit__.Var.ABSENT, var.value)
+        self.assertIs(ABSENT, var.value)
 
     def test_ctor__none(self):
         var = __unit__.Var(None)
@@ -417,7 +418,7 @@ class Var(TestCase):
 
     def test_set__from_absent__to_absent(self):
         var = __unit__.Var()
-        var.set(__unit__.Var.ABSENT)
+        var.set(ABSENT)
         self._assertIsAbsent(var)
 
     def test_set__from_absent__to_present(self):
@@ -437,7 +438,7 @@ class Var(TestCase):
 
     def test_set__from_present__to_absent(self):
         var = __unit__.Var(self.SIMPLE_VALUE)
-        var.set(__unit__.Var.ABSENT)
+        var.set(ABSENT)
         self._assertIsAbsent(var)
 
     def test_transform__none(self):
@@ -533,7 +534,7 @@ class Var(TestCase):
 
     def _assertIsAbsent(self, var):
         # intentionally bypass Var.has_value(), as this tests it indirectly
-        self.assertIs(__unit__.Var.ABSENT, var.value)
+        self.assertIs(ABSENT, var.value)
 
     @contextmanager
     def _assertRaisesValueAbsent(self):

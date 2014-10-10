@@ -10,7 +10,7 @@ from taipan.collections import (ensure_iterable, ensure_ordered_mapping,
                                 is_mapping)
 from taipan.functional import ensure_callable
 from taipan.functional.functions import none
-from taipan.lang import ensure_contextmanager
+from taipan.lang import ABSENT, ensure_contextmanager
 
 
 __all__ = [
@@ -20,9 +20,6 @@ __all__ = [
 
 
 # Statements
-
-__missing = object()
-
 
 def pass_(*args, **kwargs):
     """Do nothing, swallowing any and all possible arguments
@@ -37,7 +34,7 @@ def pass_(*args, **kwargs):
 print_ = getattr(builtins, 'print')
 
 
-def raise_(exception=__missing, *args, **kwargs):
+def raise_(exception=ABSENT, *args, **kwargs):
     """Raise (or re-raises) an exception.
 
     :param exception: Exception object to raise, or an exception class.
@@ -45,7 +42,7 @@ def raise_(exception=__missing, *args, **kwargs):
                       to the exception's constructor.
                       If omitted, the currently handled exception is re-raised.
     """
-    if exception is __missing:
+    if exception is ABSENT:
         raise
     else:
         if inspect.isclass(exception):
@@ -206,10 +203,12 @@ class Var(object):
     .. versionchanged:: 0.0.2
        Converting a :class:`Var` to :type:`bool` (e.g. ``if`` condition)
        is now equivalent of calling :meth:`has_value` on it.
+
+    .. versionchanged:: 0.0.3
+       ``taipan.lang.ABSENT`` is now used to indicate absent value.
+       ``Var.ABSENT`` has been removed.
     """
     __slots__ = ['value', '__weakref__']
-
-    ABSENT = object()
 
     def __init__(self, value=ABSENT):
         """Constructor.
@@ -226,7 +225,7 @@ class Var(object):
 
     def clear(self):
         """Clears the variable, making it uninitialized."""
-        self.value = self.ABSENT
+        self.value = ABSENT
 
     def dec(self, by=1):
         """Decrement the value stored in this variable.
@@ -250,7 +249,7 @@ class Var(object):
         """Checks whether the variable has a value.
         :return: True if variable has a value, False otherwise
         """
-        return self.value is not self.ABSENT
+        return self.value is not ABSENT
 
     def inc(self, by=1):
         """Increment the value stored in this variable.
@@ -264,6 +263,7 @@ class Var(object):
         """Sets a new value of this variable.
         :param value: The value to set
         """
+        # TODO(xion): consider raising ValueError if new value is ABSENT
         self.value = value
 
     def transform(self, func):

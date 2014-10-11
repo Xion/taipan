@@ -6,16 +6,18 @@ import operator
 from taipan.collections.lists import flatten
 from taipan.functional import (ensure_argcount, ensure_callable,
                                ensure_keyword_args)
+from taipan.lang import is_identifier
 from taipan.strings import ensure_string
 
 
 __all__ = [
-    'identity', 'const', 'true', 'false', 'none', 'zero', 'one', 'empty',
+    'identity', 'packing',
+    'const', 'true', 'false', 'none', 'zero', 'one', 'empty',
     'attr_func', 'key_func', 'item_func', 'dotcall',
 ]
 
 
-# Constant functions
+# Identity functions
 
 def identity():
     """Returns an identity function.
@@ -23,6 +25,17 @@ def identity():
     """
     return lambda x: x
 
+
+def packing():
+    """Creates a function that returns all positional arguments
+    that were passed to it as an argument tuple.
+
+    ... versionadded:: 0.0.2
+    """
+    return lambda *args: args
+
+
+# Constant functions
 
 def const(k):
     """Creates a function that always returns the same value.
@@ -81,15 +94,18 @@ def attr_func(*attrs, **kwargs):
     :return: Unary attribute function
     """
     ensure_argcount(attrs, min_=1)
-    attrs = map(ensure_string, attrs)
-    # TODO(xion): verify attribute names correctness
+    ensure_keyword_args(kwargs, optional=('default',))
 
-    # allow arguments with dots, interpreting them as multiple attributes,
-    # e.g. ``attr_func('a.b')`` as ``attr_func('a', 'b')``
+    # preprocess argument list:
+    # * allow dots in arguments, interpreting them as multiple attributes,
+    #   e.g. ``attr_func('a.b')`` as ``attr_func('a', 'b')``
+    # * make sure the attribute names are valid Python identifiers
+    attrs = map(ensure_string, attrs)
     attrs = flatten(attr.split('.') if '.' in attr else [attr]
                     for attr in attrs)
-
-    ensure_keyword_args(kwargs, optional=('default',))
+    for attr in attrs:
+        if not is_identifier(attr):
+            raise ValueError("'%s' is not a valid attribute name", attr)
 
     if 'default' in kwargs:
         default = kwargs['default']
@@ -129,9 +145,9 @@ def key_func(*keys, **kwargs):
     :return: Unary key function
     """
     ensure_argcount(keys, min_=1)
-    keys = list(map(ensure_string, keys))
-
     ensure_keyword_args(kwargs, optional=('default',))
+
+    keys = list(map(ensure_string, keys))
 
     if 'default' in kwargs:
         default = kwargs['default']

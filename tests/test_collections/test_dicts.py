@@ -286,13 +286,36 @@ class Get(TestCase):
             __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
 
 
-class Select(TestCase):
+class PeekItem(TestCase):
+    DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekitem(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekitem(object())
+
+    def test_dict__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.peekitem({})
+
+    def test_dict__normal(self):
+        key, value = __unit__.peekitem(self.DICT)
+        self.assertIn(key, self.DICT)
+        self.assertEquals(value, self.DICT[key])
+
+
+class _Projection(TestCase):
     DICT = dict(zip(('foo', 'bar', 'baz', 'thud', 'qux'), range(5)))
 
     STRICT_KEYS = ('foo', 'bar')
     EXTRANEOUS_KEY = 'blah'
     NONSTRICT_KEYS = ('bar', 'qux', EXTRANEOUS_KEY)
 
+
+class Select(_Projection):
     SELECTED_BY_STRICT_KEYS = {'foo': 0, 'bar': 1}
     SELECTED_BY_NONSTRICT_KEYS = {'bar': 1, 'qux': 4}
 
@@ -339,6 +362,54 @@ class Select(TestCase):
             __unit__.select(self.NONSTRICT_KEYS, self.DICT, strict=False))
 
 
+class Omit(_Projection):
+    WITH_STRICT_KEYS_OMITTED = {'baz': 2, 'thud': 3, 'qux': 4}
+    WITH_NONSTRICT_KEYS_OMITTED = {'foo': 0, 'baz': 2, 'thud': 3}
+
+    def test_keys__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(None, self.DICT)
+
+    def test_keys__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(object(), self.DICT)
+
+    def test_keys__empty(self):
+        self.assertEquals(self.DICT, __unit__.omit((), self.DICT))
+
+    def test_from__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(self.STRICT_KEYS, None)
+
+    def test_from__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.omit(self.STRICT_KEYS, object())
+
+    def test_from__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.omit(self.STRICT_KEYS, {}, strict=True)
+        self.assertEquals(
+            {}, __unit__.omit(self.NONSTRICT_KEYS, {}, strict=False))
+
+    def test_strict__true(self):
+        self.assertEquals(
+            self.WITH_STRICT_KEYS_OMITTED,
+            __unit__.omit(self.STRICT_KEYS, self.DICT, strict=True))
+
+        with self.assertRaises(KeyError) as r:
+            __unit__.omit(self.NONSTRICT_KEYS, self.DICT, strict=True)
+        self.assertIn(repr(self.EXTRANEOUS_KEY), str(r.exception))
+
+    def test_strict__false(self):
+        self.assertEquals(
+            self.WITH_STRICT_KEYS_OMITTED,
+            __unit__.omit(self.STRICT_KEYS, self.DICT, strict=False))
+        self.assertEquals(
+            self.WITH_NONSTRICT_KEYS_OMITTED,
+            __unit__.omit(self.NONSTRICT_KEYS, self.DICT, strict=False))
+
+
+
 # Filter functions
 
 class _Filter(TestCase):
@@ -346,13 +417,19 @@ class _Filter(TestCase):
     FALSY_DICT = {'foo': 0, '': 1, False: 2, 'bar': 3, (): 4, 'baz': ()}
 
 
-class FilterItems(_Filter):
+class _FilterItems(_Filter):
     COALESCED_FALSY_DICT = {'bar': 3}
 
-    FILTER = staticmethod(
-        lambda k, v: (k and k[0] == 'b') or (v and v % 2 == 1))
+    KEY_FILTER = staticmethod(lambda k: k and k[0] == 'b')
+    VALUE_FILTER = staticmethod(lambda v: v and v %2 == 1)
+
     FILTERED_TRUTHY_DICT = {'foo': 1, 'bar': 2, 'baz': 3}
     FILTERED_FALSY_DICT = {'': 1, 'bar': 3, 'baz': ()}
+
+
+class FilterItems(_FilterItems):
+    FILTER = staticmethod(lambda item: _FilterItems.KEY_FILTER(item[0]) or
+                                       _FilterItems.VALUE_FILTER(item[1]))
 
     def test_function__none(self):
         self.assertEquals(self.TRUTHY_DICT,
@@ -362,7 +439,7 @@ class FilterItems(_Filter):
 
     def test_function__non_function(self):
         with self.assertRaises(TypeError):
-            __unit__.filteritems(object(), self.TRUTHY_DICT)
+            __unit__.starfilteritems(object(), self.TRUTHY_DICT)
 
     def test_dict__none(self):
         with self.assertRaises(TypeError):
@@ -383,6 +460,41 @@ class FilterItems(_Filter):
         self.assertEquals(
             self.FILTERED_FALSY_DICT,
             __unit__.filteritems(FilterItems.FILTER, self.FALSY_DICT))
+
+
+class StarFilterItems(_FilterItems):
+    FILTER = staticmethod(lambda k, v: _FilterItems.KEY_FILTER(k) or
+                                       _FilterItems.VALUE_FILTER(v))
+
+    def test_function__none(self):
+        self.assertEquals(self.TRUTHY_DICT,
+                          __unit__.starfilteritems(None, self.TRUTHY_DICT))
+        self.assertEquals(self.COALESCED_FALSY_DICT,
+                          __unit__.starfilteritems(None, self.FALSY_DICT))
+
+    def test_function__non_function(self):
+        with self.assertRaises(TypeError):
+            __unit__.starfilteritems(object(), self.TRUTHY_DICT)
+
+    def test_dict__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.starfilteritems(StarFilterItems.FILTER, None)
+
+    def test_dict__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.starfilteritems(StarFilterItems.FILTER, object())
+
+    def test_dict__empty(self):
+        self.assertEquals({}, __unit__.starfilteritems(None, {}))
+        self.assertEquals({}, __unit__.starfilteritems(self.FILTER, {}))
+
+    def test_filter(self):
+        self.assertEquals(
+            self.FILTERED_TRUTHY_DICT,
+            __unit__.starfilteritems(StarFilterItems.FILTER, self.TRUTHY_DICT))
+        self.assertEquals(
+            self.FILTERED_FALSY_DICT,
+            __unit__.starfilteritems(StarFilterItems.FILTER, self.FALSY_DICT))
 
 
 class FilterKeys(_Filter):
@@ -606,11 +718,18 @@ class _Combine(TestCase):
 
     COMBINED = dict(zip(KEYS, range(5)))
 
+    # dicts used for testing deep= flag
     DEEP_DICT1 = {'foo': {'bar': 1}, 'baz': 'A'}
     DEEP_DICT2 = {'foo': {'qux': 2}, 'thud': 'B'}
     NOT_DEEP_DICT = {'foo': 'a'}
     COMBINED_DEEP_1_2 = {'foo': {'bar': 1, 'qux': 2}, 'baz': 'A', 'thud': 'B'}
     COMBINED_DEEP1_AND_NOT_DEEP = {'foo': 'a', 'baz': 'A'}
+
+    # dicts used for testing overwrite= flag
+    BASE_DICT = {'foo': 1, 'bar': 2}
+    OVERWRITING_DICT = {'foo': 10, 'baz': 30}
+    OVERWRITTEN_DICT = {'foo': 10, 'bar': 2, 'baz': 30}
+    NOT_OVERWRITTEN_DICT = {'foo': 1, 'bar': 2, 'baz': 30}
 
 
 class Merge(_Combine):
@@ -671,6 +790,35 @@ class Merge(_Combine):
     def test_deep__two_args__deep_and_shallow(self):
         result = __unit__.merge(self.DEEP_DICT1, self.NOT_DEEP_DICT, deep=True)
         self.assertEquals(self.MERGED_DEEP1_AND_NOT_DEEP, result)
+
+    def test_overwrite__no_args(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(overwrite=False)
+
+    def test_overwrite__single_arg__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(None, overwrite=False)
+
+    def test_overwrite__single_arg__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.merge(object(), overwrite=False)
+
+    def test_overwrite__single_arg__dict(self):
+        result = __unit__.merge(self.BASE_DICT, overwrite=False)
+        self.assertEquals(self.BASE_DICT, result)
+        self.assertIsNot(self.BASE_DICT, result)
+
+    def test_overwrite__two_args__true(self):
+        self.assertEquals(
+            self.OVERWRITTEN_DICT,
+            __unit__.merge(self.BASE_DICT, self.OVERWRITING_DICT,
+                           overwrite=True))
+
+    def test_overwrite__two_args__false(self):
+        self.assertEquals(
+            self.NOT_OVERWRITTEN_DICT,
+            __unit__.merge(self.BASE_DICT, self.OVERWRITING_DICT,
+                           overwrite=False))
 
 
 class Extend(_Combine):
@@ -762,6 +910,37 @@ class Extend(_Combine):
 
         self.assertIs(original, extended)
         self.assertEquals(self.EXTENDED_DEEP1_AND_NOT_DEEP, extended)
+
+    def test_overwrite__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(None, overwrite=False)
+
+    def test_overwrite__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.extend(object(), overwrite=False)
+
+    def test_overwrite__empty_dicts(self):
+        original = {}
+        extended = __unit__.extend(original, {}, overwrite=False)
+
+        self.assertIs(original, extended)
+        self.assertEquals({}, extended)
+
+    def test_overwrite__true(self):
+        original = self.BASE_DICT.copy()
+        extended = __unit__.extend(original, self.OVERWRITING_DICT,
+                                   overwrite=True)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.OVERWRITTEN_DICT, extended)
+
+    def test_overwrite__false(self):
+        original = self.BASE_DICT.copy()
+        extended = __unit__.extend(original, self.OVERWRITING_DICT,
+                                   overwrite=False)
+
+        self.assertIs(original, extended)
+        self.assertEquals(self.NOT_OVERWRITTEN_DICT, extended)
 
 
 # Other transformation functions

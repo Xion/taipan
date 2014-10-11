@@ -5,12 +5,52 @@ from itertools import chain, combinations
 from numbers import Integral
 
 from taipan._compat import imap, xrange
-from taipan.collections import ensure_countable, is_set
+from taipan.collections import (ensure_countable, ensure_iterable, ensure_set,
+                                is_set)
 from taipan.collections.tuples import is_tuple
 
 
-__all__ = ['k_subsets', 'power', 'powerset', 'trivial_partition']
+__all__ = [
+    'peek',
+    'remove_subset',
+    'k_subsets', 'power', 'powerset', 'trivial_partition',
+]
 
+
+# Access functions
+
+def peek(set_):
+    """Return an arbitrary set element.
+    :raise KeyError: If the set is empty
+
+    ..versionadded:: 0.0.3
+    """
+    ensure_set(set_)
+    if not set_:
+        raise KeyError("peek into an empty set")
+    return next(iter(set_))
+
+
+# Set operations
+
+def remove_subset(set_, subset):
+    """Remove a subset from given set.
+
+    This is essentially an extension of :func:`set.remove`
+    to work with more than one set element.
+
+    :raise KeyError: If some element from ``subset`` is not present in ``set_``
+
+    .. versionadded:: 0.0.2
+    """
+    ensure_set(set_)
+    ensure_iterable(subset)
+
+    for elem in subset:
+        set_.remove(elem)
+
+
+# Subset generation
 
 def k_subsets(set_, k):
     """Return subsets of given set with given cardinality.

@@ -38,6 +38,10 @@ class _UnaryCombinator(_Combinator):
     ARG_AND_KWARG = ((42,), {'foo': 1})
     ARGS_AND_KWARGS = ((13, 42), {'foo': 1, 'bar': 2})
 
+    def _invoke(self, func, argspec):
+        varargs, kwargs = argspec
+        return func(*varargs, **kwargs)
+
 
 class Uncurry(_UnaryCombinator):
 
@@ -78,21 +82,26 @@ class Flip(_UnaryCombinator):
 
     def test_callable__positional_args(self):
         flipped = __unit__.flip(Flip.VERBATIM)
-        self.assertEquals(self.SINGLE_VARARG, flipped(*self.SINGLE_VARARG))
         self.assertEquals(
-            self._reverse_first(self.TWO_VARARGS), flipped(*self.TWO_VARARGS))
+            self.SINGLE_VARARG, self._invoke(flipped, self.SINGLE_VARARG))
+        self.assertEquals(
+            self._reverse_first(self.TWO_VARARGS),
+            self._invoke(flipped, self.TWO_VARARGS))
 
     def test_callable__keyword_args(self):
         flipped = __unit__.flip(Flip.VERBATIM)
-        self.assertEquals(self.SINGLE_KWARG, flipped(*self.SINGLE_KWARG))
-        self.assertEquals(self.TWO_KWARGS, flipped(*self.TWO_KWARGS))
+        self.assertEquals(
+            self.SINGLE_KWARG, self._invoke(flipped, self.SINGLE_KWARG))
+        self.assertEquals(
+            self.TWO_KWARGS, self._invoke(flipped, self.TWO_KWARGS))
 
     def test_callable__both(self):
         flipped = __unit__.flip(Flip.VERBATIM)
-        self.assertEquals(self.ARG_AND_KWARG, flipped(*self.ARG_AND_KWARG))
+        self.assertEquals(
+            self.ARG_AND_KWARG, self._invoke(flipped, self.ARG_AND_KWARG))
         self.assertEquals(
             self._reverse_first(self.ARGS_AND_KWARGS),
-            flipped(*self.ARGS_AND_KWARGS))
+            self._invoke(flipped, self.ARGS_AND_KWARGS))
 
     # Utility functions
 

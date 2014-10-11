@@ -1,6 +1,8 @@
 """
 Tests for .collections.sets module.
 """
+from contextlib import contextmanager
+
 from taipan._compat import xrange
 from taipan.collections import is_set
 from taipan.collections.tuples import is_tuple
@@ -9,12 +11,119 @@ from taipan.testing import TestCase
 import taipan.collections.sets as __unit__
 
 
-class _SubsetOperation(TestCase):
+class Peek(TestCase):
+    SET = set(xrange(3))
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.peek(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.peek(object())
+
+    def test_non_set_iterable(self):
+        with self.assertRaises(TypeError):
+            __unit__.peek([42])
+
+    def test_set__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.peek(set())
+
+    def test_set__normal(self):
+        element = __unit__.peek(self.SET)
+        self.assertIn(element, self.SET)
+
+
+class RemoveSubset(TestCase):
+    SINGLETON = set(['foo'])
+    SET = set('foo bar baz'.split())
+    DIFFERENCE = SET - SINGLETON
+
+    def test_set__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.remove_subset(None, set())
+
+    def test_set__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.remove_subset(object(), set())
+
+    def test_subset__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.remove_subset(set(), None)
+
+    def test_subset__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.remove_subset(set(), object())
+
+    def test_empty_sets(self):
+        s = set()
+        __unit__.remove_subset(s, set())
+        self.assertEmpty(s)
+
+    def test_empty_set__empty_iterable_subset(self):
+        s = set()
+        __unit__.remove_subset(s, ())
+        self.assertEmpty(s)
+
+    def test_empty_set__nonempty_subset(self):
+        s = set()
+        with self._assertKeyError(*self.SINGLETON):
+            __unit__.remove_subset(s, self.SINGLETON)
+
+    def test_singleton_set__empty_subset(self):
+        s = self.SINGLETON.copy()
+        __unit__.remove_subset(s, set())
+        self.assertEquals(self.SINGLETON, s)
+
+    def test_singleton_set__singleton_subset(self):
+        s = self.SINGLETON.copy()
+        __unit__.remove_subset(s, self.SINGLETON)
+        self.assertEmpty(s)
+
+    def test_singleton_set__too_big_a_subset(self):
+        s = self.SINGLETON.copy()
+        with self._assertKeyError(*self.DIFFERENCE):
+            __unit__.remove_subset(s, self.SET)
+
+    def test_set__empty_subset(self):
+        s = self.SET.copy()
+        __unit__.remove_subset(s, set())
+        self.assertEquals(self.SET, s)
+
+    def test_set__singleton_subset(self):
+        s = self.SET.copy()
+        __unit__.remove_subset(s, self.SINGLETON)
+        self.assertEquals(self.DIFFERENCE, s)
+
+    def test_set__same_one_as_subset(self):
+        s = self.SET.copy()
+        __unit__.remove_subset(s, self.SET)
+        self.assertEmpty(s)
+
+    # Utility finctions
+
+    @contextmanager
+    def _assertKeyError(self, *keys):
+        """Assert that code raises KeyError with one of given keys."""
+        with self.assertRaises(KeyError) as r:
+            yield r
+
+        msg = str(r.exception)
+        self.assertAny(
+            lambda key: repr(key) == msg, keys,
+            msg="expected KeyError not raised; got %s instead of one of %s" % (
+                msg, list(map(repr, keys))))
+
+
+# Subset generation
+
+class _SubsetGeneration(TestCase):
     TWO_ELEMS_TUPLE = (1, 2)
     TWO_ELEMS_SET = set([1, 2])
 
 
-class KSubsets(_SubsetOperation):
+class KSubsets(_SubsetGeneration):
 
     def test_set__none(self):
         with self.assertRaises(TypeError):
@@ -65,7 +174,7 @@ class KSubsets(_SubsetOperation):
             __unit__.k_subsets(self.TWO_ELEMS_SET, len(self.TWO_ELEMS_SET) + 1)
 
 
-class Power(_SubsetOperation):
+class Power(_SubsetGeneration):
     POWERSET_OF_TWO_ELEMS_TUPLE = [(), (1,), (2,), (1, 2)]
     POWERSET_OF_TWO_ELEMS_SET = [set(), set([1]), set([2]), set([1, 2])]
 
@@ -113,7 +222,7 @@ class Power(_SubsetOperation):
         self.assertEquals(2 ** len(self.EIGHT_ELEMS_SET), len(powerset))
 
 
-class TrivialPartition(_SubsetOperation):
+class TrivialPartition(_SubsetGeneration):
     TRIVIAL_PARTITION_OF_TWO_ELEMS_TUPLE = [(1,), (2,)]
     TRIVIAL_PARTITION_OF_TWO_ELEMS_SET = [set((1,)), set((2,))]
 

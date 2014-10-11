@@ -9,6 +9,7 @@ with ``sys.version_info`` being perhaps the most well known one).
 """
 from numbers import Integral
 
+from taipan._compat import xrange
 from taipan.collections import ensure_iterable, ensure_sequence
 
 
@@ -19,7 +20,7 @@ __all__ = [
     'ensure_single', 'ensure_triple', 'ensure_quadruple', 'ensure_quintuple',
 
     'first', 'second', 'third', 'fourth', 'fifth',
-    'select',
+    'select', 'pick', 'omit',
 ]
 
 
@@ -205,6 +206,41 @@ def select(indices, from_, strict=False):
         len_ = len(from_)
         return from_.__class__(from_[index] for index in indices
                                if 0 <= index < len_)
+
+
+#: Alias for :func:`select`.
+#: .. versionadded: 0.0.3
+pick = select
+
+
+def omit(indices, from_, strict=False):
+    """Returns a subsequence from given tuple, omitting specified indices.
+
+    :param indices: Iterable of indices to exclude
+    :param strict: Whether ``indices`` are required to exist in the tuple
+
+    :return: Tuple without elements of specified indices
+
+    :raise IndexError: If ``strict`` is True and one of ``indices``
+                       is out of range.
+
+    .. versionadded:: 0.0.3
+    """
+    from taipan.collections.sets import remove_subset
+
+    ensure_iterable(indices)
+    ensure_sequence(from_)
+
+    if strict:
+        remaining_indices = set(xrange(len(from_)))
+        try:
+            remove_subset(remaining_indices, indices)
+        except KeyError as e:
+            raise IndexError(int(str(e)))
+    else:
+        remaining_indices = set(xrange(len(from_))) - set(indices)
+
+    return from_.__class__(from_[index] for index in remaining_indices)
 
 
 # Utility functions

@@ -2,7 +2,6 @@
 Functional programming utilities.
 """
 from taipan.collections import ensure_iterable, ensure_mapping, ensure_sequence
-from taipan.strings import ensure_string
 
 
 def ensure_callable(arg):
@@ -59,6 +58,8 @@ def ensure_keyword_args(kwargs, mandatory=(), optional=()):
 
     :raise TypeError: When conditions are not met
     """
+    from taipan.strings import ensure_string
+
     ensure_mapping(kwargs)
     mandatory = list(map(ensure_string, ensure_iterable(mandatory)))
     optional = list(map(ensure_string, ensure_iterable(optional)))
@@ -79,6 +80,7 @@ def ensure_keyword_args(kwargs, mandatory=(), optional=()):
         if len(excess) == 1:
             raise TypeError("unexpected keyword argument '%s'" % excess.pop())
         else:
-            raise TypeError("unexpected keyword arguments: %s" % tuple(excess))
+            raise TypeError(
+                "unexpected keyword arguments: %s" % (tuple(excess),))
 
     return kwargs

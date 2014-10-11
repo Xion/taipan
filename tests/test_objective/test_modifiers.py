@@ -1,12 +1,189 @@
 """
 Tests for .objective.modifiers module.
 """
+import abc
+
 from taipan.objective.base import Object
-from taipan.testing import skipIf
+from taipan.functional.functions import const
 
 from tests.test_objective.test_base import _UniversalBaseClass
 import taipan.objective.modifiers as __unit__
 
+
+# @abstract
+
+class _Abstract(_UniversalBaseClass):
+
+    def _assertIsABC(self, class_):
+        self.assertIsSubclass(type(class_), abc.ABCMeta)
+
+    def _assertCantInstantiate(self, class_, *args, **kwargs):
+        with self.assertRaises(TypeError) as r:
+            class_(*args, **kwargs)
+
+        msg = str(r.exception)
+        self.assertIn("instantiate", msg)
+        self.assertIn(class_.__name__, msg)
+
+    def _create_abstract_method_class(self, base, method=None):
+        method = method or (lambda self: None)
+
+        @__unit__.abstract
+        class Foo(base):
+            @__unit__.abstract.method
+            def foo(self):
+                return method(self)
+
+        return Foo
+
+
+class Abstract(_Abstract):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.abstract(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.abstract(object())
+
+    def test_function(self):
+        with self.assertRaises(TypeError):
+            @__unit__.abstract
+            def foo():
+                pass
+
+
+class Abstract_StandardClasses(_Abstract):
+    """Tests for @abstract modifier as applied to standard Python classes."""
+
+    def test_class__empty(self):
+        @__unit__.abstract
+        class Foo(object):
+            pass
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_class__with_abstract_method(self):
+        Foo = self._create_abstract_method_class()
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_class__with_abstract_property(self):
+        @__unit__.abstract
+        class Foo(object):
+            @__unit__.abstract.property
+            def foo(self):
+                pass
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_inheritance__without_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            pass
+
+        self._assertCantInstantiate(Bar)
+
+    def test_inheritance__with_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            def foo(self):
+                pass
+
+        Bar().foo()
+
+    def test_inheritance__with_override__and_super_call(self):
+        retval = 42
+        Foo = self._create_abstract_method_class(method=const(retval))
+
+        class Bar(Foo):
+            def foo(self):
+                return super(Bar, self).foo()
+
+        self.assertEquals(retval, Bar().foo())
+
+    # Utility functions
+
+    def _create_abstract_method_class(self, method=None):
+        return super(Abstract_StandardClasses, self) \
+            ._create_abstract_method_class(base=object, method=method)
+
+
+class Abstract_ObjectiveClasses(_Abstract):
+    """Tests for @abstract modifier as applied to our 'objective' classes
+    (descendants of :class:`taipan.objective.base.Object`).
+    """
+    def test_class__empty(self):
+        @__unit__.abstract
+        class Foo(Object):
+            pass
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_class__with_abstract_method(self):
+        Foo = self._create_abstract_method_class()
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_class__with_abstract_property(self):
+        @__unit__.abstract
+        class Foo(Object):
+            @__unit__.abstract.property
+            def foo(self):
+                pass
+
+        self._assertIsABC(Foo)
+        self._assertCantInstantiate(Foo)
+
+    def test_inheritance__without_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            pass
+
+        self._assertCantInstantiate(Bar)
+
+    def test_inheritance__with_override__but_no_modifier(self):
+        Foo = self._create_abstract_method_class()
+
+        with self._assertRaisesMissingOverrideException():
+            class Bar(Foo):
+                def foo(self):  # no ``@override``
+                    pass
+
+    def test_inheritance__with_override(self):
+        Foo = self._create_abstract_method_class()
+        class Bar(Foo):
+            @__unit__.override
+            def foo(self):
+                pass
+
+        Bar().foo()
+
+    def test_inheritance__with_override__and_super_call(self):
+        retval = 42
+        Foo = self._create_abstract_method_class(method=const(retval))
+
+        class Bar(Foo):
+            @__unit__.override
+            def foo(self):
+                return super(Bar, self).foo()
+
+        self.assertEquals(retval, Bar().foo())
+
+    # Utility functions
+
+    def _create_abstract_method_class(self, method=None):
+        return super(Abstract_ObjectiveClasses, self) \
+            ._create_abstract_method_class(base=Object, method=method)
+
+
+# @final
 
 class Final(_UniversalBaseClass):
 
@@ -23,6 +200,9 @@ class Final(_UniversalBaseClass):
             @__unit__.final
             def foo():
                 pass
+
+
+class Final_Classes(_UniversalBaseClass):
 
     def test_class__incompatible(self):
         with self.assertRaises(ValueError):
@@ -58,6 +238,96 @@ class Final(_UniversalBaseClass):
         return Foo
 
 
+class Final_Methods(_UniversalBaseClass):
+
+    def test_method__normal__attempt_override(self):
+        Base = self._create_class_with_final_method()
+
+        with self._assertRaisesOverrideFinalException():
+            class Foo(Base):
+                @__unit__.override
+                def florb(self):
+                    pass
+
+    def test_method__normal__attempt_hiding(self):
+        Base = self._create_class_with_final_method()
+
+        with self._assertRaisesHideFinalException():
+            class Foo(Base):
+                def florb(self):
+                    pass
+
+    def test_method__override__attempt_further_override(self):
+        Foo = self._create_class_with_final_override_method()
+
+        with self._assertRaisesOverrideFinalException():
+            class Bar(Foo):
+                @__unit__.override
+                def florb(self):
+                    pass
+
+    def test_method__override__attempt_hiding(self):
+        Foo = self._create_class_with_final_override_method()
+
+        with self._assertRaisesHideFinalException():
+            class Bar(Foo):
+                def florb(self):
+                    pass
+
+    def test_method__reversed_final_and_override(self):
+        """Test for 'reversed' application of @override and @final
+        on a single method.
+
+        This is 'reversed' in contrast to the recommended and more readable
+        way of placing @final before @override, as mentioned by docs
+        of the former. Nevertheless, the reversed way should still work.
+        """
+        class Base(Object):
+            def florb(self):
+                pass
+
+        class Foo(Base):
+            @__unit__.override
+            @__unit__.final
+            def florb(self):
+                pass
+
+        with self._assertRaisesOverrideFinalException():
+            class Bar(Foo):
+                @__unit__.override
+                def florb(self):
+                    pass
+        with self._assertRaisesHideFinalException():
+            class Bar(Foo):
+                def florb(self):
+                    pass
+
+    # Utility functions
+
+    def _create_class_with_final_method(self):
+        class Base(Object):
+            @__unit__.final
+            def florb(self):
+                pass
+
+        return Base
+
+    def _create_class_with_final_override_method(self):
+        class Base(Object):
+            def florb(self):
+                pass
+
+        class Foo(Base):
+            @__unit__.final
+            @__unit__.override
+            def florb(self):
+                pass
+
+        return Foo
+
+
+# @override
+
 class _Override(_UniversalBaseClass):
 
     def _create_regular_class(self):
@@ -89,12 +359,6 @@ class Override_Basics(_Override):
     def test_some_object(self):
         with self.assertRaises(TypeError):
             __unit__.override(object())
-
-    def test_class(self):
-        with self.assertRaises(TypeError):
-            @__unit__.override
-            class Foo(object):
-                pass
 
     def test_regular_function(self):
         with self.assertRaises(TypeError):
@@ -144,6 +408,59 @@ class Override_InstanceMethods(_Override):
 
         class Bar(Base, Object):
             @__unit__.override
+            def florb(self):
+                pass
+
+
+class Override_InstanceMethods_WithExplicitBase(_Override):
+    OBJECT_CLASSNAME = 'taipan.objective.base.Object'
+
+    class InnerClass(object):
+        def florb(self):
+            pass
+
+    def test_override_base__class_object__correct(self):
+        Base = self._create_objective_class()
+
+        class Bar(Base):
+            @__unit__.override(Base)
+            def florb(self):
+                pass
+
+    def test_override_base__class_object__incorrect(self):
+        Base = self._create_objective_class()
+
+        with self._assertRaisesIncorrectOverrideBase(Object, correct=Base):
+            class Bar(Base):
+                @__unit__.override(Object)
+                def florb(self):
+                    pass
+
+    def test_override_base__class_name(self):
+        # we can use the universal base Object class itself to avoid
+        # introducing another class in the global scope
+        with self._assertRaisesUnnecessaryOverrideException():
+            class Foo(Object):
+                @__unit__.override(self.OBJECT_CLASSNAME)
+                def foo(self):
+                    pass
+
+    def test_override_base__class_name__incorrect(self):
+        Base = self._create_objective_class()
+
+        with self._assertRaisesIncorrectOverrideBase(Object, correct=Base):
+            class Bar(Base):
+                @__unit__.override(self.OBJECT_CLASSNAME)
+                def florb(self):
+                    pass
+
+    def test_override_base__class_name__inner_class(self):
+        Base = self.InnerClass
+        classname = '.'.join([
+            __name__, self.__class__.__name__, Base.__name__])
+
+        class Bar(Base):
+            @__unit__.override(classname)
             def florb(self):
                 pass
 

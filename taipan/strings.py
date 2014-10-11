@@ -7,9 +7,10 @@ from random import choice, randint
 import re
 import string
 
-from taipan._compat import IS_PY3, imap, xrange
+from taipan._compat import IS_PY3, ifilter, imap, xrange
 from taipan.collections import ensure_iterable, is_iterable, is_mapping
 from taipan.collections.tuples import is_pair
+from taipan.functional import ensure_keyword_args
 
 
 __all__ = [
@@ -118,6 +119,7 @@ def split(s, by=None, maxsplit=None):
     if is_iterable(by):
         if not by:
             raise ValueError("empty separator list")
+        by = list(imap(ensure_string, by))
         if not s:
             return ['']  # quickly eliminate trivial case
         or_ = s.__class__('|')
@@ -127,16 +129,64 @@ def split(s, by=None, maxsplit=None):
     raise TypeError("invalid separator")
 
 
-def join(delimiter, iterable):
+def join(delimiter, iterable, **kwargs):
     """Returns a string which is a concatenation of strings in ``iterable``,
     separated by given ``delimiter``.
+
+    :param delimiter: Delimiter to put between strings
+    :param iterable: Iterable to join
+
+    Optional keyword arguments control the exact joining strategy:
+
+    :param errors:
+        What to do with erroneous non-strings in the input.
+        Possible values include:
+
+            * ``'ignore'`` (or ``None``)
+            * ``'cast'`` (or ``False``) -- convert non-strings to strings
+            * ``'raise'`` (or ``True``) -- raise exception for any non-strings
+            * ``'replace'`` -- replace non-strings with alternative value
+
+    :param with_: Replacement used when ``errors == 'replace'``.
+                  This can be a string, or a callable taking erroneous value
+                  and returning a string replacement.
+
+    .. versionadded:: 0.0.3
+       Allow to specify error handling policy through ``errors`` parameter
     """
-    # TODO(xion): add arg(s) that control handling Nones (skip/replace/error)
     ensure_string(delimiter)
     ensure_iterable(iterable)
 
-    string_class = delimiter.__class__
-    return delimiter.join(imap(string_class, iterable))
+    ensure_keyword_args(kwargs, optional=('errors', 'with_'))
+    errors = kwargs.get('errors', True)
+
+    if errors in ('raise', True):
+        iterable = imap(ensure_string, iterable)
+    elif errors in ('ignore', None):
+        iterable = ifilter(is_string, iterable)
+    elif errors in ('cast', False):
+        iterable = imap(delimiter.__class__, iterable)
+    elif errors == 'replace':
+        if 'with_' not in kwargs:
+            raise ValueError("'replace' error policy requires specifying "
+                             "replacement through with_=")
+
+        with_ = kwargs['with_']
+        if is_string(with_):
+            replacement = lambda x: with_
+        elif callable(with_):
+            replacement = with_
+        else:
+            raise TypeError("error replacement must be a string or function, "
+                            "got %s" % type(with_).__name__)
+
+        iterable = (x if is_string(x) else ensure_string(replacement(x))
+                    for x in iterable)
+    else:
+        raise TypeError(
+            "%r is not a valid error handling policy for join()" % (errors,))
+
+    return delimiter.join(iterable)
 
 
 # Case conversion
@@ -209,7 +259,6 @@ def replace(needle, with_=None, in_=None):
     if not needle:
         raise ValueError("replacement needle cannot be empty")
 
-    # TODO(xion): allow for regex needles
     if is_string(needle):
         replacer = Replacer((needle,))
     else:
@@ -263,6 +312,7 @@ class Replacer(object):
         """Provide replacement for string "needles".
 
         :param replacement: Target replacement for needles given in constructor
+        :return: The :class:`Replacement` object
 
         :raise TypeError: If ``replacement`` is not a string
         :raise ReplacementError: If replacement has been already given
@@ -284,6 +334,8 @@ class Replacer(object):
         :raise TypeError: If ``haystack`` if not a string
         :raise ReplacementError: If no replacement(s) have been provided yet
         """
+        from taipan.collections import dicts
+
         ensure_string(haystack)
         if not is_mapping(self._replacements):
             raise ReplacementError("string replacements not provided")
@@ -292,7 +344,7 @@ class Replacer(object):
         if not self._replacements:
             return haystack
         if len(self._replacements) == 1:
-            return haystack.replace(*self._replacements.popitem())
+            return haystack.replace(*dicts.peekitem(self._replacements))
 
         # construct a regex matching any of the needles in the order
         # of descending length (to prevent issues if they contain each other)

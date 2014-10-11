@@ -36,7 +36,7 @@ def flip(f):
     """Flip the order of positonal arguments of given function."""
     ensure_callable(f)
 
-    result = lambda args=(), kwargs=None: f(*reversed(args), **(kwargs or {}))
+    result = lambda *args, **kwargs: f(*reversed(args), **kwargs)
     functools.update_wrapper(result, f, ('__name__', '__module__'))
     return result
 
@@ -111,7 +111,7 @@ def merge(arg, *rest, **kwargs):
         default = ensure_callable(kwargs['default'])
 
     # if more than one argument was given, they must all be functions;
-    # result will be a function that takes multiple arguments (ratrher than
+    # result will be a function that takes multiple arguments (rather than
     # a single collection) and returns a tuple
     unary_result = True
     if rest:

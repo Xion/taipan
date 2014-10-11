@@ -3,6 +3,7 @@ Object-oriented programming utilities.
 """
 import inspect
 
+from taipan import lang
 from taipan.strings import is_string
 
 
@@ -21,8 +22,7 @@ def is_magic(member):
     Magic fields and methods have names that begin and end
     with double underscores, such ``__hash__`` or ``__eq__``.
     """
-    name = _get_member_name(member)
-    return len(name) > 4 and name.startswith('__') and name.endswith('__')
+    return lang.is_magic(_get_member_name(member))
 
 
 # Utility functions

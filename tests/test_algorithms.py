@@ -4,7 +4,7 @@ Tests for .algorithms module.
 from collections import namedtuple
 
 from taipan._compat import IS_PY3, izip, xrange
-from taipan.collections import is_iterable, is_sequence
+from taipan.collections import dicts, is_iterable, is_sequence
 from taipan.collections.tuples import is_tuple
 from taipan.functional import functions ; attr_func = functions.attr_func
 from taipan.testing import TestCase
@@ -404,9 +404,9 @@ class BreadthFirst(_Traversal):
         self.assertItemsEqual([obj], bfs)
 
     def test_start__single_node(self):
-        bfs = __unit__.breadth_first(self._create_node(), self.CHILDREN_FUNC)
-        next(bfs)
-        self.assertEmpty(bfs)
+        node = self._create_node()
+        self.assertItemsEqual(
+            [node], __unit__.breadth_first(node, self.CHILDREN_FUNC))
 
     def test_start__path(self):
         graph = self._create_path(10)
@@ -443,9 +443,9 @@ class DepthFirst(_Traversal):
         self.assertItemsEqual([obj], dfs)
 
     def test_start__single_node(self):
-        dfs = __unit__.depth_first(self._create_node(), self.CHILDREN_FUNC)
-        next(dfs)
-        self.assertEmpty(dfs)
+        node = self._create_node()
+        self.assertItemsEqual(
+            [node], __unit__.depth_first(node, self.CHILDREN_FUNC))
 
     def test_start__path(self):
         graph = self._create_path(10)
@@ -470,3 +470,86 @@ class DepthFirst(_Traversal):
     def test_descend__some_object(self):
         with self.assertRaises(TypeError):
             __unit__.depth_first(self._create_node(), descend=object())
+
+
+class TopologicalOrder(TestCase):
+    class Item(object):
+        """Simple class of items/nodes with dependencies that can be sorted."""
+
+        def __init__(self, name, deps=None):
+            self.name = name
+            self.deps = list(deps or ())
+
+        def __repr__(self):
+            if not self.deps:
+                return "Item(%s)" % (self.name,)
+            return "Item(%s, [<%s dep(s)>])" % (self.name, len(self.deps))
+
+    INCOMING_FUNC = attr_func('deps')
+
+    # Data and utility functions
+
+    NO_DEPS_ITEMS = list(map(Item, ("alice", "amy", "alex")))
+    FIRST_GEN_ITEMS = [Item("bob", deps=("alice",)),
+                       Item("barry", deps=("amy",)),
+                       Item("bart", deps=("alice", "alex"))]
+
+    CIRCULAR_DEPS_ITEMS = [Item("a", deps=("b",)),
+                           Item("b", deps=("a",))]
+
+    def _resolve(self, items):
+        """Turn textual references to items into actual objects.
+
+        Must be called on any of the above test data before passing it
+        to the tested :func:`topological_order` function.
+        """
+        item_dict = dict((item.name, item) for item in items)
+
+        result = []
+        for item in dicts.itervalues(item_dict):
+            item.deps = list(map(item_dict.get, item.deps))
+            result.append(item)
+        return result
+
+    # Tests
+
+    def test_nodes__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.topological_order(None, self.INCOMING_FUNC)
+
+    def test_nodes__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.topological_order(object(), self.INCOMING_FUNC)
+
+    def test_nodes__empty(self):
+        toposorted = __unit__.topological_order((), self.INCOMING_FUNC)
+        self.assertEmpty(toposorted)
+
+    def test_nodes__single__no_incoming(self):
+        for item in self._resolve(self.NO_DEPS_ITEMS):
+            self.assertItemsEqual(
+                [item],
+                __unit__.topological_order([item], self.INCOMING_FUNC))
+
+    def test_nodes__multiple__no_incoming(self):
+        items = self._resolve(self.NO_DEPS_ITEMS)
+        self.assertItemsEqual(
+            items, __unit__.topological_order(items, self.INCOMING_FUNC))
+
+    def test_nodes__multiple__with_deps(self):
+        items = self._resolve(self.NO_DEPS_ITEMS + self.FIRST_GEN_ITEMS)
+        sorted_items = list(__unit__.topological_order(items,
+                                                       self.INCOMING_FUNC))
+
+        # check that every item has its dependencies satisfied
+        # by the items that preceed it
+        for i, item in enumerate(sorted_items):
+            for dep in item.deps:
+                self.assertIn(dep, sorted_items[:i])
+
+    def test_nodes__circular_deps(self):
+        with self.assertRaises(ValueError):  # TODO(xion): more specific error
+            sort_generator =__unit__.topological_order(
+                self._resolve(self.CIRCULAR_DEPS_ITEMS), self.INCOMING_FUNC)
+            for _ in sort_generator:
+                pass

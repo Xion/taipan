@@ -247,7 +247,7 @@ def topological_order(nodes, incoming):
             for neighbor in incoming(node):
                 for n in visit(neighbor):
                     yield n
-            visit_state[id(node)] = VISITED
+            visit_states[id(node)] = VISITED
             yield node
 
     def generator():
@@ -259,7 +259,7 @@ def topological_order(nodes, incoming):
             visited_count = 0
             for node in nodes:
                 if visit_state(node) == VISITED:
-                    curr_visited_count += 1
+                    visited_count += 1
                 else:
                     for n in visit(node):
                         yield n

@@ -4,11 +4,11 @@ General purpose algorithms dealing with data structures.
 from __future__ import absolute_import
 
 from collections import deque
-from itertools import chain, cycle as cycle_, islice, repeat
+from itertools import chain, cycle as cycle_, islice, repeat, tee
 from numbers import Integral
 
 from taipan._compat import imap, izip_longest
-from taipan.collections import ensure_iterable
+from taipan.collections import ensure_countable, ensure_iterable
 from taipan.functional import ensure_callable
 
 
@@ -193,5 +193,68 @@ def depth_first(start, descend):
             node = stack.pop()
             yield node
             stack.extend(descend(node))
+
+    return generator()
+
+
+def topological_order(nodes, incoming):
+    """Performs topological sort of a DAG-like structure
+    (directed acyclic graph).
+
+    :param nodes: Collection of nodes
+    :param incoming: Function taking node as an argument and returning iterable
+                     of nodes with edges pointing _towards_ given one
+
+    :return: Iterable of nodes in the topological order
+
+    .. note::
+
+        ``incoming`` function works in _reverse_ to the typical adjacency
+        relation in graphs: if ``A in incoming(B)``, it implies that ``A->B``
+        is among the graph edges (**not** ``B->A``!).
+
+        This reversal is useful in practice when dealing with graphs
+        representing dependencies, module imports, header includes, and so on.
+
+    Example::
+
+        for package in topological_order(packages, attr_func('dependencies')):
+            install(package)
+
+    .. versionadded:: 0.0.4
+    """
+    ensure_iterable(nodes) ; ensure_countable(nodes)
+    ensure_callable(incoming)
+
+    # data structure for tracking node's visit state
+    NOT_VISITED, VISITING, VISITED = range(3)
+    visit_states = {}
+    visit_state = lambda node: visit_states.get(id(node), NOT_VISITED)
+
+    def visit(node):
+        """Topological sort visitor function."""
+        if visit_state(node) == VISITING:
+            raise ValueError("cycle found on node %r" % (node,))
+        if visit_state(node) == NOT_VISITED:
+            visit_states[id(node)] = VISITING
+            for neighbor in incoming(node):
+                for n in visit(neighbor):
+                    yield n
+            visit_state[id(node)] = VISITED
+            yield node
+
+    def generator():
+        """Main generator function that loops through the nodes
+        until we've visited them all.
+        """
+        visited_count = 0
+        while visited_count < len(nodes):
+            visited_count = 0
+            for node in nodes:
+                if visit_state(node) == VISITED:
+                    curr_visited_count += 1
+                else:
+                    for n in visit(node):
+                        yield n
 
     return generator()

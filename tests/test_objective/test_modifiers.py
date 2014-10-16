@@ -106,6 +106,16 @@ class Abstract_StandardClasses(_Abstract):
 
         self.assertEquals(retval, Bar().foo())
 
+    def test_inheritance_chain(self):
+        Foo = self._create_abstract_method_class()
+
+        @__unit__.abstract
+        class Bar(Foo):
+            pass
+
+        self._assertIsABC(Bar)
+        self._assertCantInstantiate(Bar)
+
     # Utility functions
 
     def _create_abstract_method_class(self, method=None):
@@ -175,6 +185,16 @@ class Abstract_ObjectiveClasses(_Abstract):
                 return super(Bar, self).foo()
 
         self.assertEquals(retval, Bar().foo())
+
+    def test_inheritance_chain(self):
+        Foo = self._create_abstract_method_class()
+
+        @__unit__.abstract
+        class Bar(Foo):
+            pass
+
+        self._assertIsABC(Bar)
+        self._assertCantInstantiate(Bar)
 
     # Utility functions
 

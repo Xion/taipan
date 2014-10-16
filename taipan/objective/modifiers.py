@@ -60,18 +60,24 @@ def abstract(class_):
     if not inspect.isclass(class_):
         raise TypeError("@abstract can only be applied to classes")
 
-    # decide what metaclass to use, depending on whether it's a subclass
-    # of our universal :class:`Object` or not
-    if type(class_) is type:
-        abc_meta = _ABCMetaclass  # like ABCMeta, but can never instantiate
-    elif type(class_) is ObjectMetaclass:
-        abc_meta = _ABCObjectMetaclass  # ABCMeta mixed with ObjectMetaclass
-    else:
-        raise ValueError(
-            "@abstract cannot be applied to classes with custom metaclass")
+    abc_meta = None
+
+    # if the class is not already using a metaclass specific to ABC,
+    # we need to change that
+    class_meta = type(class_)
+    if class_meta not in (_ABCMetaclass, _ABCObjectMetaclass):
+        # decide what metaclass to use, depending on whether it's a subclass
+        # of our universal :class:`Object` or not
+        if class_meta is type:
+            abc_meta = _ABCMetaclass  # like ABCMeta, but can never instantiate
+        elif class_meta is ObjectMetaclass:
+            abc_meta = _ABCObjectMetaclass  # ABCMeta mixed with ObjectMetaclass
+        else:
+            raise ValueError(
+                "@abstract cannot be applied to classes with custom metaclass")
 
     class_.__abstract__ = True
-    return metaclass(abc_meta)(class_)
+    return metaclass(abc_meta)(class_) if abc_meta else class_
 
 #: Alias for :func:`abc.abstractmethod` for marking abstract methods
 #: inside abstract base classes.

@@ -29,7 +29,7 @@ def decorator(decor):
 
     Although it works for any decorator, it's useful mainly for those
     that should take optional arguments. If the decorator is adorned
-    with ``@function_decorator``, it's possible to use it without the pair of
+    with ``@decorator``, it's possible to use it without the pair of
     empty parentheses::
 
         @enhanced  # rather than @enhanced()

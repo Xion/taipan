@@ -21,6 +21,11 @@ except ImportError:
     except ImportError:
         import django.utils.simplejson as json
 
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 
 # Global symbols
 

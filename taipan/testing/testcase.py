@@ -3,9 +3,10 @@ Test case class with additional enhancements.
 """
 from taipan._compat import IS_PY3, metaclass
 from taipan.collections import dicts
-from taipan.objective.methods import is_method
+from taipan.functional.functions import attr_func
 from taipan.testing._unittest import TestCase as _TestCase
 from taipan.testing.asserts import AssertsMixin
+from taipan.testing.decorators import _StageMethod
 
 
 __all__ = ['TestCase']
@@ -25,20 +26,27 @@ class TestCaseMetaclass(type):
         """Create the new subclass of :class:`TestCase`."""
         super_ = (bases[0] if bases else object).__mro__[0]
 
-        # FIXME(xion): doesn't work correctly for @classmethod,
-        # we probably need to use technique similar to _WrappedMethod
-        # from ObjectMetaclass
-        get_stage = lambda meth: getattr(meth, '__stage__', (None, None))[0]
-
+        # for every test stage, gather methods adorned with its decorator,
+        # sort them by definition order and construct final stage method
         for stage in meta.CLASS_STAGES + meta.INSTANCE_STAGES:
-            if stage in dict_:
-                continue  # test case class is overriding this stage completely
+            stage_method_wrappers = [
+                mw for mw in dicts.itervalues(dict_)
+                if isinstance(mw, _StageMethod) and mw.stage == stage
+            ]
+            if not stage_method_wrappers:
+                continue  # no stage methods, may be custom setUp/tearDown/etc.
 
-            stage_step_methods = [m for m in dicts.itervalues(dict_)
-                                  if is_method(m) and get_stage(m) == stage]
-            stage_step_methods.sort(key=lambda m: m.__stage__[1])
-            dict_[stage] = meta._create_stage_method(
-                stage, stage_step_methods, super_)
+            # if setUp/tearDown/etc. method was defined AND corresponding
+            # decorator used, then it's impossible to resolve proper runtime
+            # order of those two approaches, so we report that as an error
+            if stage in dict_:
+                raise RuntimeError(
+                    "ambiguous test stage: either define {stage}() method or "
+                    "use @{stage} decorator".format(stage=stage))
+
+            stage_method_wrappers.sort(key=attr_func('order'))
+            methods = [mw.method for mw in stage_method_wrappers]
+            dict_[stage] = meta._create_stage_method(stage, methods, super_)
 
         return super(TestCaseMetaclass, meta).__new__(meta, name, bases, dict_)
 

@@ -4,7 +4,7 @@ General purpose algorithms dealing with data structures.
 from __future__ import absolute_import
 
 from collections import deque
-from itertools import chain, cycle as cycle_, islice, repeat, tee
+from itertools import chain, cycle as cycle_, islice, repeat
 from numbers import Integral
 
 from taipan._compat import imap, izip_longest

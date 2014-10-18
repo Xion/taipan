@@ -67,10 +67,28 @@ class _StageDecorator(object):
 
 # Specific stage decorators
 
-# TODO(xion): add docstrings to them
-
 @function_decorator
 class setUpClass(_StageDecorator):
+    """Decorator for test case methods which should be invoked at the time
+    when the whole test case class is being set up.
+
+    .. warning::
+
+        Even though the decorated method is class-level, it should **not**
+        be also decorated as ``@classmethod``!
+
+    Example::
+
+        class MyTest(TestCase):
+            @setUpClass
+            def do_some_class_setup(cls):
+                ...
+
+    Multiple methods decorated this way will be invoked in the order
+    they were defined in the test case class.
+
+    .. versionadded:: 0.0.4
+    """
     stage = 'setUpClass'
 
 #: Alias for :class:`setUpClass`.
@@ -79,6 +97,21 @@ beforeClass = setUpClass
 
 @method_decorator
 class setUp(_StageDecorator):
+    """Decorator for test case methods which should be invoked immediately
+    before any test is run.
+
+    Example::
+
+        class MyTest(TestCase):
+            @setUp
+            def do_some_test_setup(self):
+                ...
+
+    Multiple methods decorated this way will be invoked in the order
+    they were defined in the test case class.
+
+    .. versionadded:: 0.0.4
+    """
     stage = 'setUp'
 
 #: Alias for :class:`setUp`.
@@ -87,6 +120,21 @@ before = setUp
 
 @method_decorator
 class tearDown(_StageDecorator):
+    """Decorator for test case methods which should be invoked immediately
+    after any test has been run.
+
+    Example::
+
+        class MyTest(TestCase):
+            @tearDown
+            def do_some_test_cleanup(self):
+                ...
+
+    Multiple methods decorated this way will be invoked in the order
+    they were defined in the test case class.
+
+    .. versionadded:: 0.0.4
+    """
     stage = 'tearDown'
 
 #: Alias for :class:`tearDown`.
@@ -95,6 +143,26 @@ after = tearDown
 
 @function_decorator
 class tearDownClass(_StageDecorator):
+    """Decorator for test case methods which should be invoked at the time
+    when the whole test case class is being torn down.
+
+    .. warning::
+
+        Even though the decorated method is class-level, it should **not**
+        be also decorated as ``@classmethod``!
+
+    Example::
+
+        class MyTest(TestCase):
+            @tearDownClass
+            def do_some_class_cleanup(cls):
+                ...
+
+    Multiple methods decorated this way will be invoked in the order
+    they were defined in the test case class.
+
+    .. versionadded:: 0.0.4
+    """
     stage = 'tearDownClass'
 
 #: Alias for :class:`tearDownClass`

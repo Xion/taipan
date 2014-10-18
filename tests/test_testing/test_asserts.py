@@ -1,20 +1,10 @@
 """
-Tests for the .testing module (yep).
-
-.. note::
-
-    Unlike other tests, these cannot use :class:`TestCase` from ``.testing``
-    module, for the simple and obvious reason that it is among the very things
-    that we're trying to test here!
+Tests for the assertion methods from the .testing package.
 """
-try:
-    from unittest2 import TestCase, skipIf
-except ImportError:
-    from unittest import TestCase, skipIf
-
 import operator
 
 from taipan._compat import IS_PY3
+from taipan.testing._unittest import TestCase, skipIf
 
 import taipan.testing as __unit__
 

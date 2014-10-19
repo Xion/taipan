@@ -4,8 +4,8 @@ Tests for the test stage decorators: ``@setUp``, ``@tearDown``, etc.
 from __future__ import print_function
 
 import os
-from StringIO import StringIO
 
+from taipan._compat import StringIO
 from taipan.collections import lists
 from taipan.strings import is_string
 from taipan.testing._unittest import TestCase, TestLoader, TextTestRunner

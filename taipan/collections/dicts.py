@@ -126,6 +126,9 @@ def peekitem(dict_):
         raise KeyError("peekitem(): dictionary is empty")
     return next(iteritems(dict_))
 
+# TODO(xion): peekkey and peekvalue
+
+# TODO(xion): make the ``from_`` argument keyword-only in select() and omit()
 
 def select(keys, from_, strict=False):
     """Selects a subset of given dictionary, including only the specified keys.

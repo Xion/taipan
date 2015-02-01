@@ -126,7 +126,24 @@ def peekitem(dict_):
         raise KeyError("peekitem(): dictionary is empty")
     return next(iteritems(dict_))
 
-# TODO(xion): peekkey and peekvalue
+
+def peekkey(dict_):
+    """Return some key from the dictionary without modifying it.
+
+    :param dict_: Dictionary to retrieve the key from
+    :return: Key from ``dict_``
+
+    :raise KeyError: If the dictionary is empty
+
+    .. versionadded:: 0.0.4
+    """
+    ensure_mapping(dict_)
+    if not dict_:
+        raise KeyError("peekkey(): dictionary is empty")
+    return next(iterkeys(dict_))
+
+
+# TODO(xion): peekvalue
 
 # TODO(xion): make the ``from_`` argument keyword-only in select() and omit()
 

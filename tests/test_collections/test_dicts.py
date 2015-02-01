@@ -286,8 +286,13 @@ class Get(TestCase):
             __unit__.get(self.DICT, self.ABSENT_KEYS, self.DEFAULT))
 
 
-class PeekItem(TestCase):
+class _Peek(TestCase):
+    #: Dictionary where keys and values are different, non-overlapping sets,
+    #: so as to easily distringuish between them in peekkey() and peekvalue().
     DICT = dict(zip(ALPHABET, range(1, len(ALPHABET) + 1)))
+
+
+class PeekItem(_Peek):
 
     def test_none(self):
         with self.assertRaises(TypeError):
@@ -305,6 +310,26 @@ class PeekItem(TestCase):
         key, value = __unit__.peekitem(self.DICT)
         self.assertIn(key, self.DICT)
         self.assertEquals(value, self.DICT[key])
+
+
+class PeekKey(_Peek):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekkey(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekkey(object())
+
+    def test_dict__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.peekkey({})
+
+    def test_dict__normal(self):
+        key = __unit__.peekkey(self.DICT)
+        self.assertIn(key, self.DICT)
+        self.assertNotIn(key, self.DICT.values())
 
 
 class _Projection(TestCase):

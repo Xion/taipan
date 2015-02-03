@@ -332,6 +332,26 @@ class PeekKey(_Peek):
         self.assertNotIn(key, self.DICT.values())
 
 
+class PeekValue(_Peek):
+
+    def test_none(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekvalue(None)
+
+    def test_some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.peekvalue(object())
+
+    def test_dict__empty(self):
+        with self.assertRaises(KeyError):
+            __unit__.peekvalue({})
+
+    def test_dict__normal(self):
+        value = __unit__.peekvalue(self.DICT)
+        self.assertIn(value, self.DICT.values())
+        self.assertNotIn(value, self.DICT.keys())
+
+
 class _Projection(TestCase):
     DICT = dict(zip(('foo', 'bar', 'baz', 'thud', 'qux'), range(5)))
 

@@ -16,7 +16,7 @@ import taipan.lang
 __all__ = [
     'AbsentDict', 'ABSENT',
     'iteritems', 'iterkeys', 'itervalues', 'items', 'keys', 'values',
-    'get', 'peekitem', 'select', 'pick', 'omit',
+    'get', 'peekitem', 'peekkey', 'peekvalue', 'select', 'pick', 'omit',
     'filteritems', 'starfilteritems', 'filterkeys', 'filtervalues',
     'mapitems', 'starmapitems', 'mapkeys', 'mapvalues',
     'merge', 'extend',
@@ -143,9 +143,21 @@ def peekkey(dict_):
     return next(iterkeys(dict_))
 
 
-# TODO(xion): peekvalue
+def peekvalue(dict_):
+    """Return some value from the dictionary without modifying it.
 
-# TODO(xion): make the ``from_`` argument keyword-only in select() and omit()
+    :param dict_: Dictionary to retrieve the value from
+    :return: Value from ``dict_``
+
+    :raise KeyError: If the dictionary is empty
+
+    .. versionadded:: 0.0.4
+    """
+    ensure_mapping(dict_)
+    if not dict_:
+        raise KeyError("peekvalue(): dictionary is empty")
+    return next(itervalues(dict_))
+
 
 def select(keys, from_, strict=False):
     """Selects a subset of given dictionary, including only the specified keys.

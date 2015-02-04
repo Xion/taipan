@@ -6,7 +6,7 @@ import functools
 import inspect
 import sys
 
-from taipan._compat import IS_PY3, ifilter, xrange
+from taipan._compat import ifilter, xrange
 from taipan.objective.classes import is_class, metaclass
 from taipan.objective.methods import is_method
 
@@ -26,22 +26,14 @@ class ObjectMetaclass(type):
     will grant access to additional object-oriented features.
     """
     #: Methods exempt from ``@override`` requirement.
-    #: Note that not all magic method names are includes, but only those
-    #: that are by default present in :class:`object`
     OVERRIDE_EXEMPTIONS = set([
         '__delattr__', '__getattr__', '__getattribute__', '__setattr__',
-        '__format__', '__hash__', '__repr__',  '__str__',
+        '__format__', '__hash__', '__repr__',  '__str__', '__unicode__',
+        '__eq__', '__ne__', '__ge__', '__gt__', '__le__', '__lt__',
         '__init__', '__new__',
         '__reduce__', '__reduce_ex__', '__sizeof__',
         '__instancehook__', '__subclasshook__',
     ])
-    if IS_PY3:
-        OVERRIDE_EXEMPTIONS.update([
-            '__eq__', '__ne__',
-            '__ge__', '__gt__', '__le__', '__lt__',
-        ])
-    else:
-        OVERRIDE_EXEMPTIONS.add('__unicode__')
 
     def __new__(meta, name, bases, dict_):
         """Creates a new class using this metaclass.

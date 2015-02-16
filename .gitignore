@@ -3,6 +3,7 @@
 dist
 
 .tox
+.coverage
 
 *.sublime-*
 .ropeproject

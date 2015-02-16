@@ -35,6 +35,22 @@ class AssertsMixin(object):
         if nonempty:
             self.__fail(msg, "%r is not empty" % (argument,))
 
+    def assertNotEmpty(self, argument, msg=None):
+        """Assert that ``argument`` is not an empty collection."""
+        if is_countable(argument):
+            empty = len(argument) == 0
+        else:
+            if not is_iterable(argument):
+                self.__fail(msg, "%r is not an iterable" % (argument,))
+
+            empty = True
+            for _ in argument:
+                empty = False
+                break
+
+        if empty:
+            self.__fail(msg, "%r is empty" % (argument,))
+
     def assertStartsWith(self, prefix, string, msg=None):
         """Assert that ``string`` starts with given ``prefix``."""
         self.__fail_unless_strings(prefix)

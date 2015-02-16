@@ -116,6 +116,66 @@ class AssertEmpty(_Assertion):
         self._TESTCASE.assertEmpty(frozenset())
 
 
+class AssertNotEmpty(_Assertion):
+
+    def test_none(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(None)
+
+    def test_false(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(False)
+
+    def test_zero(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(0)
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(0.0)
+
+    @skipIf(IS_PY3, "requires Python 2.x")
+    def test_zero__py2(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(eval('0L'))
+
+    def test_empty_string(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty("")
+
+    def test_empty_tuple(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(())
+
+    def test_empty_list(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty([])
+
+    def test_empty_dict(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty({})
+
+    def test_empty_set(self):
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(set())
+        with self._assertFailure():
+            self._TESTCASE.assertNotEmpty(frozenset())
+
+    def test_nonempty__string(self):
+        self._TESTCASE.assertNotEmpty("foo")
+
+    def test_nonempty_tuple(self):
+        self._TESTCASE.assertNotEmpty((1, 2))
+
+    def test_nonempty_list(self):
+        self._TESTCASE.assertNotEmpty([1, 2])
+
+    def test_nonempty_dict(self):
+        self._TESTCASE.assertNotEmpty({1: 2})
+
+    def test_nonempty_set(self):
+        self._TESTCASE.assertNotEmpty(set((1, 2)))
+        self._TESTCASE.assertNotEmpty(frozenset((1, 2)))
+
+
 class AssertStartsWith(_Assertion):
     PREFIX = "foo"
     PREFIXES_WITH_ACTUAL = (PREFIX, "baz")

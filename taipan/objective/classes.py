@@ -12,6 +12,7 @@ from taipan.functional.combinators import and_, not_
 __all__ = [
     'is_class', 'ensure_class',
     'is_direct_subclass', 'ensure_direct_subclass',
+    'is_indirect_subclass', 'ensure_indirect_subclass',
 
     'iter_subclasses', 'iter_superclasses',
 
@@ -41,7 +42,7 @@ def is_direct_subclass(class_, of):
     """Check whether given class is a direct subclass of the other.
 
     :param class_: Class to check
-    :param of: Subclass to check against
+    :param of: Superclass to check against
 
     :return: Boolean result of the test
 
@@ -57,7 +58,7 @@ def ensure_direct_subclass(class_, of):
     """Check whether given class is a direct subclass of another.
 
     :param class_: Class to check
-    :param of: Subclass to check against
+    :param of: Superclass to check against
 
     :return: ``class_``, if the check succeeds
     :raise TypeError: When the check fails
@@ -67,6 +68,42 @@ def ensure_direct_subclass(class_, of):
     if not is_direct_subclass(class_, of):
         raise TypeError("expected a direct subclass of %r, got %s instead" % (
             of, class_.__name__))
+    return class_
+
+
+def is_indirect_subclass(class_, of):
+    """Check whether given is an indirect subclass of another,
+    i.e. there exists at least intermediate base between ``of`` and ``class_``.
+
+    :param class_: Class to check
+    :param of: Superclass to check against
+
+    :return: Boolean result of the test
+
+    .. versionadded:: 0.0.4
+    """
+    ensure_class(class_)
+    ensure_class(of)  # TODO(xion): support predicates in addition to classes
+
+    return issubclass(class_, of) and not is_direct_subclass(class_, of)
+
+
+def ensure_indirect_subclass(class_, of):
+    """Check whether given is an indirect subclass of another,
+    i.e. there exists at least intermediate base between ``of`` and ``class_``.
+
+    :param class_: Class to check
+    :param of: Superclass to check against
+
+    :return: ``class_``, if the check succeeds
+    :raise TypeError: When the check fails
+
+    .. versionadded:: 0.0.4
+    """
+    if not is_indirect_subclass(class_, of):
+        raise TypeError(
+            "expected an indirect subclass of %r, got %s instead" % (
+                of, class_.__name__))
     return class_
 
 

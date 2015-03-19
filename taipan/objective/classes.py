@@ -11,13 +11,16 @@ from taipan.functional.combinators import and_, not_
 
 __all__ = [
     'is_class', 'ensure_class',
+    'is_direct_subclass', 'ensure_direct_subclass',
+
     'iter_subclasses', 'iter_superclasses',
+
     'is_metaclass', 'ensure_metaclass',
     'metaclass',
 ]
 
 
-# Class checks and assetions
+# Class checks and assertions
 
 #: Alias for ``inspect.isclass``
 is_class = inspect.isclass
@@ -33,6 +36,41 @@ def ensure_class(arg):
             "expected a class, got %s instead" % type(arg).__name__)
     return arg
 
+
+def is_direct_subclass(class_, of):
+    """Check whether given class is a direct subclass of the other.
+
+    :param class_: Class to check
+    :param of: Subclass to check against
+
+    :return: Boolean result of the test
+
+    .. versionadded:: 0.0.4
+    """
+    ensure_class(class_)
+    ensure_class(of)  # TODO(xion): support predicates in addition to classes
+
+    return of in class_.__bases__
+
+
+def ensure_direct_subclass(class_, of):
+    """Check whether given class is a direct subclass of another.
+
+    :param class_: Class to check
+    :param of: Subclass to check against
+
+    :return: ``class_``, if the check succeeds
+    :raise TypeError: When the check fails
+
+    .. versionadded:: 0.0.4
+    """
+    if not is_direct_subclass(class_, of):
+        raise TypeError("expected a direct subclass of %r, got %s instead" % (
+            of, class_.__name__))
+    return class_
+
+
+# Class utilities
 
 def iter_subclasses(class_):
     """Iterate over all the subclasses (and subclasses thereof, etc.)

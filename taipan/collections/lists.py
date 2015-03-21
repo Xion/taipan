@@ -66,7 +66,8 @@ def index(*args, **kwargs):
 
     .. versionadded:: 0.0.3
     """
-    return _index(*args, start=0, step=1, **kwargs)
+    _, idx = _index(*args, start=0, step=1, **kwargs)
+    return idx
 
 
 def lastindex(*args, **kwargs):
@@ -89,7 +90,8 @@ def lastindex(*args, **kwargs):
 
     .. versionadded:: 0.0.3
     """
-    return _index(*args, start=sys.maxsize, step=-1, **kwargs)
+    _, idx = _index(*args, start=sys.maxsize, step=-1, **kwargs)
+    return idx
 
 
 def _index(*args, **kwargs):
@@ -101,7 +103,9 @@ def _index(*args, **kwargs):
     :param start: Start index for the lookup
     :param step: Counter step (i.e. in/decrement) for each iteration
 
-    :return: Index of the first element found, or -1
+    :return: Pair of ``(list, index)``,
+             where ``list`` is the list we searched in
+             and ``index`` is the index of the first element found, or -1
     """
     start = kwargs.pop('start', 0)
     step = kwargs.pop('step', 1)
@@ -132,10 +136,10 @@ def _index(*args, **kwargs):
     i = start
     while 0 <= i < len_:
         if predicate(list_[i]):
-            return i
+            return list_, i
         i += step
     else:
-        return -1
+        return list_, -1
 
 
 # List manipulation

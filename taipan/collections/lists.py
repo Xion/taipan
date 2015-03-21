@@ -10,7 +10,7 @@ from taipan.functional import ensure_callable, ensure_keyword_args
 
 __all__ = [
     'head', 'last', 'tail', 'init',
-    'index', 'lastindex',
+    'find', 'findlast', 'index', 'lastindex',
     'intersperse', 'intercalate', 'concat', 'join', 'flatten',
 ]
 
@@ -47,6 +47,58 @@ def init(list_):
 
 # Searching for elements
 
+def find(*args, **kwargs):
+    """Find the first matching element in a list and return it.
+
+    Usage::
+
+        find(element, list_)
+        find(of=element, in_=list_)
+        find(where=predicate, in_=list_)
+
+    :param element, of: Element to search for (by equality comparison)
+    :param where: Predicate defining an element to search for.
+                  This should be a callable taking a single argument
+                  and returning a boolean result.
+    :param list_, in_: List to search in
+
+    :return: Last matching element
+    :raise IndexError: If no matching elements were found
+
+    .. versionadded:: 0.0.4
+    """
+    list_, idx = _index(*args, start=0, step=1, **kwargs)
+    if idx < 0:
+        raise IndexError("element not found")
+    return list_[idx]
+
+
+def findlast(*args, **kwargs):
+    """Find the last matching element in a list and return it.
+
+    Usage::
+
+        findlast(element, list_)
+        findlast(of=element, in_=list_)
+        findlast(where=predicate, in_=list_)
+
+    :param element, of: Element to search for (by equality comparison)
+    :param where: Predicate defining an element to search for.
+                  This should be a callable taking a single argument
+                  and returning a boolean result.
+    :param list_, in_: List to search in
+
+    :return: Last matching element
+    :raise IndexError: If no matching elements were found
+
+    .. versionadded:: 0.0.4
+    """
+    list_, idx = _index(*args, start=sys.maxsize, step=-1, **kwargs)
+    if idx < 0:
+        raise IndexError("element not found")
+    return list_[idx]
+
+
 def index(*args, **kwargs):
     """Search a list for an exact element, or element satisfying a predicate.
 
@@ -56,7 +108,7 @@ def index(*args, **kwargs):
         index(of=element, in_=list_)
         index(where=predicate, in_=list_)
 
-    :param element, of: Element to search for
+    :param element, of: Element to search for (by equality comparison)
     :param where: Predicate defining an element to search for.
                   This should be a callable taking a single argument
                   and returning a boolean result.
@@ -80,7 +132,7 @@ def lastindex(*args, **kwargs):
         lastindex(of=element, in_=list_)
         lastindex(where=predicate, in_=list_)
 
-    :param element, of: Element to search for
+    :param element, of: Element to search for (by equality comparison)
     :param where: Predicate defining an element to search for.
                   This should be a callable taking a single argument
                   and returning a boolean result.

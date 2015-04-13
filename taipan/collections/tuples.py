@@ -15,9 +15,10 @@ from taipan.collections import ensure_iterable, ensure_sequence
 
 __all__ = [
     'is_tuple',
-    'is_single', 'is_triple', 'is_quadruple', 'is_quintuple',
+    'is_single', 'is_pair', 'is_triple', 'is_quadruple', 'is_quintuple',
     'ensure_tuple',
-    'ensure_single', 'ensure_triple', 'ensure_quadruple', 'ensure_quintuple',
+    'ensure_single', 'ensure_pair', 'ensure_triple', 'ensure_quadruple',
+    'ensure_quintuple',
 
     'first', 'second', 'third', 'fourth', 'fifth',
     'select', 'pick', 'omit',

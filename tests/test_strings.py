@@ -111,6 +111,55 @@ class EnsureRegex(TestCase):
         __unit__.ensure_regex(self.BYTE_STRING_RE)
 
 
+class Trim(TestCase):
+    STRING = 'some arbitrary string'
+
+    def test_string__none(self):
+        with self.assertRaises(TypeError):
+            __unit__.trim(None)
+
+    def test_string__some_object(self):
+        with self.assertRaises(TypeError):
+            __unit__.trim(object())
+
+    def test_no_infixes(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.trim(self.STRING)
+        self.assertIn("exactly one", str(r.exception))
+
+    def test_prefix__empty(self):
+        self.assertEquals(self.STRING, __unit__.trim(self.STRING, prefix=""))
+
+    def test_prefix__present(self):
+        self.assertEquals('bar', __unit__.trim('foobar', prefix='foo'))
+
+    def test_prefix__absent__non_strict(self):
+        self.assertEquals(
+            'foobar', __unit__.trim('foobar', prefix='thud', strict=False))
+
+    def test_prefix__absent__strict(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.trim('foobar', prefix='thud', strict=True)
+        self.assertIn("expected", str(r.exception))
+        self.assertIn("prefix", str(r.exception))
+
+    def test_suffix__empty(self):
+        self.assertEquals(self.STRING, __unit__.trim(self.STRING, suffix=""))
+
+    def test_suffix__present(self):
+        self.assertEquals('foo', __unit__.trim('foobar', suffix='bar'))
+
+    def test_suffix__absent__non_strict(self):
+        self.assertEquals(
+            'foobar', __unit__.trim('foobar', suffix='thud', strict=False))
+
+    def test_suffix__absent__strict(self):
+        with self.assertRaises(ValueError) as r:
+            __unit__.trim('foobar', suffix='thud', strict=True)
+        self.assertIn("expected", str(r.exception))
+        self.assertIn("suffix", str(r.exception))
+
+
 class Split(TestCase):
     TEXT = 'Alice has a cat'
     WORDS = ['Alice', 'has', 'a', 'cat']

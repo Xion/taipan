@@ -16,6 +16,7 @@ from taipan.functional import ensure_keyword_args
 __all__ = [
     'BaseString', 'UnicodeString', 'is_string', 'ensure_string',
     'Regex', 'is_regex', 'ensure_regex',
+    'trim',
     'split', 'join',
     'camel_case',
     'replace', 'Replacer', 'ReplacementError',
@@ -74,6 +75,61 @@ def ensure_regex(r):
         raise TypeError(
             "expected a regular expression, got %s" % type(r).__name__)
     return r
+
+
+# String manipulation
+
+def trim(s, prefix=None, suffix=None, strict=False):
+    """Trim a string, removing given prefix or suffix.
+
+    :param s: String to trim
+    :param prefix: Prefix to remove from ``s``
+    :param suffix: Suffix to remove from ``s``
+    :param strict: Whether the prefix or suffix must be present in ``s``.
+                   By default, if the infix is not found, function will simply
+                   return the string passed.
+
+    Either ``prefix`` or ``suffix`` must be provided, but not both
+    (which would be ambiguous as to what to remove first).
+
+    :raise ValueError: If ``strict`` is True and required prefix or suffix
+                       was not found
+
+    Examples::
+
+        trim('foobar', prefix='foo')  # 'bar'
+        trim('foobar', suffix='bar')  # 'foo'
+        trim('foobar', prefix='baz', strict=True)  # exception
+
+    .. versionadded:: 0.0.4
+    """
+    ensure_string(s)
+
+    has_prefix = prefix is not None
+    has_suffix = suffix is not None
+    if has_prefix == has_suffix:
+        raise ValueError(
+            "exactly one of either prefix or suffix must be provided")
+
+    if has_prefix:
+        ensure_string(prefix)
+        if s.startswith(prefix):
+            return s[len(prefix):]
+        elif strict:
+            raise ValueError(
+                "string %r does not start with expected prefix %r" % (
+                    s, prefix))
+
+    if has_suffix:
+        ensure_string(suffix)
+        if s.endswith(suffix):
+            return s[:-len(suffix)] if suffix else s
+        elif strict:
+            raise ValueError(
+                "string %r does not end with expected suffix %r" % (
+                    s, suffix))
+
+    return s
 
 
 # Splitting and joining

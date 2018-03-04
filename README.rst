@@ -6,10 +6,10 @@ taipan
 .. |Version| image:: https://img.shields.io/pypi/v/taipan.svg?style=flat
     :target: https://pypi.python.org/pypi/taipan
     :alt: Version
-.. |Development Status| image:: https://pypip.in/status/taipan/badge.svg?style=flat
+.. |Development Status| image:: https://img.shields.io/pypi/status/taipan.svg?style=flat
     :target: https://pypi.python.org/pypi/taipan/
     :alt: Development Status
-.. |Python Versions| image:: https://pypip.in/py_versions/taipan/badge.svg?style=flat
+.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/taipan.svg?style=flat
     :target: https://pypi.python.org/pypi/taipan
     :alt: Python versions
 .. |License| image:: https://img.shields.io/pypi/l/taipan.svg?style=flat
